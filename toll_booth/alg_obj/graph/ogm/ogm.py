@@ -31,6 +31,10 @@ class OgmReader:
         self._trident_driver = trident_driver
         self._index_driver = index_driver
 
+    def execute(self, query):
+        results = self._trident_driver.execute(query, True)
+        return results
+
     def find_object(self, internal_id, is_edge=False):
         object_letter = 'V'
         if is_edge:
