@@ -45,12 +45,24 @@ class OgmReader:
             return
         return results[0].to_gql
 
-    def get_edges(self, internal_id, out=False):
-        edge_direction = 'inE()'
-        if out:
-            edge_direction = 'outE()'
-        query = f"g.V('{internal_id}').{edge_direction}"
+    def get_neighbors(self, internal_id, out=False, is_edge=False, get_edges=False):
+        neighbors = self.calculate_neighbors(out, get_edges)
+        object_letter = 'V'
+        if is_edge:
+            object_letter = 'E'
+        query = f"g.{object_letter}('{internal_id}').{neighbors}"
         results = self._trident_driver.execute(query, True)
         if not results:
             return []
         return [x.to_gql for x in results]
+
+    @classmethod
+    def calculate_neighbors(cls, out, get_edges):
+        if out and get_edges:
+            return 'outE()'
+        if get_edges:
+            return 'inE()'
+        if out:
+            return 'out()'
+        return 'in()'
+

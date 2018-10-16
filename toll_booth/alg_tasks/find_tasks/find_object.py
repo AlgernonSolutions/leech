@@ -19,6 +19,11 @@ def find_object(*args, **kwargs):
     if source:
         object_type = source['object_type']
         internal_id = source['internal_id']
+        neighbors = source['neighbors']
         if internal_id and object_type:
-            if object_type in ['in_edges', 'out_edges']:
-                return ogm.get_edges(internal_id, object_type == 'out_edges')
+            out = neighbors in ['out_edges', 'out_vertexes']
+            is_edge = object_type == 'Edge'
+            get_edges = neighbors in ['out_edges', 'in_edges']
+            return ogm.get_neighbors(
+                internal_id=internal_id, out=out, is_edge=is_edge, get_edges=get_edges
+            )
