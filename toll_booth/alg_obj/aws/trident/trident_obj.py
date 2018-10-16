@@ -24,11 +24,8 @@ class TridentProperty(AlgObject):
 
     @property
     def to_gql(self):
-        type_name = 'IntegerProperty'
-        if isinstance(self._property_value, str):
-            type_name = 'StringProperty'
         return {
-            '__typename': type_name,
+            '__typename': 'ObjectProperty',
             'property_name': self._property_label,
             'property_value': self._property_value
         }
