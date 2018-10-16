@@ -6,6 +6,7 @@ import os
 import urllib.parse
 
 import requests
+import dateutil.parser
 
 from toll_booth.alg_obj.aws.aws_obj.squirrel import Opossum
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentVertex, TridentEdge, TridentProperty, TridentPath
@@ -34,6 +35,8 @@ class TridentDecoder(json.JSONDecoder):
             return obj_value
         if obj_type == 'g:Set':
             return set(obj_value)
+        if obj_type == 'g:Date':
+            return datetime.datetime.fromtimestamp(obj_value/1000)
         if obj_type == 'g:Map':
             created_map = {}
             i = 0

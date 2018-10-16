@@ -2,7 +2,7 @@ import collections
 from xml.dom import minidom
 
 import requests
-from dateutil import parser
+import dateutil.parser
 
 from toll_booth.alg_obj.aws.aws_obj.squirrel import Opossum
 
@@ -204,7 +204,7 @@ def parse_tables(document):
                                 data = data.replace('<b>', '')
                                 data = data.replace('</b>', '')
                             elif data_type == 'dateTime':
-                                data = parser.isoparse(data)
+                                data = dateutil.parser.parse(data)
                             elif data_type == 'boolean':
                                 data = data == 'true'
                             else:
