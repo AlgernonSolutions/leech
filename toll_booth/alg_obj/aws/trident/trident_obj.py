@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from toll_booth.alg_obj import AlgObject
 
 
@@ -24,10 +26,19 @@ class TridentProperty(AlgObject):
 
     @property
     def to_gql(self):
+        property_value = {
+            '__typename': 'ObjectPropertyValue',
+            'data_type': 'S',
+            'property_value': self._property_value
+        }
+        if isinstance(self._property_value, int):
+            property_value['data_type'] = 'I'
+        if isinstance(self._property_value, datetime):
+            property_value['data_type'] = 'DT'
         return {
             '__typename': 'ObjectProperty',
             'property_name': self._property_label,
-            'property_value': self._property_value
+            'property_value': property_value
         }
 
     @property
