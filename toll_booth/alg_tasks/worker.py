@@ -66,7 +66,7 @@ class Worker:
                 task_function = getattr(task_module, task_name)
                 return task_function
             except AttributeError as e:
-                logging.info(f'tried to find the task named {task_name} in module named {str(task_unit)}, to no avail')
-                logging.info(e.args)
+                logging.debug(f'tried to find the task named {task_name} in module named {str(task_unit)}, to no avail')
+                logging.debug(e.args)
                 continue
         raise NotImplementedError('remote task defined as: %s was not registered with the program' % task_name)
