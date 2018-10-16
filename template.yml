@@ -19,22 +19,168 @@ Parameters:
 #       Type: Canary10Percent5Minutes
 
 Resources:
-  HelloWorld:
+  work:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: index.handler
+      Handler: toll_booth/alg_tasks/toll_booth.work
       Runtime: python3.6
-      Role:
-        Fn::ImportValue:
-          !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]
+      FunctionName: algernon-work-dev
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-06b3a26ff04155688
+        SubnetIds:
+          - subnet-872a24cc
+          - subnet-29497e4d
+          - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  monitor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.work
+      Runtime: python3.6
+      FunctionName: metal-monitor
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+      ReservedConcurrentExecutions: 100
+  extract:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: metal-extract
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-06b3a26ff04155688
+        SubnetIds:
+          - subnet-872a24cc
+          - subnet-29497e4d
+          - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
       Events:
-        GetEvent:
-          Type: Api
+        extraction:
+          Type: SQS
           Properties:
-            Path: /
-            Method: get
-        PostEvent:
-          Type: Api
+            Queue: arn:aws:sqs:us-east-1:803040539655:extraction
+            BatchSize: 1
+      Tracing: Active
+      ReservedConcurrentExecutions: 100
+  transform:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: metal-transform
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Events:
+        transformation:
+          Type: SQS
           Properties:
-            Path: /
-            Method: post
+            Queue: arn:aws:sqs:us-east-1:803040539655:transform
+            BatchSize: 1
+      Tracing: Active
+      ReservedConcurrentExecutions: 100
+  assimilate:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: metal-assimilate
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Events:
+        assimilation:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:us-east-1:803040539655:assimilate
+            BatchSize: 1
+      Tracing: Active
+      ReservedConcurrentExecutions: 100
+  load:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: metal-load
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Events:
+        loading:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:us-east-1:803040539655:load
+            BatchSize: 1
+      Tracing: Active
+      ReservedConcurrentExecutions: 100
+  audit:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: metal-audit
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  aphid:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.aphid
+      Runtime: python3.6
+      FunctionName: metal-aphid
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active

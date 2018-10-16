@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GraphSchema",
+  "description": "A schema defining objects within an algernon graph system",
+  "type": "object",
+  "properties": {
+    "patterns": {
+      "description": "array of pattern entries",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/pattern"
+      },
+      "uniqueItems": true
+    }
+  },
+  "definitions": {
+    "pattern": {
+      "description": "a single example of pattern found in the graph space"
+    }
+  }
+}
