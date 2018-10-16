@@ -65,4 +65,3 @@ class OgmReader:
         if out:
             return 'out()'
         return 'in()'
-
