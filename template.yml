@@ -43,7 +43,6 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
-      ReservedConcurrentExecutions: 100
   extract:
     Type: AWS::Serverless::Function
     Properties:
@@ -67,7 +66,6 @@ Resources:
             Queue: arn:aws:sqs:us-east-1:803040539655:extraction
             BatchSize: 1
       Tracing: Active
-      ReservedConcurrentExecutions: 100
   transform:
     Type: AWS::Serverless::Function
     Properties:
@@ -91,7 +89,6 @@ Resources:
             Queue: arn:aws:sqs:us-east-1:803040539655:transform
             BatchSize: 1
       Tracing: Active
-      ReservedConcurrentExecutions: 100
   assimilate:
     Type: AWS::Serverless::Function
     Properties:
@@ -115,7 +112,6 @@ Resources:
             Queue: arn:aws:sqs:us-east-1:803040539655:assimilate
             BatchSize: 1
       Tracing: Active
-      ReservedConcurrentExecutions: 100
   load:
     Type: AWS::Serverless::Function
     Properties:
@@ -139,7 +135,6 @@ Resources:
             Queue: arn:aws:sqs:us-east-1:803040539655:load
             BatchSize: 1
       Tracing: Active
-      ReservedConcurrentExecutions: 100
   audit:
     Type: AWS::Serverless::Function
     Properties:
