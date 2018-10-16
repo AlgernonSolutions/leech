@@ -44,3 +44,13 @@ class OgmReader:
         if not results:
             return
         return results[0].to_gql
+
+    def get_edges(self, internal_id, out=False):
+        edge_direction = 'in()'
+        if out:
+            edge_direction = 'out()'
+        query = f"g.V('{internal_id}').{edge_direction}"
+        results = self._trident_driver.execute(query, True)
+        if not results:
+            return
+        return [x.to_gql for x in results]
