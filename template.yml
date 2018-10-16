@@ -8,23 +8,13 @@ Parameters:
     Type: String
     Description: CodeStar projectId used to associate new resources to team members
 
-# Enable blue/green deployments using this Globals section. For instructions, see the AWS CodeStar User Guide:
-# https://docs.aws.amazon.com/codestar/latest/userguide/how-to-modify-serverless-project.html?icmpid=docs_acs_rm_tr
-#
-# Globals:
-#   Function:
-#     AutoPublishAlias: live
-#     DeploymentPreference:
-#       Enabled: true
-#       Type: Canary10Percent5Minutes
-
 Resources:
   work:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
       Runtime: python3.6
-      FunctionName: algernon-work-dev
+      FunctionName: leech-work
       VpcConfig:
         SecurityGroupIds:
           - sg-06b3a26ff04155688
@@ -41,7 +31,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
       Runtime: python3.6
-      FunctionName: metal-monitor
+      FunctionName: leech-monitor
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
@@ -59,7 +49,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: metal-extract
+      FunctionName: leech-extract
       VpcConfig:
         SecurityGroupIds:
           - sg-06b3a26ff04155688
@@ -83,7 +73,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: metal-transform
+      FunctionName: leech-transform
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
@@ -107,7 +97,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: metal-assimilate
+      FunctionName: leech-assimilate
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
@@ -131,7 +121,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: metal-load
+      FunctionName: leech-load
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
@@ -155,7 +145,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: metal-audit
+      FunctionName: leech-audit
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
@@ -172,7 +162,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.aphid
       Runtime: python3.6
-      FunctionName: metal-aphid
+      FunctionName: leech-aphid
       VpcConfig:
         SecurityGroupIds:
         - sg-06b3a26ff04155688
