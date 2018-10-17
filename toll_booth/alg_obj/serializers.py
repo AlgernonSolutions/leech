@@ -75,5 +75,5 @@ class GqlDecoder(json.JSONDecoder):
         if alg_class in alg_classes:
             test = alg_classes[alg_class]
             alg_obj = test.from_json(obj_value)
-            return alg_obj
+            return alg_obj.to_gql
         return obj

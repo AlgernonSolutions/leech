@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
 class TridentProperty(AlgObject):
@@ -200,3 +201,59 @@ class TridentPath(AlgObject):
     @property
     def path_objects(self):
         return self._path_objects
+
+
+class TridentEdgeConnection(AlgObject):
+    def __init__(self, edges, token, more):
+        self._edges = edges
+        self._token = token
+        self._more = more
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['edges'], json_dict['token'], json_dict['more'])
+
+    @property
+    def page_info(self):
+        return TridentPageInfo(self._token, self._more)
+
+    @property
+    def in_count(self):
+        return len(self._edges['in_edges'])
+
+    @property
+    def out_count(self):
+        return len(self._edges['out_edges'])
+
+    @property
+    def total_count(self):
+        return len(self._edges)
+
+    @property
+    def to_gql(self):
+        return {
+            '__typename': 'EdgeConnection',
+            'edges': self._edges,
+            'page_info': self.page_info,
+            'total_count': self.total_count,
+            'in_count': self.in_count,
+            'out_count': self.out_count
+        }
+
+
+class TridentPageInfo(AlgObject):
+    def __init__(self, pagination_token, more):
+        self._token = pagination_token
+        self._more = more
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(PaginationToken.generate(**json_dict), json_dict['more'])
+
+    @property
+    def to_gql(self):
+        return {
+            'pagination_token': self._token.package(),
+            'more': self._more,
+            '__typename': 'PageInfo'
+        }

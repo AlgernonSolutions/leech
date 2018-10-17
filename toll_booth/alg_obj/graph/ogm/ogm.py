@@ -1,5 +1,6 @@
 from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexDriver
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
+from toll_booth.alg_obj.aws.trident.trident_obj import TridentVertex, TridentEdgeConnection
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
@@ -42,24 +43,30 @@ class OgmReader:
         return self.get_vertex(**kwargs)
 
     def get_vertex(self, internal_id, **kwargs):
-        pagination_token = kwargs.get('pagination_token', PaginationToken.generate(**kwargs))
-        connected_edges, more = self.get_connected_edges(internal_id, **kwargs)
-        vertex_properties = self.get_vertex_properties(internal_id, **kwargs)
-        pass
+        vertex_properties, vertex_label = self.get_vertex_properties(internal_id, **kwargs)
+        return TridentVertex(internal_id, vertex_label, vertex_properties)
 
     def get_vertex_properties(self, internal_id, **kwargs):
         property_names = kwargs.get('property_names', [])
         filter_string = ','.join('"{0}"'.format(w) for w in property_names)
-        query = f'g.V("{internal_id}").propertyMap([{filter_string}])'
+        query = f'g.V("{internal_id}").project("vertex_properties", "vertex_label")' \
+                f'.by(propertyMap([{filter_string}]))' \
+                f'.by(label())'
         results = self._trident_driver.execute(query, True)
         if not results:
             return []
-        return [y[0] for x, y in results[0].items()]
+        return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
 
-    def get_connected_edges(self, vertex_internal_id, **kwargs):
+    def get_edge_connection(self, vertex_internal_id, **kwargs):
+        token = kwargs.get('pagination_token', PaginationToken.generate(**kwargs))
+        edges, more = self.get_connected_edges(vertex_internal_id, token)
+        token.increment()
+        return TridentEdgeConnection(edges, token, more)
+
+    def get_connected_edges(self, vertex_internal_id, pagination_token, **kwargs):
         edge_labels = kwargs.get('edge_labels', [])
-        inclusive_start = kwargs.get('inclusive_start', 0)
-        exclusive_end = kwargs.get('exclusive_end', 10)
+        inclusive_start = pagination_token.inclusive_start
+        exclusive_end = pagination_token.exclusive_end
         edge_label_string = ', '.join(edge_labels)
         query = f'g.V("{vertex_internal_id}")' \
                 f'.outE({edge_label_string})' \
