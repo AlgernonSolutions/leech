@@ -140,12 +140,12 @@ class TridentEdge(AlgObject):
     def to_gql(self):
         return {
             'internal_id': self.internal_id,
-            'label': self.label,
+            'edge_label': self.label,
             'in_id': self.in_id,
             'in_label': self.in_label,
             'out_id': self.out_id,
             'out_label': self.out_label,
-            '__typename': self.label
+            '__typename': 'Edge'
         }
 
     @property

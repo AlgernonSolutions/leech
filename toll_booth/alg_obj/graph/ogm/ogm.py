@@ -36,14 +36,21 @@ class OgmReader:
         return results
 
     def find_object(self, internal_id, is_edge=False):
-        object_letter = 'V'
+        query = f'g.V("{internal_id}").as("source_object")'
+        '.project("in_edges", "out_edges", "in_vertexes", "out_vertexes")'
+        '.by(inE().fold()).by(outE().fold()).by(in().fold()).by(out().fold()).as("neighbors")'
+        '.select("source_object", "neighbors")'
         if is_edge:
-            object_letter = 'E'
-        query = f"g.{object_letter}('{internal_id}')"
+            query = f"g.E('{internal_id}')"
         results = self._trident_driver.execute(query, True)
         if not results:
             return
-        return results[0].to_gql
+        if is_edge:
+            return results[0].to_gql
+        returned_data = results[0]['source_object']
+        for x, y in results[0]['neighbors'].items():
+            returned_data[x] = y
+        return returned_data
 
     def get_neighbors(self, internal_id, out=False, is_edge=False, get_edges=False):
         neighbors = self.calculate_neighbors(out, get_edges)
