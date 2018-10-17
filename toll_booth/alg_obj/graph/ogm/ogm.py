@@ -43,7 +43,7 @@ class OgmReader:
         return self.get_vertex(**kwargs)
 
     def get_vertex(self, internal_id, **kwargs):
-        vertex_properties, vertex_label = self.get_vertex_properties(internal_id, **kwargs)
+        vertex_label, vertex_properties = self.get_vertex_properties(internal_id, **kwargs)
         return TridentVertex(internal_id, vertex_label, vertex_properties)
 
     def get_vertex_properties(self, internal_id, **kwargs):
