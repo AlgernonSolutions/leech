@@ -51,3 +51,29 @@ class AlgDecoder(json.JSONDecoder):
             alg_obj = test.from_json(obj_value)
             return alg_obj
         return obj
+
+
+class GqlDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    @staticmethod
+    def object_hook(obj):
+        alg_classes = get_subclasses(AlgObject)
+        if '_alg_class' not in obj:
+            return obj
+        alg_class = obj['_alg_class']
+        obj_value = obj['value']
+        if alg_class == 'frozenset':
+            return frozenset(x for x in obj_value)
+        if alg_class == 'tuple':
+            return tuple(x for x in obj_value)
+        if alg_class == 'datetime':
+            return obj_value
+        if alg_class == 'decimal':
+            return Decimal(obj_value)
+        if alg_class in alg_classes:
+            test = alg_classes[alg_class]
+            alg_obj = test.from_json(obj_value)
+            return alg_obj
+        return obj

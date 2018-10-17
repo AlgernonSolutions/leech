@@ -1,7 +1,7 @@
 import json
 import logging
 
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.serializers import GqlDecoder
 from toll_booth.alg_tasks.worker import Worker
 
 root = logging.getLogger()
@@ -52,7 +52,7 @@ def aphid(event, context):
         'task_args': event
     }
     work_results = work(event, context)
-    results = json.loads(work_results, cls=AlgDecoder)
+    results = json.loads(work_results, cls=GqlDecoder)
     logging.info(f'aphid call completed, results: {results}')
     return results
 
