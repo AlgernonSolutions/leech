@@ -1,5 +1,6 @@
 from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexDriver
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
+from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
 class Ogm:
@@ -35,13 +36,13 @@ class OgmReader:
         results = self._trident_driver.execute(query, True)
         return results
 
-    def find_object(self, internal_id, is_edge=False, **kwargs):
+    def find_object(self, is_edge=False, **kwargs):
         if is_edge:
             return
-        return self.get_vertex(internal_id, **kwargs)
+        return self.get_vertex(**kwargs)
 
     def get_vertex(self, internal_id, **kwargs):
-        pagination_token = kwargs.get('pagination_token', None)
+        pagination_token = kwargs.get('pagination_token', PaginationToken.generate(**kwargs))
         connected_edges, more = self.get_connected_edges(internal_id, **kwargs)
         vertex_properties = self.get_vertex_properties(internal_id, **kwargs)
         pass

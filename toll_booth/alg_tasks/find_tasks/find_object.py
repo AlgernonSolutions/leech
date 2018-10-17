@@ -15,15 +15,11 @@ def find_object(*args, **kwargs):
         internal_id = context.get('internal_id', None)
         object_type = context.get('object_type', None)
         if internal_id and object_type:
-            return ogm.find_object(internal_id, object_type == 'Edge', **context)
+            return ogm.find_object(object_type == 'Edge', **context)
     if source:
         object_type = source['object_type']
         internal_id = source['internal_id']
-        neighbors = source['neighbors']
-        if internal_id and object_type:
-            out = neighbors in ['out_edges', 'out_vertexes']
-            is_edge = object_type == 'Edge'
-            get_edges = neighbors in ['out_edges', 'in_edges']
-            return ogm.get_neighbors(
-                internal_id=internal_id, out=out, is_edge=is_edge, get_edges=get_edges
-            )
+        requested_property = source['property']
+        if object_type and internal_id:
+            if requested_property == 'ConnectedEdges':
+                return ogm.get_connected_edges(internal_id, **source)
