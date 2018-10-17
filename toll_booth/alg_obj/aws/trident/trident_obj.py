@@ -36,6 +36,7 @@ class TridentProperty(AlgObject):
             property_value['data_type'] = 'I'
         if isinstance(self._property_value, datetime):
             property_value['data_type'] = 'DT'
+
         return {
             '__typename': 'ObjectProperty',
             'property_name': self._property_label,
@@ -76,9 +77,8 @@ class TridentVertex(AlgObject):
             '__typename': 'Vertex',
             'vertex_properties': []
         }
-        for vertex_property in self._vertex_properties.values():
-            first_property = vertex_property[0]
-            gql['vertex_properties'].append(first_property.to_gql)
+        for vertex_property in self._vertex_properties:
+            gql['vertex_properties'].append(vertex_property)
         return gql
 
     @property

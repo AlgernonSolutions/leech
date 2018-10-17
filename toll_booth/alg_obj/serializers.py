@@ -69,7 +69,7 @@ class GqlDecoder(json.JSONDecoder):
         if alg_class == 'tuple':
             return tuple(x for x in obj_value)
         if alg_class == 'datetime':
-            return obj_value
+            return str(obj_value)
         if alg_class == 'decimal':
             return Decimal(obj_value)
         if alg_class in alg_classes:
