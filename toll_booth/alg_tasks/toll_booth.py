@@ -52,7 +52,9 @@ def aphid(event, context):
         'task_args': event
     }
     work_results = work(event, context)
-    return json.loads(work_results, cls=AlgDecoder)
+    results = json.loads(work_results, cls=AlgDecoder)
+    logging.info(f'aphid call completed, results: {results}')
+    return results
 
 
 def _map_aphid(event):
