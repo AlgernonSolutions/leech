@@ -35,22 +35,38 @@ class OgmReader:
         results = self._trident_driver.execute(query, True)
         return results
 
-    def find_object(self, internal_id, is_edge=False):
-        query = f'g.V("{internal_id}").as("source_object")'
-        '.project("in_edges", "out_edges", "in_vertexes", "out_vertexes")'
-        '.by(inE().fold()).by(outE().fold()).by(in().fold()).by(out().fold()).as("neighbors")'
-        '.select("source_object", "neighbors")'
+    def find_object(self, internal_id, is_edge=False, **kwargs):
         if is_edge:
-            query = f"g.E('{internal_id}')"
+            return
+        return self.get_vertex(internal_id, **kwargs)
+
+    def get_vertex(self, internal_id, **kwargs):
+        pagination_token = kwargs.get('pagination_token', None)
+        connected_edges, more = self.get_connected_edges(internal_id, **kwargs)
+        vertex_properties = self.get_vertex_properties(internal_id, **kwargs)
+        pass
+
+    def get_vertex_properties(self, internal_id, **kwargs):
+        property_names = kwargs.get('property_names', [])
+        filter_string = ','.join('"{0}"'.format(w) for w in property_names)
+        query = f'g.V("{internal_id}").propertyMap([{filter_string}])'
         results = self._trident_driver.execute(query, True)
         if not results:
-            return
-        if is_edge:
-            return results[0].to_gql
-        returned_data = results[0]['source_object']
-        for x, y in results[0]['neighbors'].items():
-            returned_data[x] = y
-        return returned_data
+            return []
+        return [y[0] for x, y in results[0].items()]
+
+    def get_connected_edges(self, vertex_internal_id, **kwargs):
+        edge_labels = kwargs.get('edge_labels', [])
+        inclusive_start = kwargs.get('inclusive_start', 0)
+        exclusive_end = kwargs.get('exclusive_end', 10)
+        edge_label_string = ', '.join(edge_labels)
+        query = f'g.V("{vertex_internal_id}")' \
+                f'.outE({edge_label_string})' \
+                f'.range({inclusive_start}, {exclusive_end+1})'
+        edges = self._trident_driver.execute(query, True)
+        returned_edges = edges[0:(exclusive_end-inclusive_start)]
+        more = len(edges) > len(returned_edges)
+        return self.sort_edges(vertex_internal_id, returned_edges), more
 
     def get_neighbors(self, internal_id, out=False, is_edge=False, get_edges=False):
         neighbors = self.calculate_neighbors(out, get_edges)
@@ -62,6 +78,19 @@ class OgmReader:
         if not results:
             return []
         return [x.to_gql for x in results]
+
+    @classmethod
+    def sort_edges(cls, internal_id, unsorted_edges):
+        edges = {
+            'in_edges': [],
+            'out_edges': []
+        }
+        for edge in unsorted_edges:
+            edge_type = 'in_edges'
+            if edge.in_id == internal_id:
+                edge_type = 'out_edges'
+            edges[edge_type].append(edge)
+        return edges
 
     @classmethod
     def calculate_neighbors(cls, out, get_edges):

@@ -15,7 +15,7 @@ def find_object(*args, **kwargs):
         internal_id = context.get('internal_id', None)
         object_type = context.get('object_type', None)
         if internal_id and object_type:
-            return ogm.find_object(internal_id, object_type == 'Edge')
+            return ogm.find_object(internal_id, object_type == 'Edge', **context)
     if source:
         object_type = source['object_type']
         internal_id = source['internal_id']

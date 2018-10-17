@@ -60,3 +60,32 @@ class Opossum:
                 return json.loads(get_secret_value_response['SecretString'])
             else:
                 return get_secret_value_response['SecretBinary']
+
+
+class SneakyKipper:
+    task_key_aliases = {
+        'pagination': 'alias/algPaginationKey'
+    }
+
+    def __init__(self, task_name):
+        self._client = boto3.client('kms')
+        self._key_alis = self.task_key_aliases[task_name]
+
+    def encrypt(self, unencrypted_text, encryption_context):
+        import base64
+        response = self._client.encrypt(
+            KeyId=self._key_alis,
+            Plaintext=json.dumps(unencrypted_text),
+            EncryptionContext=encryption_context
+        )
+        bit = base64.b64encode(response['CiphertextBlob'])
+        return bit.decode()
+
+    def decrypt(self, encrypted_text, encryption_context):
+        import base64
+
+        response = self._client.decrypt(
+            CiphertextBlob=base64.b64decode(encrypted_text),
+            EncryptionContext=encryption_context
+        )
+        return json.loads(response['Plaintext'].decode())
