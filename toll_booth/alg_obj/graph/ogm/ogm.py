@@ -95,10 +95,11 @@ class OgmReader:
             'all': []
         }
         for edge in unsorted_edges:
-            edge_type = 'in_edges'
+            edge_type = 'inbound'
             if edge.in_id == internal_id:
-                edge_type = 'out_edges'
+                edge_type = 'outbound'
             edges[edge_type].append(edge)
+            edges['all'].append(edge)
         return edges
 
     @classmethod
