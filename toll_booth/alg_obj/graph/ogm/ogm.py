@@ -90,8 +90,9 @@ class OgmReader:
     @classmethod
     def sort_edges(cls, internal_id, unsorted_edges):
         edges = {
-            'in_edges': [],
-            'out_edges': []
+            'inbound': [],
+            'outbound': [],
+            'all': []
         }
         for edge in unsorted_edges:
             edge_type = 'in_edges'
