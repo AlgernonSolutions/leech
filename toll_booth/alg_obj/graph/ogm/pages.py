@@ -24,11 +24,11 @@ class PaginationToken:
     @classmethod
     def generate(cls, **kwargs):
         from toll_booth.alg_obj.aws.aws_obj.squirrel import SneakyKipper
-        json_string = kwargs.get('json_string', None)
+        token = kwargs.get('pagination_token', None)
         username = kwargs.get('username')
-        if not json_string:
-            return cls(username, exclusive_end=kwargs.get('page_size'))
-        json_string = SneakyKipper('pagination').decrypt(json_string, {'username': username})
+        if not token:
+            return cls(username, exclusive_end=kwargs.get('page_size', 10))
+        json_string = SneakyKipper('pagination').decrypt(token, {'username': username})
         obj_dict = json.loads(json_string)
         return cls(username, pagination_id=obj_dict['id'],
                    inclusive_start=obj_dict['start'], exclusive_end=obj_dict['end'])

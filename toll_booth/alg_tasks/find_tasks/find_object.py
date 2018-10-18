@@ -22,4 +22,4 @@ def find_object(*args, **kwargs):
         requested_property = source['property']
         if object_type and internal_id:
             if requested_property == 'ConnectedEdges':
-                return ogm.get_edge_connection(internal_id, **source)
+                return ogm.get_edge_connection(**source)

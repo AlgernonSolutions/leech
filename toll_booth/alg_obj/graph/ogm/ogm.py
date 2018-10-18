@@ -57,24 +57,24 @@ class OgmReader:
             return []
         return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
 
-    def get_edge_connection(self, vertex_internal_id, **kwargs):
+    def get_edge_connection(self, internal_id, **kwargs):
         token = kwargs.get('pagination_token', PaginationToken.generate(**kwargs))
-        edges, more = self.get_connected_edges(vertex_internal_id, token)
+        edges, more = self.get_connected_edges(internal_id, token)
         token.increment()
         return TridentEdgeConnection(edges, token, more)
 
-    def get_connected_edges(self, vertex_internal_id, pagination_token, **kwargs):
+    def get_connected_edges(self, internal_id, pagination_token, **kwargs):
         edge_labels = kwargs.get('edge_labels', [])
         inclusive_start = pagination_token.inclusive_start
         exclusive_end = pagination_token.exclusive_end
         edge_label_string = ', '.join(edge_labels)
-        query = f'g.V("{vertex_internal_id}")' \
+        query = f'g.V("{internal_id}")' \
                 f'.outE({edge_label_string})' \
                 f'.range({inclusive_start}, {exclusive_end+1})'
         edges = self._trident_driver.execute(query, True)
         returned_edges = edges[0:(exclusive_end-inclusive_start)]
         more = len(edges) > len(returned_edges)
-        return self.sort_edges(vertex_internal_id, returned_edges), more
+        return self.sort_edges(internal_id, returned_edges), more
 
     def get_neighbors(self, internal_id, out=False, is_edge=False, get_edges=False):
         neighbors = self.calculate_neighbors(out, get_edges)
