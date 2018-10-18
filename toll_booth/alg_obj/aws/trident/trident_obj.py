@@ -208,6 +208,7 @@ class TridentEdgeConnection(AlgObject):
         self._edges = edges
         self._token = token
         self._more = more
+        self._page_info = TridentPageInfo(token, more)
 
     @classmethod
     def parse_json(cls, json_dict):
@@ -215,7 +216,7 @@ class TridentEdgeConnection(AlgObject):
 
     @property
     def page_info(self):
-        return TridentPageInfo(self._token, self._more)
+        return self._page_info
 
     @property
     def in_count(self):
@@ -248,7 +249,7 @@ class TridentPageInfo(AlgObject):
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(PaginationToken.generate(**json_dict), json_dict['more'])
+        return cls(PaginationToken.parse_json(json_dict), json_dict['more'])
 
     @property
     def to_gql(self):

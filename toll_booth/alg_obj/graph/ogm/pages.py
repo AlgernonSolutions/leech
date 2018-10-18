@@ -16,22 +16,11 @@ class PaginationToken(AlgObject):
 
     @classmethod
     def parse_json(cls, json_dict):
-        username = json_dict['username']
-        token = json_dict['pagination_token']
-        if not token:
-            return cls(username, exclusive_end=json_dict['page_size'])
-        json_string = SneakyKipper('pagination').decrypt(token, {'username': username})
-        obj_dict = json.loads(json_string)
-        return cls(username, pagination_id=obj_dict['id'],
-                   inclusive_start=obj_dict['start'], exclusive_end=obj_dict['end'])
-
-    @classmethod
-    def generate(cls, **kwargs):
         from toll_booth.alg_obj.aws.aws_obj.squirrel import SneakyKipper
-        token = kwargs.get('pagination_token', None)
-        username = kwargs.get('username')
+        token = json_dict.get('token', None)
+        username = json_dict.get('username')
         if not token:
-            return cls(username, exclusive_end=kwargs.get('page_size', 10))
+            return cls(username, exclusive_end=json_dict.get('page_size', 10))
         json_string = SneakyKipper('pagination').decrypt(token, {'username': username})
         obj_dict = json.loads(json_string)
         return cls(username, pagination_id=obj_dict['id'],
