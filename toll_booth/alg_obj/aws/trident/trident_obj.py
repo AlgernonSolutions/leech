@@ -204,15 +204,17 @@ class TridentPath(AlgObject):
 
 
 class TridentEdgeConnection(AlgObject):
-    def __init__(self, edges, token, more):
+    def __init__(self, edges, token, more, page_info=None):
+        if not page_info:
+            page_info = TridentPageInfo(token, more)
         self._edges = edges
         self._token = token
         self._more = more
-        self._page_info = TridentPageInfo(token, more)
+        self._page_info = page_info
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(json_dict['edges'], json_dict['token'], json_dict['more'])
+        return cls(json_dict['edges'], json_dict['token'], json_dict['more'], json_dict.get('page_info'))
 
     @property
     def page_info(self):
@@ -235,7 +237,7 @@ class TridentEdgeConnection(AlgObject):
         return {
             '__typename': 'EdgeConnection',
             'edges': self._edges,
-            'page_info': self.page_info,
+            'page_info': self._page_info,
             'total_count': self.total_count,
             'in_count': self.in_count,
             'out_count': self.out_count
@@ -243,18 +245,18 @@ class TridentEdgeConnection(AlgObject):
 
 
 class TridentPageInfo(AlgObject):
-    def __init__(self, pagination_token, more):
-        self._token = pagination_token
+    def __init__(self, token, more):
+        self._token = token
         self._more = more
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(PaginationToken.parse_json(json_dict), json_dict['more'])
+        return cls(json_dict['token'], json_dict['more'])
 
     @property
     def to_gql(self):
         return {
-            'pagination_token': self._token.package(),
+            'token': self._token,
             'more': self._more,
             '__typename': 'PageInfo'
         }
