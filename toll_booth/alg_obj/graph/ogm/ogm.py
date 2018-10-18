@@ -58,7 +58,7 @@ class OgmReader:
         return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
 
     def get_edge_connection(self, internal_id, **kwargs):
-        token = kwargs.get('pagination_token', PaginationToken.generate(**kwargs))
+        token = kwargs.get('pagination_token', PaginationToken.from_json(kwargs))
         edges, more = self.get_connected_edges(internal_id, token)
         token.increment()
         return TridentEdgeConnection(edges, token, more)
