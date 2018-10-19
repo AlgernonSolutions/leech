@@ -19,7 +19,7 @@ def find_object(*args, **kwargs):
         function_args = {}
     ogm = OgmReader()
     resolver = _derive_resolver(source, function_args, object_type, object_property, ogm)
-    return resolver(username, source, function_args)
+    return resolver(source, function_args, username=username)
 
 
 def _derive_resolver(source, function_args, object_type, object_property, ogm):

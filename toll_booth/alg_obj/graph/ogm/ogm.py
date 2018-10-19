@@ -42,7 +42,7 @@ class OgmReader:
         vertex_label, vertex_properties = self.get_vertex_properties(source, function_args, internal_id=internal_id)
         return TridentVertex(internal_id, vertex_label, vertex_properties)
 
-    def get_vertex_properties(self, source, function_args, **kwargs):
+    def get_vertex_properties(self,  source, function_args, **kwargs):
         name_filters = function_args.get('property_names', [])
         filter_string = ','.join('"{0}"'.format(w) for w in name_filters)
         internal_id = source.get('internal_id', function_args.get('internal_id', kwargs['internal_id']))
@@ -54,20 +54,20 @@ class OgmReader:
             return []
         return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
 
-    def get_edge_connection(self, source, function_args):
+    def get_edge_connection(self, source, function_args, username):
         token_json = {
-            'username': source.get('username', function_args['username']),
+            'username': username,
             'token': function_args.get('token', None),
             'page_size': function_args.get('page_size', 10)
         }
         token = function_args.get('pagination_token', PaginationToken.from_json(token_json))
         internal_id = source['internal_id']
-        edges, more = self._get_connected_edges(internal_id, token)
+        edges, more = self._get_connected_edges(internal_id, token, function_args)
         token.increment()
         return TridentEdgeConnection(edges, token, more)
 
-    def _get_connected_edges(self, internal_id, pagination_token, **kwargs):
-        edge_labels = kwargs.get('edge_labels', [])
+    def _get_connected_edges(self, internal_id, pagination_token, function_args):
+        edge_labels = function_args.get('edge_labels', [])
         inclusive_start = pagination_token.inclusive_start
         exclusive_end = pagination_token.exclusive_end
         edge_label_string = ', '.join(edge_labels)
