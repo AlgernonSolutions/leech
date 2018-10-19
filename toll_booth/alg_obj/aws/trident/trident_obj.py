@@ -120,15 +120,11 @@ class TridentVertex(AlgObject):
 
 
 class TridentEdge(AlgObject):
-    def __init__(self, internal_id, label, in_v_internal_id, in_v_label, out_v_internal_id, out_v_label):
+    def __init__(self, internal_id, label, from_vertex, to_vertex):
         self._internal_id = internal_id
         self._label = label
-        self._in_v_internal_id = in_v_internal_id
-        self._in_v_label = in_v_label
-        self._out_v_internal_id = out_v_internal_id
-        self._out_v_label = out_v_label
-        self._from_vertex = TridentVertex(in_v_internal_id, in_v_label)
-        self._to_vertex = TridentVertex(out_v_internal_id, out_v_label)
+        self._from_vertex = from_vertex
+        self._to_vertex = to_vertex
 
     def __len__(self):
         return 1
@@ -136,8 +132,8 @@ class TridentEdge(AlgObject):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['internal_id'], json_dict['label'], json_dict['in_v_internal_id'],
-            json_dict['in_v_label'], json_dict['out_v_internal_id'], json_dict['out_v_label']
+            json_dict['internal_id'], json_dict['label'],
+            json_dict['from_vertex'], json_dict['to_vertex'],
         )
 
     @property
@@ -145,10 +141,6 @@ class TridentEdge(AlgObject):
         return {
             'internal_id': self.internal_id,
             'edge_label': self.label,
-            'in_id': self.in_id,
-            'in_label': self.in_label,
-            'out_id': self.out_id,
-            'out_label': self.out_label,
             'from_vertex': self._from_vertex,
             'to_vertex': self._to_vertex,
             '__typename': 'Edge'
@@ -164,27 +156,11 @@ class TridentEdge(AlgObject):
 
     @property
     def in_id(self):
-        return self._in_v_internal_id
+        return self._from_vertex.vertex_id
 
     @property
     def out_id(self):
-        return self._out_v_internal_id
-
-    @property
-    def in_label(self):
-        return self._in_v_label
-
-    @property
-    def out_label(self):
-        return self._out_v_label
-
-    @property
-    def in_vertex_data(self):
-        return {'internal_id': self._in_v_internal_id, 'label': self._in_v_label}
-
-    @property
-    def out_vertex_data(self):
-        return {'internal_id': self._out_v_internal_id, 'label': self._out_v_label}
+        return self._to_vertex.vertex_id
 
 
 class TridentPath(AlgObject):

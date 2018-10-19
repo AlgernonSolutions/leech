@@ -6,7 +6,6 @@ import os
 import urllib.parse
 
 import requests
-import dateutil.parser
 
 from toll_booth.alg_obj.aws.aws_obj.squirrel import Opossum
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentVertex, TridentEdge, TridentProperty, TridentPath
@@ -51,9 +50,10 @@ class TridentDecoder(json.JSONDecoder):
             except KeyError:
                 return TridentVertex(obj_value['id'], obj_value['label'])
         if obj_type == 'g:Edge':
+            from_vertex = TridentVertex(obj_value['inV'], obj_value['inVLabel'])
+            to_vertex = TridentVertex(obj_value['outV'], obj_value['outVLabel'])
             return TridentEdge(obj_value['id'], obj_value['label'],
-                               obj_value['inV'], obj_value['inVLabel'],
-                               obj_value['outV'], obj_value['outVLabel'])
+                               from_vertex, to_vertex)
         if obj_type == 'g:VertexProperty':
             return TridentProperty(obj_value['label'], obj_value['value'])
         if obj_type == 'g:Path':
