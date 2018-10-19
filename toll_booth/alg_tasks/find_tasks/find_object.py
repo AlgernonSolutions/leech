@@ -24,11 +24,10 @@ def _derive_resolver(source, function_args, ogm):
     property_type_key = 'property'
     object_type = source.get(object_type_key, function_args.get(object_type_key, None))
     object_property = source.get(property_type_key, function_args.get(property_type_key, None))
-    if not object_type:
-        raise RuntimeError(f'no object type specified for this query, source: {source}, function_args: {function_args}')
     if object_type == 'Vertex':
         if object_property == 'ConnectedEdges':
             return ogm.get_edge_connection
         if object_property == 'VertexProperties':
             return ogm.get_vertex_properties
         return ogm.get_vertex
+    raise NotImplementedError(f'could not find any matching resolves for source: {source}, functions_args: {function_args}')
