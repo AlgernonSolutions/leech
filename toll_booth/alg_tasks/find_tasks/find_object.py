@@ -10,24 +10,24 @@ def find_object(*args, **kwargs):
     task_args = kwargs['task_args']
     function_args = task_args['context']
     source = task_args['source']
+    username = task_args['username']
+    object_type = task_args['object_type']
+    object_property = task_args.get('object_property', None)
     if source is None:
         source = {}
     if function_args is None:
         function_args = {}
     ogm = OgmReader()
-    resolver = _derive_resolver(source, function_args, ogm)
-    return resolver(source, function_args)
+    resolver = _derive_resolver(source, function_args, object_type, object_property, ogm)
+    return resolver(username, source, function_args)
 
 
-def _derive_resolver(source, function_args, ogm):
-    object_type_key = 'object_type'
-    property_type_key = 'property'
-    object_type = source.get(object_type_key, function_args.get(object_type_key, None))
-    object_property = source.get(property_type_key, function_args.get(property_type_key, None))
+def _derive_resolver(source, function_args, object_type, object_property, ogm):
     if object_type == 'Vertex':
         if object_property == 'ConnectedEdges':
             return ogm.get_edge_connection
         if object_property == 'VertexProperties':
             return ogm.get_vertex_properties
         return ogm.get_vertex
-    raise NotImplementedError(f'could not find any matching resolves for source: {source}, functions_args: {function_args}')
+    raise NotImplementedError(f'could not find any matching resolves for '
+                              f'source: {source}, functions_args: {function_args}')
