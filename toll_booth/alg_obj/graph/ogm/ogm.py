@@ -45,7 +45,11 @@ class OgmReader:
     def get_vertex_properties(self,  source, function_args, **kwargs):
         name_filters = function_args.get('property_names', [])
         filter_string = ','.join('"{0}"'.format(w) for w in name_filters)
-        internal_id = source.get('internal_id', function_args.get('internal_id', kwargs['internal_id']))
+        internal_id = source.get('internal_id', function_args.get('internal_id', kwargs.get('internal_id', None)))
+        if not internal_id:
+            raise NotImplementedError(
+                f'requested to get vertex properties, but no internal_id present, '
+                f'source: {source}, function_args: {function_args}, kwargs: {kwargs}')
         query = f'g.V("{internal_id}").project("vertex_properties", "vertex_label")' \
                 f'.by(propertyMap([{filter_string}]))' \
                 f'.by(label())'
