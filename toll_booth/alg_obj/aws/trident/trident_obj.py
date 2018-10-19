@@ -222,15 +222,15 @@ class TridentEdgeConnection(AlgObject):
 
     @property
     def in_count(self):
-        return len(self._edges['in_edges'])
+        return len(self._edges['inbound'])
 
     @property
     def out_count(self):
-        return len(self._edges['out_edges'])
+        return len(self._edges['outbound'])
 
     @property
     def total_count(self):
-        return len(self._edges)
+        return len(self._edges['all'])
 
     @property
     def to_gql(self):
