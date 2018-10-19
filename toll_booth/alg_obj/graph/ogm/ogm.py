@@ -69,7 +69,7 @@ class OgmReader:
         exclusive_end = pagination_token.exclusive_end
         edge_label_string = ', '.join(edge_labels)
         query = f'g.V("{internal_id}")' \
-                f'.outE({edge_label_string})' \
+                f'.bothE({edge_label_string})' \
                 f'.range({inclusive_start}, {exclusive_end+1})'
         edges = self._trident_driver.execute(query, True)
         returned_edges = edges[0:(exclusive_end-inclusive_start)]
