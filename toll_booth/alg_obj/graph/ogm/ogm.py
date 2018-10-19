@@ -39,8 +39,10 @@ class OgmReader:
 
     def get_vertex(self, source, function_args, **kwargs):
         internal_id = function_args.get('internal_id', source.get('internal_id'))
-        vertex_label, vertex_properties = self.get_vertex_properties(source, function_args, internal_id=internal_id)
-        return TridentVertex(internal_id, vertex_label, vertex_properties)
+        query = f'g.V("{internal_id}")'
+        results = self._trident_driver.execute(query, True)
+        for result in results:
+            return result
 
     def get_vertex_properties(self,  source, function_args, **kwargs):
         name_filters = function_args.get('property_names', [])
@@ -50,13 +52,11 @@ class OgmReader:
             raise NotImplementedError(
                 f'requested to get vertex properties, but no internal_id present, '
                 f'source: {source}, function_args: {function_args}, kwargs: {kwargs}')
-        query = f'g.V("{internal_id}").project("vertex_properties", "vertex_label")' \
-                f'.by(propertyMap([{filter_string}]))' \
-                f'.by(label())'
+        query = f'g.V("{internal_id}").propertyMap([{filter_string}])'
         results = self._trident_driver.execute(query, True)
         if not results:
             return []
-        return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
+        return [y[0] for x, y in results[0].items()]
 
     def get_edge_connection(self, source, function_args, **kwargs):
         token_json = {

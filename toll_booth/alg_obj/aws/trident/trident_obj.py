@@ -76,8 +76,8 @@ class TridentVertex(AlgObject):
             '__typename': 'Vertex'
         }
         vertex_properties = []
-        for vertex_property in self._vertex_properties:
-            vertex_properties.append(vertex_property)
+        for property_name, vertex_property in self._vertex_properties.items():
+            vertex_properties.append(vertex_property[0])
         if vertex_properties:
             gql['vertex_properties'] = vertex_properties
         return gql
