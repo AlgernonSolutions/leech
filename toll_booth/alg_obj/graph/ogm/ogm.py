@@ -37,7 +37,7 @@ class OgmReader:
         results = self._trident_driver.execute(query, True)
         return results
 
-    def get_vertex(self, source, function_args):
+    def get_vertex(self, source, function_args, **kwargs):
         internal_id = function_args.get('internal_id', source.get('internal_id'))
         vertex_label, vertex_properties = self.get_vertex_properties(source, function_args, internal_id=internal_id)
         return TridentVertex(internal_id, vertex_label, vertex_properties)
@@ -54,9 +54,9 @@ class OgmReader:
             return []
         return results[0]['vertex_label'], [y[0] for x, y in results[0]['vertex_properties'].items()]
 
-    def get_edge_connection(self, source, function_args, username):
+    def get_edge_connection(self, source, function_args, **kwargs):
         token_json = {
-            'username': username,
+            'username': kwargs['username'],
             'token': function_args.get('token', None),
             'page_size': function_args.get('page_size', 10)
         }
