@@ -10,6 +10,10 @@ def find_object(*args, **kwargs):
     task_args = kwargs['task_args']
     function_args = task_args['context']
     source = task_args['source']
+    if source is None:
+        source = {}
+    if function_args is None:
+        function_args = {}
     ogm = OgmReader()
     resolver = _derive_resolver(source, function_args, ogm)
     return resolver(source, function_args)
