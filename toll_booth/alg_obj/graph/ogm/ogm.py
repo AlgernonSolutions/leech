@@ -38,14 +38,14 @@ class OgmReader:
         return results
 
     def get_vertex(self, source, function_args):
-        internal_id = function_args['internal_id']
+        internal_id = function_args.get('internal_id', source.get('internal_id'))
         vertex_label, vertex_properties = self.get_vertex_properties(source, function_args, internal_id=internal_id)
         return TridentVertex(internal_id, vertex_label, vertex_properties)
 
     def get_vertex_properties(self, source, function_args, **kwargs):
         name_filters = function_args.get('property_names', [])
         filter_string = ','.join('"{0}"'.format(w) for w in name_filters)
-        internal_id = source.get('internal_id', kwargs['internal_id'])
+        internal_id = source.get('internal_id', function_args.get('internal_id', kwargs['internal_id']))
         query = f'g.V("{internal_id}").project("vertex_properties", "vertex_label")' \
                 f'.by(propertyMap([{filter_string}]))' \
                 f'.by(label())'
