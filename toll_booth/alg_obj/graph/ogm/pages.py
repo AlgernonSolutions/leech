@@ -16,14 +16,20 @@ class PaginationToken(AlgObject):
 
     @classmethod
     def parse_json(cls, json_dict):
-        token = json_dict['token']
-        username = json_dict['username']
-        if not token:
-            return cls(username, exclusive_end=json_dict['page_size'])
-        json_string = SneakyKipper('pagination').decrypt(token, {'username': username})
-        obj_dict = json.loads(json_string)
-        return cls(username, pagination_id=obj_dict['id'],
-                   inclusive_start=obj_dict['start'], exclusive_end=obj_dict['end'])
+        try:
+            return cls(
+                json_dict['username'], json_dict['inclusive_start'],
+                json_dict['exclusive_end'], json_dict['pagination_id']
+            )
+        except KeyError:
+            token = json_dict['token']
+            username = json_dict['username']
+            if not token:
+                return cls(username, exclusive_end=json_dict['page_size'])
+            json_string = SneakyKipper('pagination').decrypt(token, {'username': username})
+            obj_dict = json.loads(json_string)
+            return cls(username, pagination_id=obj_dict['id'],
+                       inclusive_start=obj_dict['start'], exclusive_end=obj_dict['end'])
 
     @property
     def to_gql(self):
