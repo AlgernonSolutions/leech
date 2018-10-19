@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
 class TridentProperty(AlgObject):
@@ -74,11 +73,13 @@ class TridentVertex(AlgObject):
         gql = {
             'internal_id': self.vertex_id,
             'vertex_type': self.vertex_label,
-            '__typename': 'Vertex',
-            'vertex_properties': []
+            '__typename': 'Vertex'
         }
+        vertex_properties = []
         for vertex_property in self._vertex_properties:
-            gql['vertex_properties'].append(vertex_property)
+            vertex_properties.append(vertex_property)
+        if vertex_properties:
+            gql['vertex_properties'] = vertex_properties
         return gql
 
     @property
@@ -126,6 +127,8 @@ class TridentEdge(AlgObject):
         self._in_v_label = in_v_label
         self._out_v_internal_id = out_v_internal_id
         self._out_v_label = out_v_label
+        self._from_vertex = TridentVertex(in_v_internal_id, in_v_label)
+        self._to_vertex = TridentVertex(out_v_internal_id, out_v_label)
 
     def __len__(self):
         return 1
@@ -146,6 +149,8 @@ class TridentEdge(AlgObject):
             'in_label': self.in_label,
             'out_id': self.out_id,
             'out_label': self.out_label,
+            'from_vertex': self._from_vertex,
+            'to_vertex': self._to_vertex,
             '__typename': 'Edge'
         }
 
