@@ -21,12 +21,14 @@ def find_object(*args, **kwargs):
 
 def _derive_resolver(source, function_args, ogm):
     object_type_key = 'object_type'
+    property_type_key = 'property'
     object_type = source.get(object_type_key, function_args.get(object_type_key, None))
+    object_property = source.get(property_type_key, function_args.get(property_type_key, None))
     if not object_type:
         raise RuntimeError(f'no object type specified for this query, source: {source}, function_args: {function_args}')
     if object_type == 'Vertex':
+        if object_property == 'ConnectedEdges':
+            return ogm.get_edge_connection
+        if object_property == 'VertexProperties':
+            return ogm.get_vertex_properties
         return ogm.get_vertex
-    if object_type == 'VertexProperties':
-        return ogm.get_vertex_properties
-    if object_type == 'ConnectedEdges':
-        return ogm.get_edge_connection
