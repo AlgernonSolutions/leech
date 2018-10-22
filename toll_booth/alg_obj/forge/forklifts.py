@@ -1,6 +1,6 @@
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.aws.aws_obj.sapper import DynamoDriver
+from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import ProcessObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.graph.ogm.generator import VertexCommandGenerator, EdgeCommandGenerator
@@ -18,35 +18,8 @@ class ReachTruck:
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
-        self._ogm.write_edge(self._load_order.edge)
-        self._process_queue.add_order(ProcessObjectOrder(self._load_order.vertex))
-        self._process_queue.push_orders()
-
-    def _generate_commands(self):
-        graph_commands = []
-        index_commands = []
-        graph_vertex_command, index_vertex_commands = self._generate_vertex_commands()
-        graph_commands.append(graph_vertex_command)
-        index_commands.extend(index_vertex_commands)
-        if not self._load_order.edge:
-            return graph_commands, index_commands
-        graph_edge_command, index_edge_commands = self._generate_edge_commands()
-        graph_commands.append(graph_edge_command)
-        index_commands.extend(index_edge_commands)
-        return graph_commands, index_commands
-
-    def _generate_vertex_commands(self):
-        vertex = self._load_order.vertex
-        vertex_command_generator = VertexCommandGenerator.get_for_obj_type(vertex.object_type)
-        graph_command = vertex_command_generator.create_vertex_command(vertex)
-        index_commands = vertex_command_generator.create_index_graph_object_commands(vertex)
-        return graph_command, index_commands
-
-    def _generate_edge_commands(self):
-        edge = self._load_order.edge
-        if not edge:
-            return None, None
-        edge_command_generator = EdgeCommandGenerator.get_for_obj_type(edge.edge_label)
-        graph_command = edge_command_generator.create_edge_command(edge)
-        index_commands = edge_command_generator.create_index_graph_object_commands(edge)
-        return graph_command, index_commands
+        try:
+            self._ogm.write_edge(self._load_order.edge)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e

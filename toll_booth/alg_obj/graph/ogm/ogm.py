@@ -45,6 +45,9 @@ class OgmReader:
         results = self._trident_driver.execute(query, True)
         return results
 
+    def find_potential_vertexes(self, vertex_properties):
+        pass
+
     def get_vertex(self, source, function_args, **kwargs):
         internal_id = function_args.get('internal_id', source.get('internal_id'))
         query = f'g.V("{internal_id}")'
