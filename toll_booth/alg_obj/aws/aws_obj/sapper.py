@@ -1,7 +1,7 @@
 import os
 
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.graph import InternalId
@@ -156,74 +156,3 @@ class SecretWhisperer:
         except ClientError as e:
             print(e)
         return internal_id
-
-
-class DynamoDriver:
-    def __init__(self, table_name=None):
-        if not table_name:
-            table_name = 'GraphObjects'
-        self._table_name = table_name
-        self._table = boto3.resource('dynamodb').Table(self._table_name)
-
-    def write_vertex(self, vertex):
-        vertex_entry = {
-            'internal_id': vertex.internal_id,
-            'object_type': vertex.object_type,
-            'vertex_name': vertex.object_type,
-            'is_stub': vertex.is_stub,
-            'inbound': {},
-            'outbound': {}
-        }
-        for object_property_name, object_property in vertex.object_properties.items():
-            vertex_entry[object_property_name] = object_property
-        return self._table.put_item(
-            Item=vertex_entry,
-            ConditionExpression=Attr('internal_id').not_exists()
-        )
-
-    def write_edge(self, edge):
-        if not edge:
-            return
-        edge_entry = {
-            'edge_label': edge.edge_label,
-            'object_type': edge.edge_label,
-            'internal_id': edge.internal_id,
-            'from_object': edge.from_object,
-            'to_object': edge.to_object
-        }
-        for object_property_name, object_property in edge.object_properties.items():
-            edge_entry[object_property_name] = object_property
-        try:
-            self._table.put_item(
-                Item=edge_entry,
-                ConditionExpression=Attr('internal_id').not_exists()
-            )
-        except ClientError as e:
-            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
-                raise e
-        self.add_edge_to_vertex(edge.from_object, edge)
-        self.add_edge_to_vertex(edge.to_object, edge, True)
-
-    def add_edge_to_vertex(self, vertex_internal_id, edge, inbound=False):
-        direction = "outbound"
-        if inbound:
-            direction = 'inbound'
-        client = boto3.client('dynamodb')
-        client.update_item(
-            TableName=self._table_name,
-            Key={'internal_id': {'S': vertex_internal_id}},
-            UpdateExpression='ADD #direction.#edge  :internal',
-            ExpressionAttributeValues={':internal': {'SS': [edge.internal_id]}},
-            ExpressionAttributeNames={'#direction': direction, '#edge': edge.edge_label},
-            ConditionExpression='NOT contains(#direction, :internal)'
-        )
-
-    def add_edge_type_to_vertex(self, vertex_internal_id, edge, direction):
-        client = boto3.client('dynamodb')
-        client.update_item(
-            TableName=self._table_name,
-            Key={'internal_id': {'S': vertex_internal_id}},
-            UpdateExpression='ADD #direction.#edge = :empty',
-            ExpressionAttributeNames={"#edge": edge.edge_label, '#direction': direction},
-            ExpressionAttributeValues={':empty': {'L': []}}
-        )
