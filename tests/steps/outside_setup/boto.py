@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
+import boto3
 from dateutil.tz import tzlocal
 
 from tests.steps.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
@@ -204,4 +205,6 @@ def intercept(*args):
         return None
     if operation_name == 'Subscribe':
         return None
+    if operation_name == 'PutItem':
+       return None
     raise NotImplementedError(f'cannot find an intercept command for {args}')
