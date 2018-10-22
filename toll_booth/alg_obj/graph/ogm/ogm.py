@@ -9,6 +9,14 @@ class Ogm:
         self._trident_driver = kwargs.get('trident_driver', TridentDriver())
         self._index_driver = kwargs.get('index_driver', IndexDriver())
 
+    def execute(self, query):
+        results = self._trident_driver.execute(query, False)
+        return results
+
+    def index_execute(self, command):
+        results = self._index_driver.client.execute_command(command)
+        return results
+
     def add_data(self, index_commands, graph_commands):
         self._set_indexes(index_commands)
         self._graph_objects(graph_commands)
