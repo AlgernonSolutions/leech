@@ -1,7 +1,8 @@
+import datetime
 from decimal import Decimal
 
 import boto3
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
@@ -13,6 +14,20 @@ class DynamoDriver:
             table_name = 'GraphObjects'
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
+
+    def query_index_max(self, object_type, id_source, id_type, index_name=None):
+        if not index_name:
+            index_name = 'object_type-id_value-index'
+        results = self._table.query(
+            IndexName=index_name,
+            TableName=self._table_name,
+            Limit=1,
+            Select='ALL_PROJECTED_ATTRIBUTES',
+            ScanIndexForward=False,
+            KeyConditionExpression=Key('object_type').eq(object_type),
+            FilterExpression=Attr('id_source').eq(id_source) & Attr('id_type').eq(id_type)
+        )
+        print(results)
 
     def find_potential_vertexes(self, vertex_properties):
         formatted_vertexes = []
@@ -63,6 +78,8 @@ class DynamoDriver:
             'inbound': {},
             'outbound': {}
         }
+        for property_name, object_property in vertex.object_properties.items():
+            vertex_entry[property_name] = object_property
         return self._table.put_item(
             Item=vertex_entry,
             ConditionExpression=Attr('internal_id').not_exists()
@@ -79,6 +96,8 @@ class DynamoDriver:
             'to_object': edge.to_object,
             'object_properties': edge.object_properties
         }
+        for property_name, object_property in edge.object_properties.items():
+            edge_entry[property_name] = object_property
         try:
             self._table.put_item(
                 Item=edge_entry,
@@ -112,4 +131,34 @@ class DynamoDriver:
             UpdateExpression='ADD #direction.#edge = :empty',
             ExpressionAttributeNames={"#edge": edge.edge_label, '#direction': direction},
             ExpressionAttributeValues={':empty': {'L': []}}
+        )
+
+
+class DynamiteSapper:
+    def __init__(self, table_name=None):
+        if not table_name:
+            table_name = 'Fuses'
+        self._table_name = table_name
+        self._table = boto3.resource('dynamodb').Table(self._table_name)
+
+    def check_if_id_working(self, internal_id):
+        results = self._table.get_item(
+            Key={'internal_id': internal_id}
+        )
+        if results['Item']:
+            expiration_timestamp = results['Item']['expiration']
+            if datetime.datetime.now() <= datetime.datetime.fromtimestamp(expiration_timestamp):
+                return True
+        return False
+
+    def mark_id_as_working(self, internal_id, ttl_hours=0, ttl_minutes=0, ttl_seconds=0):
+        ttl = datetime.timedelta(hours=ttl_hours, minutes=ttl_minutes, seconds=ttl_seconds)
+        if not ttl_hours and not ttl_minutes and not ttl_seconds:
+            ttl = datetime.timedelta(hours=1)
+        expiration_date = datetime.datetime.now() + ttl
+        self._table.put_item(
+            Item={
+                'internal_id': internal_id,
+                'expiration': expiration_date.timestamp()
+            }
         )
