@@ -11,29 +11,27 @@ from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 class DynamoDriver:
     def __init__(self, table_name=None):
         if not table_name:
-            table_name = 'GraphObjects'
+            table_name = 'Seeds'
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
-    def query_index_max(self, object_type, id_source, id_type, index_name=None):
-        if not index_name:
-            index_name = 'object_type-id_value-index'
+    def query_index_max(self, identifier_stem):
         results = self._table.query(
-            IndexName=index_name,
-            TableName=self._table_name,
             Limit=1,
-            Select='ALL_PROJECTED_ATTRIBUTES',
             ScanIndexForward=False,
-            KeyConditionExpression=Key('object_type').eq(object_type),
-            FilterExpression=Attr('id_source').eq(id_source) & Attr('id_type').eq(id_type)
+            KeyConditionExpression=Key('identifier_stem').eq(identifier_stem)
         )
-        print(results)
+        try:
+            max_id = int(results['Items'][0]['id_value'])
+        except IndexError:
+            max_id = 0
+        return max_id
 
     def find_potential_vertexes(self, vertex_properties):
         formatted_vertexes = []
         potential_vertexes, token = self._scan_vertexes(vertex_properties)
         while token:
-            more_vertexes, token = self._scan_vertexes(vertex_properties)
+            more_vertexes, token = self._scan_vertexes(vertex_properties, token)
             potential_vertexes.extend(more_vertexes)
         for potential_vertex in potential_vertexes:
             object_properties = {}
@@ -47,6 +45,25 @@ class DynamoDriver:
                     object_properties, potential_vertex['is_stub'])
             )
         return formatted_vertexes
+
+    def _scan_index_range(self, token, object_type, id_source, id_type, index_name=None):
+        if not index_name:
+            index_name = 'object_type-id_value-index'
+        results = self._table.query(
+            IndexName=index_name,
+            TableName=self._table_name,
+            Limit=1,
+            Select='ALL_PROJECTED_ATTRIBUTES',
+            ScanIndexForward=False,
+            KeyConditionExpression=Key('object_type').eq(object_type),
+            FilterExpression=Attr('id_source').eq(id_source) & Attr('id_type').eq(id_type),
+            ExclusiveStartKey=token
+        )
+        try:
+            max_id = results['Items'][0]['id_value']
+        except IndexError:
+            max_id = None
+        return max_id, results.get('LastEvaluatedKey', None)
 
     def _scan_vertexes(self, vertex_properties, token=None):
         filter_properties = []
@@ -133,32 +150,54 @@ class DynamoDriver:
             ExpressionAttributeValues={':empty': {'L': []}}
         )
 
+    def mark_ids_as_working(self, identifier_stem, id_values):
+        already_working = []
+        not_working = []
+        for id_value in id_values:
+            try:
+                self._table.put_item(
+                    Item={
+                        'identifier_stem': identifier_stem,
+                        'id_value': id_value,
+                        'completed': False,
+                        'disposition': 'working',
+                        'last_stage_seen': 'monitor',
+                        'monitor_clear_time': datetime.datetime.now().timestamp(),
+                        'last_seen_time': datetime.datetime.now().timestamp()
+                    },
+                    ConditionExpression=Attr('identifier_stem').not_exists() & Attr('id_value').not_exists()
+                )
+                not_working.append(id_value)
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                    raise e
+                already_working.append(id_value)
+        return already_working, not_working
 
-class DynamiteSapper:
-    def __init__(self, table_name=None):
-        if not table_name:
-            table_name = 'Fuses'
-        self._table_name = table_name
-        self._table = boto3.resource('dynamodb').Table(self._table_name)
-
-    def check_if_id_working(self, internal_id):
-        results = self._table.get_item(
-            Key={'internal_id': internal_id}
-        )
-        if results['Item']:
-            expiration_timestamp = results['Item']['expiration']
-            if datetime.datetime.now() <= datetime.datetime.fromtimestamp(expiration_timestamp):
-                return True
-        return False
-
-    def mark_id_as_working(self, internal_id, ttl_hours=0, ttl_minutes=0, ttl_seconds=0):
-        ttl = datetime.timedelta(hours=ttl_hours, minutes=ttl_minutes, seconds=ttl_seconds)
-        if not ttl_hours and not ttl_minutes and not ttl_seconds:
-            ttl = datetime.timedelta(hours=1)
-        expiration_date = datetime.datetime.now() + ttl
-        self._table.put_item(
-            Item={
-                'internal_id': internal_id,
-                'expiration': expiration_date.timestamp()
+    def mark_object_as_blank(self, identifier_stem, id_value):
+        self._table.update_item(
+            Key={'identifier_stem': identifier_stem, 'id_value': id_value},
+            UpdateExpression='SET completed = :c, disposition = :d, last_stage_seen = :s, last_seen_time = :t',
+            ExpressionAttributeValues={
+                ':c': True,
+                ':d': 'blank',
+                ':s': 'extraction',
+                ':t': datetime.datetime.now()
             }
         )
+
+    def mark_object_as_stage_cleared(self, identifier_stem, id_value, stage_name):
+        self._table.update_item(
+            Key={'identifier_stem': identifier_stem, 'id_value': id_value},
+            UpdateExpression='SET last_stage_seen = :s, last_seen_time = :t, #sc = :t',
+            ExpressionAttributeValues={
+                ':s': stage_name,
+                ':t': datetime.datetime.now().timestamp()
+            },
+            ExpressionAttributeNames={
+                '#sc': f'{stage_name}_clear_time'
+            }
+        )
+
+    def mark_potential_vertex(self, identifier_stem, id_value):
+        pass

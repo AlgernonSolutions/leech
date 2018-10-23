@@ -27,9 +27,10 @@ class MetalOrder(AlgObject, ABC):
 
 
 class ExtractObjectOrder(MetalOrder):
-    def __init__(self, id_value, extraction_source, extraction_properties, schema_entry):
+    def __init__(self, identifier_stem, id_value, extraction_source, extraction_properties, schema_entry):
         super().__init__('extract')
         self._id_value = id_value
+        self._identifier_stem = identifier_stem
         self._schema_entry = schema_entry
         self._extraction_source = extraction_source
         extraction_properties['id_value'] = id_value
@@ -38,13 +39,14 @@ class ExtractObjectOrder(MetalOrder):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['id_value'], json_dict['extraction_source'],
+            json_dict['identifier_stem'], json_dict['id_value'], json_dict['extraction_source'],
             json_dict['extraction_properties'], json_dict['schema_entry']
         )
 
     @property
     def to_json(self):
         return {
+            'identifier_stem': self._identifier_stem,
             'id_value': self._id_value,
             'schema_entry': self._schema_entry,
             'extraction_source': self._extraction_source,
@@ -64,20 +66,30 @@ class ExtractObjectOrder(MetalOrder):
     def id_value(self):
         return self._id_value
 
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
 
 class TransformObjectOrder(MetalOrder):
-    def __init__(self, extracted_data, schema_entry):
+    def __init__(self, identifier_stem, id_value, extracted_data, schema_entry):
         super().__init__('transform')
+        self._identifier_stem = identifier_stem
+        self._id_value = id_value
         self._extracted_data = extracted_data
         self._schema_entry = schema_entry
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(json_dict['extracted_data'], json_dict['schema_entry'])
+        return cls(
+            json_dict['identifier_stem'], json_dict['id_value'],
+            json_dict['extracted_data'], json_dict['schema_entry'])
 
     @property
     def to_json(self):
         return {
+            'identifier_stem': self._identifier_stem,
+            'id_value': self._id_value,
             'extracted_data': self._extracted_data,
             'schema_entry': self._schema_entry,
             'action_name': self._action_name
@@ -86,6 +98,14 @@ class TransformObjectOrder(MetalOrder):
     @property
     def extracted_data(self):
         return self._extracted_data
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
+    @property
+    def id_value(self):
+        return self._id_value
 
 
 class AssimilateObjectOrder(MetalOrder):

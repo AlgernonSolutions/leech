@@ -276,18 +276,20 @@ class GraphObject(AlgObject):
 
 
 class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, is_stub):
+    def __init__(self, object_type, internal_id, object_properties, is_stub, identifier_stem=None, id_value=None):
         super().__init__(object_type, object_properties)
         self._internal_id = internal_id
         self._is_stub = is_stub
+        self._identifier_stem = identifier_stem
+        self._id_value = id_value
 
     @classmethod
-    def for_known_vertex(cls, object_data, schema_entry):
+    def for_known_vertex(cls, identifier_stem, id_value, object_data, schema_entry):
         regulator = ObjectRegulator(schema_entry)
         object_type = schema_entry.vertex_name
         internal_id = regulator.create_internal_id(object_data)
         object_properties = regulator.standardize_object_properties(object_data)
-        return cls(object_type, internal_id, object_properties, False)
+        return cls(object_type, internal_id, object_properties, False, identifier_stem, id_value)
 
     @classmethod
     def parse_json(cls, json_dict):
