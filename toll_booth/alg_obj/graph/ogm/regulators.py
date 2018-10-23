@@ -38,13 +38,15 @@ class ObjectRegulator(AlgObject):
         returned_properties = {}
         if not internal_id:
             internal_id = self.create_internal_id(graph_object)
+        if not rule_entry and not isinstance(internal_id, str):
+            raise RuntimeError('unable to derive internal_id for source object: %s' % graph_object)
         for property_name, entry_property in self._entry_properties_schema.items():
             try:
                 test_property = graph_object[property_name]
             except KeyError:
-                returned_properties[property_name] = None
-                if not rule_entry or not rule_entry.is_stub:
-                    raise RuntimeError('unable to derive object properties for ruled object: %s' % graph_object)
+                returned_properties[property_name] = MissingObjectProperty
+                if not rule_entry:
+                    raise RuntimeError('unable to derive object properties for source object: %s' % graph_object)
                 continue
             test_property, data_type = self._set_property_data_type(property_name, entry_property, test_property)
             if entry_property.sensitive:
@@ -276,10 +278,10 @@ class GraphObject(AlgObject):
 
 
 class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, is_stub, identifier_stem=None, id_value=None):
+    def __init__(self, object_type, internal_id, object_properties, if_missing, identifier_stem=None, id_value=None):
         super().__init__(object_type, object_properties)
         self._internal_id = internal_id
-        self._is_stub = is_stub
+        self._if_missing = if_missing
         self._identifier_stem = identifier_stem
         self._id_value = id_value
 
@@ -294,7 +296,10 @@ class PotentialVertex(GraphObject):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['object_type'], json_dict['internal_id'], json_dict['object_properties'], json_dict['is_stub'])
+            json_dict['object_type'], json_dict['internal_id'],
+            json_dict['object_properties'], json_dict['if_missing'],
+            json_dict.get('identifier_stem'), json_dict.get('id_value')
+        )
 
     @property
     def internal_id(self):
@@ -307,14 +312,29 @@ class PotentialVertex(GraphObject):
         return True
 
     @property
-    def is_stub(self):
-        return self._is_stub
+    def is_properties_complete(self):
+        for object_property in self._object_properties:
+            if hasattr(object_property, 'is_missing'):
+                return False
+        return True
+
+    @property
+    def if_missing(self):
+        return self._if_missing
 
     @property
     def graphed_object_type(self):
-        if self.is_stub:
+        if not self.is_identifiable and self._if_missing == 'stub':
             return f'{self.object_type}::stub'
         return self.object_type
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
+    @property
+    def id_value(self):
+        return self._id_value
 
 
 class PotentialEdge(GraphObject):
@@ -421,3 +441,9 @@ class SensitiveData:
             )
         except ClientError as e:
             print(e)
+
+
+class MissingObjectProperty:
+    @classmethod
+    def is_missing(cls):
+        return True

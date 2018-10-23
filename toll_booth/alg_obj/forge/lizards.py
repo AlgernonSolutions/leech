@@ -12,7 +12,8 @@ from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 class MonitorLizard:
     @xray_recorder.capture('lizard_init')
     def __init__(self, *, object_identifier, extraction_source_name, **kwargs):
-        self._schema_entry = SchemaVertexEntry.get(object_identifier['object_type'])
+        self._object_type = object_identifier['object_type']
+        self._schema_entry = SchemaVertexEntry.get(self._object_type)
         self._extraction_source_name = extraction_source_name
         # TODO wtf why are we doing this
         extraction_properties = self._schema_entry.extraction[extraction_source_name].extraction_properties
@@ -31,7 +32,7 @@ class MonitorLizard:
         extraction_orders = []
         if max_remote_id > max_local_id:
             already_working, not_working = self._dynamo_driver.mark_ids_as_working(
-                self._working_id_stem, range(max_local_id+1, max_remote_id+1))
+                self._working_id_stem, range(max_local_id+1, max_remote_id+1), self._object_type)
             for id_value in not_working:
                 extraction_orders.append(self._generate_extraction_order(id_value))
             self._send_extraction_orders(extraction_orders)

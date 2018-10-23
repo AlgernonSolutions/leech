@@ -1,3 +1,5 @@
+from botocore.exceptions import ClientError
+
 from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
@@ -20,7 +22,7 @@ class DisguisedRobot:
             self._transform_order.identifier_stem, self._transform_order.id_value
         )
         extracted_data = self._extracted_data
-        assimilate_orders = [AssimilateObjectOrder.for_source_vertex(source_vertex, extracted_data)]
+        assimilate_orders = []
         arbiter = RuleArbiter(source_vertex, self._schema_entry)
         potentials = arbiter.process_rules(self._extracted_data)
         for potential in potentials:
@@ -30,5 +32,11 @@ class DisguisedRobot:
             assimilate_orders.append(assimilate_order)
         self._assimilation_queue.add_orders(assimilate_orders)
         self._assimilation_queue.push_orders()
-        self._dynamo_driver.mark_object_as_stage_cleared(
-            self._transform_order.identifier_stem, self._transform_order.id_value, 'transform')
+        self._write_source_vertex(source_vertex)
+
+    def _write_source_vertex(self, vertex):
+        try:
+            self._dynamo_driver.write_vertex(vertex)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e

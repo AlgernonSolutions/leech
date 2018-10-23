@@ -137,6 +137,14 @@ class VertexLinkRuleEntry(AlgObject):
     def is_stub(self):
         return self._if_absent == 'stub'
 
+    @property
+    def is_create(self):
+        return self._if_absent == 'create'
+
+    @property
+    def is_pass(self):
+        return self._if_absent == 'pass'
+
 
 class TargetSpecifier(AlgObject, ABC):
     def __init__(self, specifier_name, specifier_type):

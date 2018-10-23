@@ -9,6 +9,8 @@ from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 
 
 class DynamoDriver:
+    _stub_key = {'identifier_stem': 'stub', 'id_value': 0}
+
     def __init__(self, table_name=None):
         if not table_name:
             table_name = 'Seeds'
@@ -42,7 +44,7 @@ class DynamoDriver:
             formatted_vertexes.append(
                 PotentialVertex(
                     potential_vertex['object_type'], potential_vertex['internal_id'],
-                    object_properties, potential_vertex['is_stub'])
+                    object_properties, potential_vertex.get('is_stub', False))
             )
         return formatted_vertexes
 
@@ -71,6 +73,8 @@ class DynamoDriver:
         expression_values = {}
         pointer = 1
         for property_name, vertex_property in vertex_properties.items():
+            if hasattr(vertex_property, 'is_missing'):
+                continue
             filter_properties.append(f'object_properties.#{pointer} = :property{pointer}')
             expression_names[f'#{pointer}'] = property_name
             expression_values[f':property{pointer}'] = vertex_property
@@ -86,20 +90,23 @@ class DynamoDriver:
         return results['Items'], results.get('LastEvaluatedKey', None)
 
     def write_vertex(self, vertex):
-        vertex_entry = {
-            'internal_id': vertex.internal_id,
-            'object_type': vertex.object_type,
-            'vertex_name': vertex.object_type,
-            'is_stub': vertex.is_stub,
-            'object_properties': vertex.object_properties,
-            'inbound': {},
-            'outbound': {}
-        }
-        for property_name, object_property in vertex.object_properties.items():
-            vertex_entry[property_name] = object_property
-        return self._table.put_item(
-            Item=vertex_entry,
-            ConditionExpression=Attr('internal_id').not_exists()
+        return self._table.update_item(
+            Key={'identifier_stem': vertex.identifier_stem, 'id_value': vertex.id_value},
+            UpdateExpression='SET #i = :i, #o = :v, #c = :c, #d = :d, #ls = :t, #sc = :t',
+            ExpressionAttributeValues={
+                ':v': vertex.object_properties,
+                ':i': vertex.internal_id,
+                ':d': 'graphing',
+                ':t': datetime.datetime.now().timestamp()
+            },
+            ExpressionAttributeNames={
+                '#i': 'internal_id',
+                '#o': 'object_properties',
+                '#d': 'disposition',
+                '#ls': 'last_seen_time',
+                '#sc': 'transform_clear_time'
+            },
+            ConditionExpression=Attr('transform_clear_time').not_exists()
         )
 
     def write_edge(self, edge):
@@ -150,7 +157,7 @@ class DynamoDriver:
             ExpressionAttributeValues={':empty': {'L': []}}
         )
 
-    def mark_ids_as_working(self, identifier_stem, id_values):
+    def mark_ids_as_working(self, identifier_stem, id_values, object_type):
         already_working = []
         not_working = []
         for id_value in id_values:
@@ -159,6 +166,8 @@ class DynamoDriver:
                     Item={
                         'identifier_stem': identifier_stem,
                         'id_value': id_value,
+                        'object_type': object_type,
+                        'is_edge': False,
                         'completed': False,
                         'disposition': 'working',
                         'last_stage_seen': 'monitor',
@@ -196,8 +205,63 @@ class DynamoDriver:
             },
             ExpressionAttributeNames={
                 '#sc': f'{stage_name}_clear_time'
+            },
+            ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
+        )
+
+    def add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
+        try:
+            self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ValidationException':
+                raise e
+            self._add_stub_object_type(object_type, stub_properties, source_internal_id, rule_name)
+
+    def add_vertex_properties(self, identifier_stem, id_value, vertex_properties):
+        self._table.update_item(
+            Key={'identifier_stem': identifier_stem, 'id_value': id_value},
+            UpdateExpression='SET #v = :v, #o = :v',
+            ExpressionAttributeValues={
+                ':v': vertex_properties
+            },
+            ExpressionAttributeNames={
+                '#v': 'vertex_properties',
+                '#o': 'object_properties'
+            },
+            ConditionExpression=Attr('vertex_properties').not_exists() & Attr('object_properties').not_exists()
+        )
+
+    def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
+        stub = {
+            'properties': stub_properties,
+            'source_internal_id': source_internal_id,
+            'rule_name': rule_name
+        }
+        self._table.update_item(
+            Key=self._stub_key,
+            UpdateExpression='SET #ot = list_append(#ot, :s)',
+            ExpressionAttributeValues={
+                ':s': [stub]
+            },
+            ExpressionAttributeNames={
+                '#ot': object_type
             }
         )
 
-    def mark_potential_vertex(self, identifier_stem, id_value):
-        pass
+    def _add_stub_object_type(self, object_type, stub_properties, source_internal_id, rule_name):
+        stub = {
+            'properties': stub_properties,
+            'source_internal_id': source_internal_id,
+            'rule_name': rule_name
+        }
+        self._table.update_item(
+            Key=self._stub_key,
+            UpdateExpression='SET #ot = :s',
+            ExpressionAttributeValues={
+                ':s': [stub]
+            },
+            ExpressionAttributeNames={
+                '#ot': object_type
+            },
+            ConditionExpression=Attr(object_type).not_exists()
+        )
