@@ -269,7 +269,26 @@
       "required": [
         "property_name",
         "property_data_type"
-      ]
+      ],
+      "additionalItems": false
+    },
+    "id_entry_property": {
+      "description": "the property which contains the field used as the id_value of the object",
+      "type": "object",
+      "properties": {
+        "property_name":{"type": "string"},
+        "property_data_type": {
+          "$ref": "#/definitions/property_data_types"
+        },
+        "is_id_value": {
+          "enum": [
+            true
+          ]
+        }
+      },
+      "maxProperties": 3,
+      "minProperties": 3,
+      "additionalItems": false
     },
     "edge_entry_property": {
       "description": "a edge property containing the name, data type, and source for the property",
@@ -373,6 +392,15 @@
       "minItems": 1,
       "uniqueItems": true
     },
+    "identifier_stem": {
+      "description": "a selection of internal_id_key fields which uniquely identify a class of objects",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
     "edge_internal_id_key": {
       "description": "the fields which will be concatenated together to form the source string for the entry internal_id",
       "type": "array",
@@ -403,12 +431,18 @@
         "internal_id_key": {
           "$ref": "#/definitions/internal_id_key"
         },
+        "identifier_stem": {
+          "$ref": "#/definitions/identifier_stem"
+        },
         "vertex_properties": {
           "description": "a array of vertex properties",
           "type": "array",
-          "items": {
-            "$ref": "#/definitions/entry_property"
-          }
+          "items": [
+            {
+              "$ref": "#/definitions/id_entry_property"
+            }
+          ],
+          "additionalItems": {"$ref": "#/definitions/entry_property"}
         },
         "indexes": {
           "description": "a array of indexes that constrain the object",
@@ -438,11 +472,12 @@
           }
         }
       },
-      "maxProperties": 6,
-      "minProperties": 6,
+      "maxProperties": 7,
+      "minProperties": 7,
       "required": [
         "vertex_name",
         "internal_id_key",
+        "identifier_stem",
         "vertex_properties",
         "indexes",
         "rules",

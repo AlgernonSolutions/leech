@@ -36,7 +36,7 @@ class SevenOfNine:
         if self._rule_entry.is_stub:
             return self._write_stub_vertex()
         if self._rule_entry.is_create:
-            return self._write_vertex()
+            return self._write_vertex(potential_vertex)
         if self._rule_entry.is_pass:
             return
         raise NotImplementedError(
@@ -66,9 +66,12 @@ class SevenOfNine:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
 
-    def _write_vertex(self):
-        if not self._potential_vertex.is_properties_complete:
+    def _write_vertex(self, vertex):
+        if not vertex.is_identifiable:
             raise RuntimeError(
-                f'could not derive all properties for ruled vertex type: {self._potential_vertex.object_type}')
+                f'could not uniquely identify a ruled vertex for type: {vertex.object_type}')
+        if not vertex.is_properties_complete:
+            raise RuntimeError(
+                f'could not derive all properties for ruled vertex type: {vertex.object_type}')
         # TODO push identifiable vertex to dynamo
         raise NotImplementedError('have not done this yet')

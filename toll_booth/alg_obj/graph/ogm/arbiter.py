@@ -12,6 +12,10 @@ class RuleArbiter:
     def source_vertex(self):
         return self._source_vertex
 
+    @property
+    def schema_entry(self):
+        return self._schema_entry
+
     def process_rules(self, extracted_data):
         vertexes = []
         linking_rules = self._rules.linking_rules
@@ -46,6 +50,10 @@ class ArbiterExecutor:
     def if_missing(self):
         return self._rule_entry.if_absent
 
+    @property
+    def id_value_field(self):
+        return self._rule_arbiter.schema_entry.id_field_value
+
     def generate_potential_vertexes(self, extracted_data):
         target_specifiers = self._rule_entry.target_specifiers
         target_constants = self.derive_target_constants(self._rule_entry.target_constants)
@@ -61,8 +69,14 @@ class ArbiterExecutor:
             generated_specifiers = specifier_executor.generate_specifiers(**specifier_kwargs)
             for generated_specifier in generated_specifiers:
                 internal_id = self._regulator.create_internal_id(generated_specifier)
+                identifier_stem = self._regulator.create_identifier_stem(generated_specifier)
+                id_value = self._regulator.create_id_value(generated_specifier)
                 object_properties = self._regulator.standardize_object_properties(generated_specifier)
-                specified_object = PotentialVertex(self._target_type, internal_id, object_properties, self.if_missing)
+
+                specified_object = PotentialVertex(
+                    self._target_type, internal_id, object_properties, self.if_missing,
+                    identifier_stem, id_value, self.id_value_field
+                )
                 specifiers.append((specified_object, self._rule_entry))
         return specifiers
 

@@ -91,6 +91,24 @@ class VertexRegulator(ObjectRegulator):
     def parse_json(cls, json_dict):
         return cls(json_dict['schema_entry'], json_dict['rule_entry'])
 
+    def create_id_value(self, potential_vertex):
+        try:
+            return potential_vertex[self._schema_entry.id_value_field]
+        except KeyError:
+            return self._schema_entry.id_value_field
+
+    def create_identifier_stem(self, potential_vertex):
+        try:
+            stem_values = []
+            identifier_stem_key = self._schema_entry.identifier_stem
+            for field_name in identifier_stem_key:
+                key_value = potential_vertex[field_name]
+                potential_vertex.append(str(key_value))
+            stem_value = '.'.join(stem_values)
+            return stem_value
+        except KeyError:
+            return self._schema_entry.identifier_stem
+
     def standardize_object_properties(self, graph_object, **kwargs):
         return super().standardize_object_properties(graph_object, self._rule_entry)
 
@@ -278,12 +296,13 @@ class GraphObject(AlgObject):
 
 
 class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, if_missing, identifier_stem=None, id_value=None):
+    def __init__(self, object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field):
         super().__init__(object_type, object_properties)
         self._internal_id = internal_id
         self._if_missing = if_missing
         self._identifier_stem = identifier_stem
         self._id_value = id_value
+        self._id_value_field = id_value_field
 
     @classmethod
     def for_known_vertex(cls, identifier_stem, id_value, object_data, schema_entry):
@@ -291,14 +310,16 @@ class PotentialVertex(GraphObject):
         object_type = schema_entry.vertex_name
         internal_id = regulator.create_internal_id(object_data)
         object_properties = regulator.standardize_object_properties(object_data)
-        return cls(object_type, internal_id, object_properties, False, identifier_stem, id_value)
+        return cls(
+            object_type, internal_id, object_properties, False, identifier_stem, id_value, schema_entry.id_value_field)
 
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
             json_dict['object_type'], json_dict['internal_id'],
             json_dict['object_properties'], json_dict['if_missing'],
-            json_dict.get('identifier_stem'), json_dict.get('id_value')
+            json_dict.get('identifier_stem'), json_dict.get('id_value'),
+            json_dict.get('id_value_field')
         )
 
     @property
@@ -308,6 +329,10 @@ class PotentialVertex(GraphObject):
     @property
     def is_identifiable(self):
         if not isinstance(self._internal_id, str):
+            return False
+        if not isinstance(self._identifier_stem, str):
+            return False
+        if self._id_value == self._id_value_field:
             return False
         return True
 
