@@ -44,10 +44,6 @@ vertex = {
 }
 
 edge = {
-    partition_key:  test_edge_stem,
-    sort_key: str(test_vertex_id_value),
-    'id_value': test_vertex_id_value,
-    'id_value_field': test_edge_id_value_field,
     'object_type': test_edge_object_type,
     'object_properties': test_edge_properties,
     'internal_id': test_edge_internal_id,
