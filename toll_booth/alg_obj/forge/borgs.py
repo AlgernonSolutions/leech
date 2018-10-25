@@ -61,20 +61,14 @@ class SevenOfNine:
 
     def _write_edge(self, edge):
         try:
-            self._dynamo_driver.write_edge(edge)
+            self._dynamo_driver.write_edge(edge, 'assimilation')
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
 
     def _write_vertex(self, vertex):
-        if not vertex.is_identifiable:
-            raise RuntimeError(
-                f'could not uniquely identify a ruled vertex for type: {vertex.object_type}')
-        if not vertex.is_properties_complete:
-            raise RuntimeError(
-                f'could not derive all properties for ruled vertex type: {vertex.object_type}')
         try:
-            self._dynamo_driver.write_vertex(vertex)
+            self._dynamo_driver.write_vertex(vertex, 'assimilation')
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e

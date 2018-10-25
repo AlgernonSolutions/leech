@@ -5,7 +5,7 @@
       "vertex_properties": [
         {
           "property_name": "id_value",
-          "property_data_type": "Integer",
+          "property_data_type": "Number",
           "is_id_value": true
         },
         {
@@ -28,7 +28,7 @@
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name",
+        "object_type",
         "id_type"
       ],
       "indexes": [
@@ -99,7 +99,7 @@
       "vertex_properties": [
         {
           "property_name": "detail_id",
-          "property_data_type": "Integer",
+          "property_data_type": "Number",
           "is_id_value": true
         },
         {
@@ -108,11 +108,11 @@
         },
         {
           "property_name": "changelog_id",
-          "property_data_type": "Integer"
+          "property_data_type": "Number"
         },
         {
           "property_name": "data_dict_id",
-          "property_data_type": "Integer"
+          "property_data_type": "Number"
         },
         {
           "property_name": "detail_one",
@@ -132,7 +132,7 @@
       ],
       "internal_id_key": [
         "id_source",
-        "self.vertex_name",
+        "object_type",
         "changelog_id",
         "detail_id"
       ],
@@ -245,7 +245,7 @@
       "vertex_properties": [
         {
           "property_name": "changelog_id",
-          "property_data_type": "Integer",
+          "property_data_type": "Number",
           "is_id_value": true
         },
         {
@@ -267,7 +267,7 @@
       ],
       "internal_id_key": [
         "id_source",
-        "self.vertex_name",
+        "object_type",
         "changelog_id"
       ],
       "identifier_stem": [

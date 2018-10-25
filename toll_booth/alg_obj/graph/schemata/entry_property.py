@@ -4,7 +4,7 @@ from toll_booth.alg_obj.graph.troubles import InvalidSchemaPropertyType
 
 class SchemaPropertyEntry(AlgObject):
     _accepted_types = [
-        'String', 'Integer', 'Float', 'DateTime'
+        'String', 'Number', 'DateTime'
     ]
 
     def __init__(self, property_name, property_data_type, sensitive=False, is_id_value=False):

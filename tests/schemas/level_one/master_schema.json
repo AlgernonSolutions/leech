@@ -169,7 +169,7 @@
     "property_data_types": {
       "enum": [
         "String",
-        "Integer",
+        "Number",
         "DateTime"
       ]
     },

@@ -4,7 +4,7 @@ from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.graph.ogm.arbiter import RuleArbiter
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
+from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
 
 
 class DisguisedRobot:
@@ -17,10 +17,8 @@ class DisguisedRobot:
         self._dynamo_driver = DynamoDriver()
 
     def transform(self):
-        source_vertex = PotentialVertex.for_known_vertex(
-            self._source_vertex_data, self._schema_entry,
-            self._transform_order.identifier_stem, self._transform_order.id_value
-        )
+        regulator = VertexRegulator(self._schema_entry)
+        source_vertex = regulator.create_potential_vertex(self._source_vertex_data)
         extracted_data = self._extracted_data
         assimilate_orders = []
         arbiter = RuleArbiter(source_vertex, self._schema_entry)
@@ -36,7 +34,7 @@ class DisguisedRobot:
 
     def _write_source_vertex(self, vertex):
         try:
-            self._dynamo_driver.write_vertex(vertex)
+            self._dynamo_driver.write_vertex(vertex, 'transformation')
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e

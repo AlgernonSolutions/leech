@@ -67,7 +67,7 @@ class MonitorLizard:
 
     @xray_recorder.capture('lizard_get_local_max')
     def _get_current_local_max_id(self):
-        return self._dynamo_driver.query_index_max(self._working_id_stem)
+        return self._dynamo_driver.query_index_value_max(self._working_id_stem)
 
     def get_working_id_stem(self):
         identifier = [x for x in self._object_identifier.values()]
