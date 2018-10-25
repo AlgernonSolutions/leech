@@ -34,7 +34,7 @@ class SevenOfNine:
     def _note_potential_vertex(self):
         potential_vertex = self._potential_vertex
         if self._rule_entry.is_stub:
-            return self._write_stub_vertex()
+            return self._write_stub_vertex(potential_vertex)
         if self._rule_entry.is_create:
             return self._write_vertex(potential_vertex)
         if self._rule_entry.is_pass:
@@ -47,11 +47,11 @@ class SevenOfNine:
         return edge_regulator.generate_potential_edge(
             self._source_vertex, potential_vertex, self._extracted_data, self._rule_entry.inbound)
 
-    def _write_stub_vertex(self):
+    def _write_stub_vertex(self, vertex):
         try:
             self._dynamo_driver.add_stub_vertex(
-                self._potential_vertex.object_type,
-                self._potential_vertex.object_properties,
+                vertex.object_type,
+                vertex.object_properties,
                 self._source_vertex.internal_id,
                 self._rule_entry.edge_type
             )
@@ -73,5 +73,8 @@ class SevenOfNine:
         if not vertex.is_properties_complete:
             raise RuntimeError(
                 f'could not derive all properties for ruled vertex type: {vertex.object_type}')
-        # TODO push identifiable vertex to dynamo
-        raise NotImplementedError('have not done this yet')
+        try:
+            self._dynamo_driver.write_vertex(vertex)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e

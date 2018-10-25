@@ -361,6 +361,10 @@ class PotentialVertex(GraphObject):
     def id_value(self):
         return self._id_value
 
+    @property
+    def id_value_field(self):
+        return self._id_value_field
+
 
 class PotentialEdge(GraphObject):
     def __init__(self, edge_label, internal_id, edge_properties, from_object, to_object):

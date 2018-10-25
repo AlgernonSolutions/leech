@@ -41,31 +41,9 @@ class DynamoDriver:
                 if isinstance(property_value, Decimal):
                     property_value = int(property_value)
                 object_properties[property_name] = property_value
-            formatted_vertexes.append(
-                PotentialVertex(
-                    potential_vertex['object_type'], potential_vertex['internal_id'],
-                    object_properties, potential_vertex.get('is_stub', False))
-            )
+            potential_vertex['object_properties'] = object_properties
+            formatted_vertexes.append(PotentialVertex.from_json(potential_vertex))
         return formatted_vertexes
-
-    def _scan_index_range(self, token, object_type, id_source, id_type, index_name=None):
-        if not index_name:
-            index_name = 'object_type-id_value-index'
-        results = self._table.query(
-            IndexName=index_name,
-            TableName=self._table_name,
-            Limit=1,
-            Select='ALL_PROJECTED_ATTRIBUTES',
-            ScanIndexForward=False,
-            KeyConditionExpression=Key('object_type').eq(object_type),
-            FilterExpression=Attr('id_source').eq(id_source) & Attr('id_type').eq(id_type),
-            ExclusiveStartKey=token
-        )
-        try:
-            max_id = results['Items'][0]['id_value']
-        except IndexError:
-            max_id = None
-        return max_id, results.get('LastEvaluatedKey', None)
 
     def _scan_vertexes(self, vertex_properties, token=None):
         filter_properties = []
@@ -88,6 +66,55 @@ class DynamoDriver:
             scan_kwargs['ExclusiveStartKey'] = token
         results = self._table.scan(**scan_kwargs)
         return results['Items'], results.get('LastEvaluatedKey', None)
+
+    def put_vertex_seed(self, object_type, identifier_stem, id_value, stage_name):
+        now = datetime.datetime.now().timestamp()
+        decimal_now = Decimal(now)
+        return self._table.put_item(
+            Item={
+                'identifier_stem': identifier_stem,
+                'id_value': id_value,
+                'object_type': object_type,
+                'is_edge': False,
+                'completed': False,
+                'disposition': 'working',
+                'last_stage_seen': stage_name,
+                f'{stage_name}_clear_time': decimal_now,
+                'last_seen_time': decimal_now
+            },
+            ConditionExpression=Attr('identifier_stem').not_exists() & Attr('id_value').not_exists()
+        )
+
+    def put_vertex(self, vertex, stage_name):
+        now = datetime.datetime.now().timestamp()
+        decimal_now = Decimal(now)
+        return self._table.put_item(
+            Item={
+                'identifier_stem': vertex.identifier_stem,
+                'id_value': vertex.id_value,
+                'object_type': vertex.object_type,
+                'object_properties': vertex.object_properties,
+                'if_missing': vertex.if_missing,
+                'id_value_field': vertex.id_value_field,
+                'internal_id': vertex.internal_id,
+                'is_edge': False,
+                'completed': False,
+                'disposition': 'working',
+                'last_stage_seen': stage_name,
+                f'{stage_name}_clear_time': decimal_now,
+                'last_seen_time': decimal_now
+            },
+            ConditionExpression=Attr('identifier_stem').not_exists() & Attr('id_value').not_exists()
+        )
+
+    def get_vertex(self, identifier_stem, id_value):
+        results = self._table.get_item(
+            Key={'identifier_stem': identifier_stem, 'id_value': id_value}
+        )
+        try:
+            return PotentialVertex.from_json(results['Item'])
+        except KeyError:
+            return None
 
     def write_vertex(self, vertex):
         return self._table.update_item(
@@ -157,25 +184,12 @@ class DynamoDriver:
             ExpressionAttributeValues={':empty': {'L': []}}
         )
 
-    def mark_ids_as_working(self, identifier_stem, id_values, object_type):
+    def mark_ids_as_working(self, identifier_stem, id_values, object_type, stage_name='Monitoring'):
         already_working = []
         not_working = []
         for id_value in id_values:
             try:
-                self._table.put_item(
-                    Item={
-                        'identifier_stem': identifier_stem,
-                        'id_value': id_value,
-                        'object_type': object_type,
-                        'is_edge': False,
-                        'completed': False,
-                        'disposition': 'working',
-                        'last_stage_seen': 'monitor',
-                        'monitor_clear_time': datetime.datetime.now().timestamp(),
-                        'last_seen_time': datetime.datetime.now().timestamp()
-                    },
-                    ConditionExpression=Attr('identifier_stem').not_exists() & Attr('id_value').not_exists()
-                )
+                self.put_vertex_seed(object_type, identifier_stem, id_value, stage_name)
                 not_working.append(id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
@@ -184,14 +198,16 @@ class DynamoDriver:
         return already_working, not_working
 
     def mark_object_as_blank(self, identifier_stem, id_value):
-        self._table.update_item(
+        now = datetime.datetime.now().timestamp()
+        decimal_now = Decimal(now)
+        return self._table.update_item(
             Key={'identifier_stem': identifier_stem, 'id_value': id_value},
             UpdateExpression='SET completed = :c, disposition = :d, last_stage_seen = :s, last_seen_time = :t',
             ExpressionAttributeValues={
                 ':c': True,
                 ':d': 'blank',
                 ':s': 'extraction',
-                ':t': datetime.datetime.now()
+                ':t': decimal_now
             }
         )
 
@@ -211,14 +227,14 @@ class DynamoDriver:
 
     def add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
         try:
-            self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)
+            return self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)
         except ClientError as e:
             if e.response['Error']['Code'] != 'ValidationException':
                 raise e
             self._add_stub_object_type(object_type, stub_properties, source_internal_id, rule_name)
 
     def add_vertex_properties(self, identifier_stem, id_value, vertex_properties):
-        self._table.update_item(
+        return self._table.update_item(
             Key={'identifier_stem': identifier_stem, 'id_value': id_value},
             UpdateExpression='SET #v = :v, #o = :v',
             ExpressionAttributeValues={
@@ -233,11 +249,11 @@ class DynamoDriver:
 
     def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
         stub = {
-            'properties': stub_properties,
+            'object_properties': stub_properties,
             'source_internal_id': source_internal_id,
             'rule_name': rule_name
         }
-        self._table.update_item(
+        return self._table.update_item(
             Key=self._stub_key,
             UpdateExpression='SET #ot = list_append(#ot, :s)',
             ExpressionAttributeValues={
@@ -250,11 +266,11 @@ class DynamoDriver:
 
     def _add_stub_object_type(self, object_type, stub_properties, source_internal_id, rule_name):
         stub = {
-            'properties': stub_properties,
+            'object_properties': stub_properties,
             'source_internal_id': source_internal_id,
             'rule_name': rule_name
         }
-        self._table.update_item(
+        return self._table.update_item(
             Key=self._stub_key,
             UpdateExpression='SET #ot = :s',
             ExpressionAttributeValues={

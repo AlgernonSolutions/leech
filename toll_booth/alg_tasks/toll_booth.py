@@ -58,6 +58,60 @@ def aphid(event, context):
 
 
 def exploded(event, context):
+    demo = {
+        'Records': [
+            {
+                'eventID': '616bbf393f3512ff1ee8cb39446815ba',
+                'eventName': 'MODIFY',
+                'eventVersion': '1.1',
+                'eventSource': 'aws:dynamodb',
+                'awsRegion': 'us-east-1',
+                'dynamodb': {
+                    'ApproximateCreationDateTime': 1540406760.0,
+                    'Keys': {
+                        'identifier_stem': {
+                            'S': 'algernon.Email'
+                        },
+                        'id_value': {
+                            'N': '1001'
+                        }
+                    },
+                    'NewImage': {
+                        'internal_id': {
+                            'S': '12345'
+                        },
+                        'object_type': {
+                            'S': 'ExternalId'
+                        },
+                        'identifier_stem': {
+                            'S': 'algernon.Email'
+                        },
+                        'id_value': {
+                            'N': '1001'
+                        }
+                    },
+                    'OldImage': {
+                        'internal_id': {
+                            'S': '1234'
+                        },
+                        'object_type': {
+                            'S': 'ExternalId'
+                        },
+                        'identifier_stem': {
+                            'S': 'algernon.Email'
+                        },
+                        'id_value': {
+                            'N': '1001'
+                        }
+                    },
+                    'SequenceNumber': '4432700000000062492661552',
+                    'SizeBytes': 193,
+                    'StreamViewType': 'NEW_AND_OLD_IMAGES'
+                },
+                'eventSourceARN': 'arn:aws:dynamodb:us-east-1:803040539655:table/Seeds/stream/2018-10-24T18:41:45.633'
+            }
+        ]
+    }
     logging.info('received a call to process a dynamo entry, event: %s' % event)
 
 
