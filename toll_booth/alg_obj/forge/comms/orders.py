@@ -2,16 +2,23 @@ import json
 from abc import ABC
 
 from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 class MetalOrder(AlgObject, ABC):
-    def __init__(self, action_name):
+    def __init__(self, action_name, identifier_stem):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._action_name = action_name
+        self._identifier_stem = str(identifier_stem)
 
     @property
     def schema_entry(self):
         return getattr(self, '_schema_entry', None)
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
 
     @property
     def to_work(self):
@@ -28,9 +35,8 @@ class MetalOrder(AlgObject, ABC):
 
 class ExtractObjectOrder(MetalOrder):
     def __init__(self, identifier_stem, id_value, extraction_source, extraction_properties, schema_entry):
-        super().__init__('extract')
+        super().__init__('extract', identifier_stem)
         self._id_value = id_value
-        self._identifier_stem = identifier_stem
         self._schema_entry = schema_entry
         self._extraction_source = extraction_source
         extraction_properties['id_value'] = id_value
@@ -66,15 +72,10 @@ class ExtractObjectOrder(MetalOrder):
     def id_value(self):
         return self._id_value
 
-    @property
-    def identifier_stem(self):
-        return self._identifier_stem
-
 
 class TransformObjectOrder(MetalOrder):
     def __init__(self, identifier_stem, id_value, extracted_data, schema_entry):
-        super().__init__('transform')
-        self._identifier_stem = identifier_stem
+        super().__init__('transform', identifier_stem)
         self._id_value = id_value
         self._extracted_data = extracted_data
         self._schema_entry = schema_entry
@@ -100,17 +101,13 @@ class TransformObjectOrder(MetalOrder):
         return self._extracted_data
 
     @property
-    def identifier_stem(self):
-        return self._identifier_stem
-
-    @property
     def id_value(self):
         return self._id_value
 
 
 class AssimilateObjectOrder(MetalOrder):
     def __init__(self, source_vertex, potential_vertex, rule_entry, extracted_data):
-        super().__init__('assimilate')
+        super().__init__('assimilate', source_vertex.identifier_stem)
         self._source_vertex = source_vertex
         self._potential_vertex = potential_vertex
         self._rule_entry = rule_entry
@@ -144,51 +141,3 @@ class AssimilateObjectOrder(MetalOrder):
     @property
     def extracted_data(self):
         return self._extracted_data
-
-
-class LoadObjectOrder(MetalOrder):
-    def __init__(self, vertex, edge):
-        super().__init__('load')
-        self._vertex = vertex
-        self._edge = edge
-
-    @classmethod
-    def for_source_vertex(cls, source_vertex):
-        return cls(source_vertex, None)
-
-    @classmethod
-    def parse_json(cls, json_dict):
-        return cls(
-            json_dict['vertex'],
-            json_dict['edge']
-        )
-
-    @property
-    def vertex(self):
-        return self._vertex
-
-    @property
-    def edge(self):
-        return self._edge
-
-    @property
-    def to_json(self):
-        return {
-            "vertex": self._vertex,
-            "edge": self._edge,
-            "action_name": self._action_name
-        }
-
-
-class ProcessObjectOrder(MetalOrder):
-    def __init__(self, vertex):
-        super().__init__('process')
-        self._vertex = vertex
-
-    @classmethod
-    def parse_json(cls, json_dict):
-        return cls(json_dict['vertex'])
-
-    @property
-    def vertex(self):
-        return self._vertex
