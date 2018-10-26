@@ -8,13 +8,34 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge
 
 
+class DynamoParameters:
+    def __init__(self, partition_key_value,  sort_key_value, **kwargs):
+        partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'identifier_stem'))
+        sort_key_name = kwargs.get('sort_key_name', os.getenv('SORT_KEY', 'sid_value'))
+        self._partition_key_name = partition_key_name
+        self._partition_key_value = partition_key_value
+        self._sort_key_name = sort_key_name
+        self._sort_key_value = sort_key_value
+
+    @classmethod
+    def for_stub(cls):
+        return cls('stub', '0')
+
+    @property
+    def as_key(self):
+        return {
+            self._partition_key_name: str(self._partition_key_value),
+            self._sort_key_name: str(self._sort_key_value)
+        }
+
+    @property
+    def as_no_overwrite(self):
+        return Attr(self._partition_key_name).not_exists() & Attr(self._sort_key_name).not_exists()
+
+
 class DynamoDriver:
-    _partition_key = os.getenv('PARTITION_KEY', 'identifier_stem')
-    _sort_key = os.getenv('SORT_KEY', 'sid_value')
-    _stub_key = {_partition_key: 'stub', _sort_key: '0'}
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
-    _no_overwrite_condition = Attr(_partition_key).not_exists() & Attr(_sort_key).not_exists()
 
     def __init__(self, table_name=None):
         if not table_name:
@@ -70,25 +91,26 @@ class DynamoDriver:
 
     def put_vertex_seed(self, object_type, identifier_stem, id_value, stage_name):
         now = self._get_decimal_timestamp()
+        params = DynamoParameters(identifier_stem, id_value)
+        seed = params.as_key
+        seed.update({
+            'id_value': id_value,
+            'object_type': object_type,
+            'is_edge': False,
+            'completed': False,
+            'disposition': 'working',
+            'last_stage_seen': stage_name,
+            f'{stage_name}_clear_time': now,
+            'last_seen_time': now
+        })
         return self._table.put_item(
-            Item={
-                self._partition_key: identifier_stem,
-                self._sort_key: str(id_value),
-                'id_value': id_value,
-                'object_type': object_type,
-                'is_edge': False,
-                'completed': False,
-                'disposition': 'working',
-                'last_stage_seen': stage_name,
-                f'{stage_name}_clear_time': now,
-                'last_seen_time': now
-            },
-            ConditionExpression=self._no_overwrite_condition
+            Item=seed,
+            ConditionExpression=params.as_no_overwrite
         )
 
     def get_vertex(self, identifier_stem, id_value):
         results = self._table.get_item(
-            Key={self._partition_key: identifier_stem, self._sort_key: str(id_value)}
+            Key=DynamoParameters(identifier_stem, id_value).as_key
         )
         try:
             vertex_information = results['Item']
@@ -106,8 +128,9 @@ class DynamoDriver:
         update_expression = '''
             SET #i=:i, #o=:v, #d=:d, #lst=:t, #sc=:t, #ot=:ot, #im=:im, #c=:c, #lss=:lss, #idf=:idf, #id=:id
         '''
+        params = DynamoParameters(vertex.identifier_stem, vertex.id_value)
         return self._table.update_item(
-            Key={self._partition_key: vertex.identifier_stem, self._sort_key: str(vertex.id_value)},
+            Key=params.as_key,
             UpdateExpression=update_expression,
             ExpressionAttributeValues={
                 ':ot': vertex.object_type,
@@ -134,15 +157,15 @@ class DynamoDriver:
                 '#idf': 'id_value_field',
                 '#id': 'id_value'
             },
-            ConditionExpression=self._no_overwrite_condition
+            ConditionExpression=params.as_no_overwrite
         )
 
     def write_edge(self, edge, stage_name):
         now = self._get_decimal_timestamp()
-        edge_entry = {
+        params = DynamoParameters(edge.identifier_stem, edge.internal_id)
+        edge_entry = params.as_key
+        edge_entry.update({
             'object_type': edge.edge_label,
-            self._partition_key: edge.identifier_stem,
-            self._sort_key: edge.internal_id,
             'internal_id': edge.internal_id,
             'from_object': edge.from_object,
             'to_object': edge.to_object,
@@ -152,20 +175,20 @@ class DynamoDriver:
             'last_stage_seen': stage_name,
             f'{stage_name}_clear_time': now,
             'last_seen_time': now
-        }
+        })
         for property_name, object_property in edge.object_properties.items():
             edge_entry[property_name] = object_property
         try:
             return self._table.put_item(
                 Item=edge_entry,
-                ConditionExpression=self._no_overwrite_condition
+                ConditionExpression=params.as_no_overwrite
             )
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
 
     def get_edge(self, edge_label, edge_internal_id):
-        results = self._table.get_item(Key={self._partition_key: edge_label, self._sort_key: edge_internal_id})
+        results = self._table.get_item(Key=DynamoParameters(edge_label, edge_internal_id).as_key)
         return PotentialEdge.from_json(results['Item'])
 
     def mark_ids_as_working(self, identifier_stem, id_values, object_type, stage_name='monitoring'):
@@ -183,7 +206,7 @@ class DynamoDriver:
 
     def mark_object_as_blank(self, identifier_stem, id_value):
         return self._table.update_item(
-            Key={self._partition_key: identifier_stem, self._sort_key: str(id_value)},
+            Key=DynamoParameters(identifier_stem, id_value).as_key,
             UpdateExpression='SET completed = :c, disposition = :d, last_stage_seen = :s, last_seen_time = :t',
             ExpressionAttributeValues={
                 ':c': True,
@@ -195,7 +218,7 @@ class DynamoDriver:
 
     def mark_object_as_stage_cleared(self, identifier_stem, id_value, stage_name):
         return self._table.update_item(
-            Key={self._partition_key: identifier_stem, self._sort_key: str(id_value)},
+            Key=DynamoParameters(identifier_stem, id_value).as_key,
             UpdateExpression='SET last_stage_seen = :s, last_seen_time = :t, #sc = :t',
             ExpressionAttributeValues={
                 ':s': stage_name,
@@ -218,7 +241,7 @@ class DynamoDriver:
     def add_object_properties(self, identifier_stem, id_value, object_properties):
         update_components = self._generate_update_property_components(object_properties)
         return self._table.update_item(
-            Key={self._partition_key: identifier_stem, self._sort_key: str(id_value)},
+            Key=DynamoParameters(identifier_stem, id_value).as_key,
             UpdateExpression=update_components[2],
             ExpressionAttributeValues=update_components[1],
             ExpressionAttributeNames=update_components[0],
@@ -232,7 +255,7 @@ class DynamoDriver:
             'rule_name': rule_name
         }
         return self._table.update_item(
-            Key=self._stub_key,
+            Key=DynamoParameters.for_stub().as_key,
             UpdateExpression='SET #ot = list_append(#ot, :s)',
             ExpressionAttributeValues={
                 ':s': [stub]
@@ -249,7 +272,7 @@ class DynamoDriver:
             'rule_name': rule_name
         }
         return self._table.update_item(
-            Key=self._stub_key,
+            Key=DynamoParameters.for_stub().as_key,
             UpdateExpression='SET #ot = :s',
             ExpressionAttributeValues={
                 ':s': [stub]
