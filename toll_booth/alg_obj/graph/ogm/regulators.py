@@ -86,7 +86,7 @@ class ObjectRegulator:
                 if isinstance(key_value, MissingObjectProperty):
                     return self._schema_entry.identifier_stem
                 stem_values.append(str(key_value))
-            stem_value = '.'.join(stem_values)
+            stem_value = f'#{"#".join(stem_values)}#'
             return stem_value
         except KeyError:
             return self._schema_entry.identifier_stem
