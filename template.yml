@@ -140,13 +140,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.aphid
       Runtime: python3.6
       FunctionName: leech-process
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-06b3a26ff04155688
-        SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448

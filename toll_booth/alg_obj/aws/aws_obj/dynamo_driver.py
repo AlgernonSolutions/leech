@@ -43,6 +43,13 @@ class DynamoDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
+    def get_object(self, identifier_stem, id_value):
+        if '#edge#' in identifier_stem:
+            return self.get_edge(identifier_stem, id_value)
+        if '#vertex#' in identifier_stem:
+            return self.get_vertex(identifier_stem, id_value)
+        raise RuntimeError(f'could not ascertain the object type (vertex/edge) from identifier: {identifier_stem}')
+
     def query_index_value_max(self, identifier_stem, index_name=None):
         if not index_name:
             index_name = self._id_value_index

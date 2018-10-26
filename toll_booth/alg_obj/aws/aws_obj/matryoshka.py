@@ -39,6 +39,10 @@ class Matryoshka(AlgObject):
             self._completed_results = self._spin()
 
     @classmethod
+    def parse_json(cls, json_dict):
+        return cls.from_json(json_dict)
+
+    @classmethod
     def from_json(cls, json_dict):
         try:
             task_args = json_dict['task_args']
@@ -164,7 +168,7 @@ class Matryoshka(AlgObject):
         return results
 
 
-class MatryoshkaCluster(AlgObject):
+class MatryoshkaCluster:
     def __init__(self, m_plan, task_name, lambda_arn, max_m_concurrency, task_constants=None, worker_args=None):
         if not task_constants:
             task_constants = {}
@@ -209,7 +213,7 @@ class MatryoshkaCluster(AlgObject):
         return seed_args
 
 
-class MatryoshkaBranch(AlgObject):
+class MatryoshkaBranch:
     def __init__(self, parent_branch_level=None, children=None, task_args=None):
         if children and task_args:
             raise NotImplementedError('current implementation only allows terminal branches to host flowers')
