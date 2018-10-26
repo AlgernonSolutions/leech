@@ -32,13 +32,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.work
       Runtime: python3.6
       FunctionName: leech-monitor
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-06b3a26ff04155688
-        SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -49,13 +42,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
       FunctionName: leech-extract
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-06b3a26ff04155688
-        SubnetIds:
-          - subnet-872a24cc
-          - subnet-29497e4d
-          - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -72,13 +58,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
       FunctionName: leech-transform
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-06b3a26ff04155688
-        SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -95,13 +74,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
       FunctionName: leech-assimilate
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-06b3a26ff04155688
-        SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -118,13 +90,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
       FunctionName: leech-load
-      VpcConfig:
-        SecurityGroupIds:
-        - sg-06b3a26ff04155688
-        SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -165,6 +130,16 @@ Resources:
         - subnet-872a24cc
         - subnet-29497e4d
         - subnet-acef95f1
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  process:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.aphid
+      Runtime: python3.6
+      FunctionName: leech-process
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448

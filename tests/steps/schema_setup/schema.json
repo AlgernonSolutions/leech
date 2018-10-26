@@ -4,6 +4,11 @@
       "vertex_name": "ExternalId",
       "vertex_properties": [
         {
+          "property_name": "id_value",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
           "property_name": "id_source",
           "property_data_type": "String"
         },
@@ -14,16 +19,17 @@
         {
           "property_name": "id_name",
           "property_data_type": "String"
-        },
-        {
-          "property_name": "id_value",
-          "property_data_type": "Integer"
         }
       ],
       "internal_id_key": [
         "id_source",
         "id_type",
         "id_value"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type",
+        "id_type"
       ],
       "indexes": [
         {
@@ -92,20 +98,21 @@
       "vertex_name": "Change",
       "vertex_properties": [
         {
+          "property_name": "detail_id",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
           "property_name": "id_source",
           "property_data_type": "String"
         },
         {
-          "property_name": "detail_id",
-          "property_data_type": "Integer"
-        },
-        {
           "property_name": "changelog_id",
-          "property_data_type": "Integer"
+          "property_data_type": "Number"
         },
         {
           "property_name": "data_dict_id",
-          "property_data_type": "Integer"
+          "property_data_type": "Number"
         },
         {
           "property_name": "detail_one",
@@ -125,8 +132,13 @@
       ],
       "internal_id_key": [
         "id_source",
+        "object_type",
         "changelog_id",
         "detail_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "self.vertex_name"
       ],
       "indexes": [
         {
@@ -233,7 +245,8 @@
       "vertex_properties": [
         {
           "property_name": "changelog_id",
-          "property_data_type": "Integer"
+          "property_data_type": "Number",
+          "is_id_value": true
         },
         {
           "property_name": "change_description",
@@ -254,7 +267,12 @@
       ],
       "internal_id_key": [
         "id_source",
+        "object_type",
         "changelog_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "self.vertex_name"
       ],
       "indexes": [
         {

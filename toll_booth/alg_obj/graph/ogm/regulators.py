@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.aws_obj.sapper import SecretWhisperer
 from toll_booth.alg_obj.graph import InternalId
 
 
-class ObjectRegulator(AlgObject):
+class ObjectRegulator:
     def __init__(self, schema_entry):
         self._schema_entry = schema_entry
         self._internal_id_key = schema_entry.internal_id_key
@@ -22,37 +24,42 @@ class ObjectRegulator(AlgObject):
                 raise RuntimeError('can not instantiate a vertex regulator without a valid rule entry')
             return VertexRegulator(target_schema_entry, rule_entry)
 
-    @classmethod
-    def parse_json(cls, json_dict):
-        try:
-            rule_entry = json_dict['rule_entry']
-        except KeyError:
-            rule_entry = None
-        return cls.get_for_object_type(json_dict['object_type'], rule_entry)
-
     @property
     def schema_entry(self):
         return self._schema_entry
 
-    def standardize_object_properties(self, graph_object, rule_entry=None, internal_id=None):
+    def _obfuscate_sensitive_data(self, internal_id, graph_object_properties):
+        returned_data = {}
+        for property_name, entry_property in self._entry_properties_schema.items():
+            property_data_type = entry_property.property_data_type
+            property_value = graph_object_properties[property_name]
+            if entry_property.sensitive:
+                if hasattr(property_value, 'is_missing'):
+                    raise RuntimeError(
+                        f'object property named {property_name} is listed as being sensitive, but the value for it '
+                        f'could not be found in the collected object properties: {graph_object_properties}')
+                if not isinstance(internal_id, str):
+                    raise RuntimeError(
+                        f'object property named {property_name} is listed as being sensitive, but the parent object '
+                        f'could not be uniquely identified. sensitive properties use their parent objects identifier '
+                        f'to guarantee uniqueness. object containing sensitive properties generally can not be stubbed'
+                    )
+                property_value = SecretWhisperer.put_secret(entry_property, internal_id, property_data_type)
+            returned_data[property_name] = property_value
+
+    def _standardize_object_properties(self, graph_object):
         returned_properties = {}
-        if not internal_id:
-            internal_id = self.create_internal_id(graph_object)
         for property_name, entry_property in self._entry_properties_schema.items():
             try:
                 test_property = graph_object[property_name]
             except KeyError:
-                returned_properties[property_name] = None
-                if not rule_entry or not rule_entry.is_stub:
-                    raise RuntimeError('unable to derive object properties for ruled object: %s' % graph_object)
+                returned_properties[property_name] = MissingObjectProperty
                 continue
-            test_property, data_type = self._set_property_data_type(property_name, entry_property, test_property)
-            if entry_property.sensitive:
-                test_property = SecretWhisperer.put_secret(test_property, internal_id, data_type)
+            test_property = self._set_property_data_type(property_name, entry_property, test_property)
             returned_properties[property_name] = test_property
         return returned_properties
 
-    def create_internal_id(self, graph_object):
+    def _create_internal_id(self, graph_object, for_known=False):
         try:
             key_values = []
             internal_id_key = self._schema_entry.internal_id_key
@@ -63,25 +70,49 @@ class ObjectRegulator(AlgObject):
             internal_id = InternalId(id_string).id_value
             return internal_id
         except KeyError:
+            if for_known:
+                raise RuntimeError(
+                    f'could not calculate internal id for a source/known object, this generally indicates that the '
+                    f'extraction for that object was flawed. error for graph object: {graph_object}'
+                )
             return self._internal_id_key
+
+    def _create_identifier_stem(self, potential_object):
+        try:
+            stem_values = []
+            identifier_stem_key = self._schema_entry.identifier_stem
+            for field_name in identifier_stem_key:
+                key_value = potential_object[field_name]
+                if isinstance(key_value, MissingObjectProperty):
+                    return self._schema_entry.identifier_stem
+                stem_values.append(str(key_value))
+            stem_value = '.'.join(stem_values)
+            return stem_value
+        except KeyError:
+            return self._schema_entry.identifier_stem
+
+    def _create_id_value(self, potential_object):
+        try:
+            return potential_object[self._schema_entry.id_value_field]
+        except KeyError:
+            return self._schema_entry.id_value_field
 
     @classmethod
     def _set_property_data_type(cls, property_name, entry_property, test_property):
         property_data_type = entry_property.property_data_type
-        if property_data_type == 'Integer':
-            return int(test_property), 'Integer'
-        if property_data_type == 'Float':
-            return float(test_property), 'Float'
+        if property_data_type == 'Number':
+            return Decimal(test_property)
         if property_data_type == 'String':
-            return str(test_property), 'String'
+            return str(test_property)
         if property_data_type == 'DateTime':
             from toll_booth.alg_obj.utils import convert_credible_datetime_to_gremlin
             is_utc = 'utc' in property_name
-            return convert_credible_datetime_to_gremlin(test_property, is_utc), 'DateTime'
+            return convert_credible_datetime_to_gremlin(test_property, is_utc)
+        raise NotImplementedError(f'data type {property_data_type} is unknown to the system')
 
 
 class VertexRegulator(ObjectRegulator):
-    def __init__(self, schema_entry, rule_entry):
+    def __init__(self, schema_entry, rule_entry=None):
         super().__init__(schema_entry)
         self._rule_entry = rule_entry
 
@@ -89,13 +120,22 @@ class VertexRegulator(ObjectRegulator):
     def parse_json(cls, json_dict):
         return cls(json_dict['schema_entry'], json_dict['rule_entry'])
 
-    def standardize_object_properties(self, graph_object, **kwargs):
-        return super().standardize_object_properties(graph_object, self._rule_entry)
+    def create_potential_vertex(self, object_data, **kwargs):
+        object_properties = self._standardize_object_properties(object_data)
+        internal_id = kwargs.get('internal_id', self._create_internal_id(object_properties))
+        identifier_stem = kwargs.get('identifier_stem', self._create_identifier_stem(object_properties))
+        id_value = kwargs.get('id_value', self._create_id_value(object_properties))
+        object_properties = self._obfuscate_sensitive_data(internal_id, object_properties)
+        object_type = self._schema_entry.object_type
+        if_missing = self._schema_entry.if_missing
+        id_value_field = self._schema_entry.id_value_field
+        return PotentialVertex(
+           object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field)
 
 
 class EdgeRegulator(ObjectRegulator):
     def standardize_edge_properties(self, edge_properties, source_vertex, potential_other, inbound):
-        returned_properties = super().standardize_object_properties(edge_properties)
+        returned_properties = super()._standardize_object_properties(edge_properties)
         accepted_source_vertex = self._schema_entry.from_type
         accepted_target_vertex = self._schema_entry.to_type
         source_object_type = source_vertex.object_type
@@ -121,16 +161,17 @@ class EdgeRegulator(ObjectRegulator):
                 return
         if accepted_vertex_types == test_vertex:
             return
-        raise RuntimeError()
+        raise RuntimeError(f'attempted to create an edge between {test_vertex} and {other_vertex}, but '
+                           f'failed constraint for edge origins')
 
     def generate_potential_edge(self, source_vertex, potential_other, extracted_data, inbound):
         edge_label = self._schema_entry.edge_label
-        edge_properties = self.generate_edge_properties(
+        edge_properties = self._generate_edge_properties(
             source_vertex, potential_other, extracted_data, inbound)
         edge_properties = self.standardize_edge_properties(
             edge_properties, source_vertex, potential_other, inbound)
         try:
-            edge_internal_id = self.create_edge_internal_id(
+            edge_internal_id = self._create_edge_internal_id(
                 inbound, source_vertex=source_vertex, potential_other=potential_other, edge_properties=edge_properties)
         except KeyError:
             edge_internal_id = self._schema_entry.internal_id_key_fields
@@ -142,7 +183,7 @@ class EdgeRegulator(ObjectRegulator):
 
     def generate_stubbed_edge(self, source_vertex, stubbed_other, extracted_data, inbound):
         edge_label = self._schema_entry.edge_label
-        edge_properties = self.generate_edge_properties(
+        edge_properties = self._generate_edge_properties(
             source_vertex, stubbed_other, extracted_data, inbound, True
         )
         source_vertex_internal_id = source_vertex.internal_id
@@ -151,7 +192,7 @@ class EdgeRegulator(ObjectRegulator):
             return PotentialEdge(edge_label, None, edge_properties, stub_properties, source_vertex_internal_id)
         return PotentialEdge(edge_label, None, edge_properties, source_vertex_internal_id, stub_properties)
 
-    def create_edge_internal_id(self, inbound, **kwargs):
+    def _create_edge_internal_id(self, inbound, **kwargs):
         key_values = []
         for key_field in self._schema_entry.internal_id_key:
             if 'to.' in key_field:
@@ -186,12 +227,13 @@ class EdgeRegulator(ObjectRegulator):
             return kwargs['ruled_target'].internal_id
         return kwargs['source_vertex'].internal_id
 
-    def generate_edge_properties(self, source_vertex, ruled_target, extracted_data, inbound, for_stub=False):
+    def _generate_edge_properties(self, source_vertex, ruled_target, extracted_data, inbound, for_stub=False):
         edge_properties = {}
         for edge_property_name, edge_property in self._entry_properties_schema.items():
             try:
                 edge_value = self._generate_edge_property(
-                    edge_property_name, edge_property, source_vertex, ruled_target, extracted_data, inbound)
+                    edge_property_name, edge_property, source_vertex=source_vertex,
+                    other_vertex=ruled_target, extracted_data=extracted_data, inbound=inbound)
             except KeyError:
                 if for_stub:
                     edge_value = None
@@ -201,35 +243,43 @@ class EdgeRegulator(ObjectRegulator):
             edge_properties[edge_property_name] = edge_value
         return edge_properties
 
-    def _generate_edge_property(self, edge_property_name, property_schema, source_vertex, other_vertex, extracted_data,
-                                inbound):
+    def _generate_edge_property(self, edge_property_name, property_schema, **kwargs):
+        inbound = kwargs['inbound']
+        source_vertex = kwargs['source_vertex']
+        other_vertex = kwargs['other_vertex']
         property_source = property_schema.property_source
         source_type = property_source['source_type']
+        extracted_data = kwargs['extracted_data']
         if source_type == 'source_vertex':
-            return self.generate_vertex_held_property(property_source, source_vertex, other_vertex, inbound)
+            return self._generate_vertex_held_property(property_source, source_vertex, other_vertex, inbound)
         if source_type == 'target_vertex':
-            return self.generate_vertex_held_property(property_source, other_vertex, source_vertex, inbound)
+            return self._generate_vertex_held_property(property_source, other_vertex, source_vertex, inbound)
         if source_type == 'extraction':
-            return self.derive_extracted_property(
+            return self._derive_extracted_property(
                 edge_property_name, property_source['extraction_name'], extracted_data)
         if source_type == 'function':
-            return self.execute_property_function(
+            return self._execute_property_function(
                 property_source['function_name'], source_vertex, other_vertex, extracted_data, self._schema_entry,
                 inbound
             )
         raise NotImplementedError('edge property source: %s is not registered with the system' % source_type)
 
     @staticmethod
-    def generate_vertex_held_property(property_source, holding_vertex, other_vertex, inbound):
+    def _generate_vertex_held_property(property_source, holding_vertex, other_vertex, inbound):
         vertex_property_name = property_source['vertex_property_name']
         if inbound:
             return other_vertex[vertex_property_name]
         return holding_vertex[vertex_property_name]
 
     @staticmethod
-    def derive_extracted_property(property_name, extraction_name, extracted_data):
+    def _derive_extracted_property(property_name, extraction_name, extracted_data):
         potential_properties = set()
-        target_extraction = extracted_data[extraction_name]
+        try:
+            target_extraction = extracted_data[extraction_name]
+        except KeyError:
+            raise RuntimeError(f'during the extraction derivation of an edge property, a KeyError was encountered, '
+                               f'extraction data source named: {extraction_name} was not found in the extracted data: '
+                               f'{extracted_data}')
         for extraction in target_extraction:
             potential_properties.add(extraction[property_name])
         if len(potential_properties) > 1:
@@ -243,7 +293,7 @@ class EdgeRegulator(ObjectRegulator):
             return _
 
     @staticmethod
-    def execute_property_function(function_name, source_vertex, ruled_target, extracted_data, schema_entry, inbound):
+    def _execute_property_function(function_name, source_vertex, ruled_target, extracted_data, schema_entry, inbound):
         from toll_booth.alg_obj.forge import specifiers
         try:
             specifier_function = getattr(specifiers, function_name)
@@ -255,10 +305,21 @@ class EdgeRegulator(ObjectRegulator):
 
 
 class GraphObject(AlgObject):
-    def __init__(self, object_type, object_properties):
+    def __init__(self, object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field):
         self._object_type = object_type
         self._object_properties = object_properties
+        self._internal_id = internal_id
+        self._identifier_stem = identifier_stem
+        self._id_value = id_value
+        self._id_value_field = id_value_field
         self._graph_as_stub = False
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['object_type'], json_dict['object_properties'], json_dict['internal_id'],
+            json_dict['identifier_stem'], json_dict['id_value'], json_dict['id_value_field']
+        )
 
     @property
     def object_type(self):
@@ -268,6 +329,22 @@ class GraphObject(AlgObject):
     def object_properties(self):
         return self._object_properties
 
+    @property
+    def internal_id(self):
+        return self._internal_id
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
+    @property
+    def id_value(self):
+        return self._id_value
+
+    @property
+    def id_value_field(self):
+        return self._id_value_field
+
     def __getitem__(self, item):
         try:
             return getattr(self, item)
@@ -276,57 +353,58 @@ class GraphObject(AlgObject):
 
 
 class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, is_stub):
-        super().__init__(object_type, object_properties)
-        self._internal_id = internal_id
-        self._is_stub = is_stub
-
-    @classmethod
-    def for_known_vertex(cls, object_data, schema_entry):
-        regulator = ObjectRegulator(schema_entry)
-        object_type = schema_entry.vertex_name
-        internal_id = regulator.create_internal_id(object_data)
-        object_properties = regulator.standardize_object_properties(object_data)
-        return cls(object_type, internal_id, object_properties, False)
+    def __init__(self, object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field):
+        super().__init__(object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field)
+        self._if_missing = if_missing
 
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['object_type'], json_dict['internal_id'], json_dict['object_properties'], json_dict['is_stub'])
-
-    @property
-    def internal_id(self):
-        return self._internal_id
+            json_dict['object_type'], json_dict['internal_id'],
+            json_dict['object_properties'], json_dict['if_missing'],
+            json_dict['identifier_stem'], int(json_dict['id_value']),
+            json_dict['id_value_field']
+        )
 
     @property
     def is_identifiable(self):
         if not isinstance(self._internal_id, str):
             return False
+        if not isinstance(self._identifier_stem, str):
+            return False
+        if self._id_value == self._id_value_field:
+            return False
         return True
 
     @property
-    def is_stub(self):
-        return self._is_stub
+    def is_properties_complete(self):
+        for object_property in self._object_properties:
+            if hasattr(object_property, 'is_missing'):
+                return False
+        return True
+
+    @property
+    def if_missing(self):
+        return self._if_missing
 
     @property
     def graphed_object_type(self):
-        if self.is_stub:
+        if not self.is_identifiable and self._if_missing == 'stub':
             return f'{self.object_type}::stub'
         return self.object_type
 
 
 class PotentialEdge(GraphObject):
-    def __init__(self, edge_label, internal_id, edge_properties, from_object, to_object):
-        super().__init__(edge_label, edge_properties)
-        self._internal_id = internal_id
+    def __init__(self, object_type, internal_id, object_properties, from_object, to_object):
+        super().__init__(object_type, object_properties, internal_id, object_type, internal_id, 'internal_id')
         self._from_object = from_object
         self._to_object = to_object
 
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['edge_label'], json_dict['internal_id'],
-            json_dict['edge_properties'], json_dict['from_object'], json_dict['to_object']
+            json_dict['object_type'], json_dict['internal_id'],
+            json_dict['object_properties'], json_dict['from_object'], json_dict['to_object']
         )
 
     @property
@@ -342,26 +420,12 @@ class PotentialEdge(GraphObject):
         return self._object_properties
 
     @property
-    def internal_id(self):
-        return self._internal_id
-
-    @property
     def from_object(self):
         return self._from_object
 
     @property
     def to_object(self):
         return self._to_object
-
-    @property
-    def to_json(self):
-        return {
-            'edge_label': self.edge_label,
-            'internal_id': self._internal_id,
-            'edge_properties': self.edge_properties,
-            'from_object': self._from_object,
-            'to_object': self._to_object
-        }
 
 
 class SensitiveData:
@@ -419,3 +483,9 @@ class SensitiveData:
             )
         except ClientError as e:
             print(e)
+
+
+class MissingObjectProperty:
+    @classmethod
+    def is_missing(cls):
+        return True

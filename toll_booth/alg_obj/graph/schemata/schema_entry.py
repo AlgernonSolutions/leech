@@ -60,11 +60,12 @@ class SchemaEntry(AlgObject, ABC):
 
 
 class SchemaVertexEntry(SchemaEntry):
-    def __init__(self, vertex_name, vertex_properties, internal_id_key, indexes, rules, extract):
+    def __init__(self, vertex_name, vertex_properties, internal_id_key, identifier_stem, indexes, rules, extract):
         super().__init__(vertex_name, internal_id_key, vertex_properties, indexes, rules)
         self._vertex_properties = vertex_properties
         self._vertex_name = vertex_name
         self._extract = extract
+        self._identifier_stem = identifier_stem
 
     @classmethod
     def parse(cls, vertex_dict):
@@ -79,6 +80,7 @@ class SchemaVertexEntry(SchemaEntry):
         except TypeError:
             vertex_properties = vertex_property_list
         internal_id_key = vertex_dict['internal_id_key']
+        identifier_stem = vertex_dict['identifier_stem']
         try:
             internal_id_key = SchemaInternalIdKey(internal_id_key)
         except TypeError:
@@ -102,7 +104,8 @@ class SchemaVertexEntry(SchemaEntry):
                 extraction[extraction_instructions.extraction_source] = extraction_instructions
         except TypeError:
             extraction = vertex_dict['extract']
-        return cls(vertex_dict['vertex_name'], vertex_properties, internal_id_key, indexes, rules, extraction)
+        return cls(
+            vertex_dict['vertex_name'], vertex_properties, internal_id_key, identifier_stem, indexes, rules, extraction)
 
     @property
     def vertex_name(self):
@@ -111,6 +114,17 @@ class SchemaVertexEntry(SchemaEntry):
     @property
     def vertex_properties(self):
         return self.entry_properties
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
+    @property
+    def id_value_field(self):
+        for vertex_property in self.vertex_properties.values():
+            if vertex_property.is_id_value:
+                return vertex_property.property_name
+        raise NotImplementedError('could not identify id_value field in the schema for vertex: %s' % self._vertex_name)
 
     @property
     def extraction(self):
@@ -132,6 +146,7 @@ class SchemaEdgeEntry(SchemaEntry):
         edge_properties = {}
         indexes = {}
         internal_id_key = SchemaInternalIdKey(edge_dict['internal_id_key'])
+
         edge_property_list = edge_dict['edge_properties']
         try:
             for entry in edge_property_list:
@@ -172,6 +187,20 @@ class SchemaEdgeEntry(SchemaEntry):
 class SchemaInternalIdKey(AlgObject):
     def __init__(self, field_names):
         if isinstance(field_names, SchemaInternalIdKey):
+            raise TypeError
+        self._field_names = field_names
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['field_names'])
+
+    def __iter__(self):
+        return iter(self._field_names)
+
+
+class SchemaIdentifierStem(AlgObject):
+    def __init__(self, field_names):
+        if isinstance(field_names, SchemaIdentifierStem):
             raise TypeError
         self._field_names = field_names
 

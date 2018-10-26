@@ -1,5 +1,4 @@
 from toll_booth.alg_obj.graph.ogm.regulators import ObjectRegulator
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 
 
 class RuleArbiter:
@@ -11,6 +10,10 @@ class RuleArbiter:
     @property
     def source_vertex(self):
         return self._source_vertex
+
+    @property
+    def schema_entry(self):
+        return self._schema_entry
 
     def process_rules(self, extracted_data):
         vertexes = []
@@ -42,6 +45,14 @@ class ArbiterExecutor:
     def is_stub(self):
         return self._rule_entry.is_stub
 
+    @property
+    def if_missing(self):
+        return self._rule_entry.if_absent
+
+    @property
+    def id_value_field(self):
+        return self._rule_arbiter.schema_entry.id_field_value
+
     def generate_potential_vertexes(self, extracted_data):
         target_specifiers = self._rule_entry.target_specifiers
         target_constants = self.derive_target_constants(self._rule_entry.target_constants)
@@ -56,9 +67,7 @@ class ArbiterExecutor:
             }
             generated_specifiers = specifier_executor.generate_specifiers(**specifier_kwargs)
             for generated_specifier in generated_specifiers:
-                internal_id = self._regulator.create_internal_id(generated_specifier)
-                object_properties = self._regulator.standardize_object_properties(generated_specifier)
-                specified_object = PotentialVertex(self._target_type, internal_id, object_properties, self.is_stub)
+                specified_object = self._regulator.create_potential_vertex(generated_specifier)
                 specifiers.append((specified_object, self._rule_entry))
         return specifiers
 

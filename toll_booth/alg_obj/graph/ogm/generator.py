@@ -66,35 +66,13 @@ class CommandGenerator:
             prepared_properties[object_property_name] = object_property
         return prepared_properties
 
-    def create_index_graph_object_commands(self, graph_object):
-        from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexKey
-        index_commands = []
-        internal_id = graph_object.internal_id
-        for index_name, index_schema_entry in self._indexes.items():
-            index_key = IndexKey.from_object_properties(graph_object, index_schema_entry)
-            index_type = index_schema_entry.index_type
-            if index_type == 'unique':
-                index_commands.append(('SETNX', index_key, internal_id))
-                continue
-            if index_type == 'sorted_set':
-                score_field_name = index_schema_entry.index_properties['score']
-                if score_field_name == '0':
-                    index_commands.append(('ZADD', index_key, 0, internal_id))
-                    continue
-                score_field_value = graph_object[score_field_name]
-                index_commands.append(('ZADD', index_key, 'NX', score_field_value, internal_id))
-                continue
-            # TODO create specific error
-            raise NotImplementedError('index type: %s not recognized as a valid index' % index_type)
-        return index_commands
-
 
 class VertexCommandGenerator(CommandGenerator):
     def __init__(self, schema_entry):
         super().__init__(schema_entry)
         self._indexes = schema_entry.indexes
 
-    def create_vertex_command(self, potential_vertex):
+    def create_command(self, potential_vertex):
         return f"{self._derive_vertex_check(potential_vertex)}.fold().coalesce(unfold(), " \
                f"{self._derive_add_vertex(potential_vertex)})"
 
@@ -114,7 +92,7 @@ class EdgeCommandGenerator(CommandGenerator):
         super().__init__(schema_entry)
         self._rules = schema_entry.rules
 
-    def create_edge_command(self, potential_edge):
+    def create_command(self, potential_edge):
         import re
         command = f"{self._derive_edge_check(potential_edge)}.fold().coalesce(unfold(), " \
                   f"{self._add_edge_start(potential_edge)}." \

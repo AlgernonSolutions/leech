@@ -57,6 +57,21 @@ def aphid(event, context):
     return results
 
 
+def exploded(event, context):
+    logging.info('received a call to process a dynamo entry, event: %s' % event)
+
+    records = event['Records']
+    new_event = {
+        'task_name': 'explode',
+        'task_args': {
+            'records': records
+        }
+    }
+    work_results = work(new_event, context)
+    logging.info('completed a call to process a dynamo entry, results: %s' % work_results)
+    return work_results
+
+
 def _map_aphid(event):
     resource = event['resource']
     method = event['httpMethod']

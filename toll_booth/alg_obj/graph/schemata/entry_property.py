@@ -4,22 +4,24 @@ from toll_booth.alg_obj.graph.troubles import InvalidSchemaPropertyType
 
 class SchemaPropertyEntry(AlgObject):
     _accepted_types = [
-        'String', 'Integer', 'Float', 'DateTime'
+        'String', 'Number', 'DateTime'
     ]
 
-    def __init__(self, property_name, property_data_type, sensitive=False):
+    def __init__(self, property_name, property_data_type, sensitive=False, is_id_value=False):
         if property_data_type not in self._accepted_types:
             raise InvalidSchemaPropertyType(property_name, property_data_type, self._accepted_types)
         self._property_name = property_name
         self._property_data_type = property_data_type
         self._sensitive = sensitive
+        self._is_id_value = is_id_value
 
     @classmethod
     def parse(cls, property_dict):
         return cls(
             property_dict['property_name'],
             property_dict['property_data_type'],
-            property_dict.get('sensitive', False)
+            property_dict.get('sensitive', False),
+            property_dict.get('is_id_value', False)
         )
 
     @classmethod
@@ -37,6 +39,10 @@ class SchemaPropertyEntry(AlgObject):
     @property
     def property_data_type(self):
         return self._property_data_type
+
+    @property
+    def is_id_value(self):
+        return self._is_id_value
 
 
 class EdgePropertyEntry(SchemaPropertyEntry):

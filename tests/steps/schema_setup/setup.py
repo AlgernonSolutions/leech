@@ -29,3 +29,7 @@ def get_test():
         master_schema = json.load(master)
         validate(test_schema, master_schema)
         return test_schema
+
+
+if __name__ == '__main__':
+    refresh()

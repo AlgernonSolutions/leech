@@ -1,35 +1,26 @@
 from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexDriver
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
-from toll_booth.alg_obj.aws.trident.trident_obj import TridentVertex, TridentEdgeConnection
+from toll_booth.alg_obj.aws.trident.trident_obj import TridentEdgeConnection
+from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
 class Ogm:
     def __init__(self, **kwargs):
         self._trident_driver = kwargs.get('trident_driver', TridentDriver())
-        self._index_driver = kwargs.get('index_driver', IndexDriver())
 
     def execute(self, query):
         results = self._trident_driver.execute(query, False)
         return results
 
-    def index_execute(self, command):
-        results = self._index_driver.client.execute_command(command)
-        return results
+    def graph_object(self, potential_object):
+        command_generator = CommandGenerator.get_for_obj_type(potential_object.object_type)
+        graph_command = command_generator.create_command(potential_object)
+        self._graph_object(graph_command)
 
-    def add_data(self, index_commands, graph_commands):
-        self._set_indexes(index_commands)
-        self._graph_objects(graph_commands)
-
-    def _set_indexes(self, index_commands):
-        with self._index_driver as pipeline:
-            for index_command in index_commands:
-                pipeline.execute_command(*index_command)
-
-    def _graph_objects(self, graph_commands):
+    def _graph_object(self, graph_command):
         with self._trident_driver as trident:
-            for graph_command in graph_commands:
-                trident.execute(graph_command)
+            trident.execute(graph_command)
 
 
 class OgmReader:

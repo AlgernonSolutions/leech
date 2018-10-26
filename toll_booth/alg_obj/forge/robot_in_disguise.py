@@ -1,7 +1,10 @@
+from botocore.exceptions import ClientError
+
+from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.graph.ogm.arbiter import RuleArbiter
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
+from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
 
 
 class DisguisedRobot:
@@ -11,11 +14,13 @@ class DisguisedRobot:
         self._extracted_data = metal_order.extracted_data
         self._schema_entry = metal_order.schema_entry
         self._source_vertex_data = metal_order.extracted_data['source']
+        self._dynamo_driver = DynamoDriver()
 
     def transform(self):
-        source_vertex = PotentialVertex.for_known_vertex(self._source_vertex_data, self._schema_entry)
+        regulator = VertexRegulator(self._schema_entry)
+        source_vertex = regulator.create_potential_vertex(self._source_vertex_data)
         extracted_data = self._extracted_data
-        assimilate_orders = [AssimilateObjectOrder.for_source_vertex(source_vertex, extracted_data)]
+        assimilate_orders = []
         arbiter = RuleArbiter(source_vertex, self._schema_entry)
         potentials = arbiter.process_rules(self._extracted_data)
         for potential in potentials:
@@ -25,3 +30,11 @@ class DisguisedRobot:
             assimilate_orders.append(assimilate_order)
         self._assimilation_queue.add_orders(assimilate_orders)
         self._assimilation_queue.push_orders()
+        self._write_source_vertex(source_vertex)
+
+    def _write_source_vertex(self, vertex):
+        try:
+            self._dynamo_driver.write_vertex(vertex, 'transformation')
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e
