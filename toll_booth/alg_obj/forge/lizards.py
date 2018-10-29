@@ -5,20 +5,20 @@ from aws_xray_sdk.core import xray_recorder
 from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
-from toll_booth.alg_obj.forge.extractors.finder import ExtractorFinder
+from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 
 
 class MonitorLizard:
     @xray_recorder.capture('lizard_init')
-    def __init__(self, *, identifier_stem, extractor_name, **kwargs):
+    def __init__(self, *, identifier_stem, **kwargs):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._identifier_stem = identifier_stem
         self._object_type = identifier_stem.object_type
         self._schema_entry = SchemaVertexEntry.get(self._object_type)
         self._dynamo_driver = DynamoDriver()
-        self._extractor_name = extractor_name
+        self._extractor_names = self._dynamo_driver.get_extractor_function_names(identifier_stem)
         self._extraction_profile = identifier_stem.for_extractor
         self._extraction_queue = kwargs.get('extraction_queue', ForgeQueue.get_for_extraction_queue(**kwargs))
         self._sample_size = kwargs.get('sample_size', 1000)
@@ -30,7 +30,8 @@ class MonitorLizard:
         extraction_orders = []
         if max_remote_id > max_local_id:
             id_range = range(max_local_id+1, max_remote_id+1)
-            already_working, not_working = self._dynamo_driver.mark_ids_as_working(self._identifier_stem, id_range)
+            already_working, not_working = self._dynamo_driver.mark_ids_as_working(
+                self._identifier_stem, id_range, self._object_type)
             for id_value in not_working:
                 extraction_orders.append(self._generate_extraction_order(id_value))
             self._send_extraction_orders(extraction_orders)
@@ -52,15 +53,14 @@ class MonitorLizard:
 
     @xray_recorder.capture('lizard_generate_extraction_order')
     def _generate_extraction_order(self, missing_id_value):
-        extractor_name = self._extractor_name
+        extractor_name = self._extractor_names['extraction']
         extraction_profile = self._extraction_profile
         return ExtractObjectOrder(
             self._identifier_stem, missing_id_value, extractor_name, extraction_profile, self._schema_entry)
 
     @xray_recorder.capture('lizard_get_remote_max')
     def _get_current_remote_max_id(self):
-        extractor = ExtractorFinder.find_by_name(self._extractor_name)
-        max_id_value = extractor.get_current_remote_max_id(**self._extraction_profile)
+        max_id_value = StageManager.run_index_query(self._extractor_names['index_query'], self._extraction_profile)
         return max_id_value
 
     @xray_recorder.capture('lizard_get_local_max')

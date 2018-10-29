@@ -10,8 +10,7 @@ from tests.steps.actor_setup.extractor import MockExtractor
 from tests.steps.actor_setup.loader import MockLoader
 from tests.steps.actor_setup.monitor import MockMonitor
 from tests.steps.actor_setup.transformer import MockTransformer
-from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder, AssimilateObjectOrder, \
-    LoadObjectOrder, ExtractObjectOrder
+from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder, AssimilateObjectOrder, ExtractObjectOrder
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 from toll_booth.alg_obj.serializers import AlgDecoder
 

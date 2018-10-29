@@ -43,14 +43,14 @@ class DynamoDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
-    def get_extractor_name(self, identifier_stem):
+    def get_extractor_function_names(self, identifier_stem):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         params = DynamoParameters(identifier_stem.for_dynamo, identifier_stem)
         results = self._table.get_item(
             Key=params.as_key
         )
-        extractor_name = results['Item']['extractor_name']
-        return extractor_name
+        extractor_function_names = results['Item']['extractor_function_names']
+        return extractor_function_names
 
     def get_object(self, identifier_stem, id_value):
         if '#edge#' in identifier_stem:

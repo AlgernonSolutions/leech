@@ -58,8 +58,8 @@ class Worker:
 
     @classmethod
     def _find_function(cls, task_name):
-        from toll_booth.alg_tasks import remote_tasks, metl_tasks, find_tasks
-        task_modules = [remote_tasks, metl_tasks, find_tasks]
+        from toll_booth.alg_tasks import remote_tasks, metl_tasks, find_tasks, extractors
+        task_modules = [remote_tasks, metl_tasks, find_tasks, extractors]
         for task_unit in task_modules:
             try:
                 task_module = getattr(task_unit, task_name)

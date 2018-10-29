@@ -34,11 +34,11 @@ class MetalOrder(AlgObject, ABC):
 
 
 class ExtractObjectOrder(MetalOrder):
-    def __init__(self, identifier_stem, id_value, extraction_source, extraction_properties, schema_entry):
+    def __init__(self, identifier_stem, id_value, extraction_function_name, extraction_properties, schema_entry):
         super().__init__('extract', identifier_stem)
         self._id_value = id_value
         self._schema_entry = schema_entry
-        self._extraction_source = extraction_source
+        self._extraction_function_name = extraction_function_name
         extraction_properties['id_value'] = id_value
         self._extraction_properties = extraction_properties
 
@@ -55,7 +55,7 @@ class ExtractObjectOrder(MetalOrder):
             'identifier_stem': self._identifier_stem,
             'id_value': self._id_value,
             'schema_entry': self._schema_entry,
-            'extraction_source': self._extraction_source,
+            'extraction_function_name': self._extraction_function_name,
             'extraction_properties': self._extraction_properties,
             'action_name': self._action_name
         }
@@ -65,8 +65,8 @@ class ExtractObjectOrder(MetalOrder):
         return self._extraction_properties
 
     @property
-    def extraction_source(self):
-        return self._extraction_source
+    def extraction_function_name(self):
+        return self._extraction_function_name
 
     @property
     def id_value(self):
