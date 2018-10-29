@@ -5,11 +5,16 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
+from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge, IdentifierStem
 
 
+class EmptyIndexException(Exception):
+    pass
+
+
 class DynamoParameters:
-    def __init__(self, partition_key_value,  sort_key_value, **kwargs):
+    def __init__(self, partition_key_value, sort_key_value, **kwargs):
         partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'identifier_stem'))
         sort_key_name = kwargs.get('sort_key_name', os.getenv('SORT_KEY', 'sid_value'))
         self._partition_key_name = partition_key_name
@@ -71,10 +76,9 @@ class DynamoDriver:
         }
         results = self._table.query(**query_args)
         try:
-            max_id = results['Items'][0]['id_value']
+            return results['Items'][0]['id_value']
         except IndexError:
-            max_id = 0
-        return max_id
+            raise EmptyIndexException
 
     def find_potential_vertexes(self, vertex_properties):
         potential_vertexes, token = self._scan_vertexes(vertex_properties)
@@ -209,6 +213,9 @@ class DynamoDriver:
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         already_working = []
         not_working = []
+        aggregated_reults = StageManager.bulk_mark_ids_as_working(id_values, identifier_stem, object_type, stage_name)
+        for result in aggregated_reults:
+            print(result)
         for id_value in id_values:
             try:
                 self.put_vertex_seed(identifier_stem, id_value, object_type, stage_name)

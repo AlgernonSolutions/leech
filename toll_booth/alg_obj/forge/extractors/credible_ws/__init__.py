@@ -20,12 +20,11 @@ class CredibleWebServiceExtractor(AbstractExtractor):
         return extracted_data
 
     @classmethod
-    def get_current_remote_max_id(cls, **kwargs):
+    def get_current_remote_max_min_id(cls, **kwargs):
         id_type = kwargs['id_type']
         object_type = kwargs['object_type']
         if id_type:
             object_type = id_type
         credible_driver = CredibleDriver(kwargs['id_source'])
         remote_max_min = credible_driver.get_remote_max_min(object_type, kwargs['id_name'])
-        max_id_value = remote_max_min.max_id
-        return max_id_value
+        return {'max': remote_max_min.max_id, 'min': remote_max_min.min_id}
