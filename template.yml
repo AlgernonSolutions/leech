@@ -15,13 +15,6 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.work
       Runtime: python3.6
       FunctionName: leech-work
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-06b3a26ff04155688
-        SubnetIds:
-          - subnet-872a24cc
-          - subnet-29497e4d
-          - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -90,6 +83,13 @@ Resources:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
       FunctionName: leech-load
+      VpcConfig:
+        SecurityGroupIds:
+        - sg-06b3a26ff04155688
+        SubnetIds:
+        - subnet-872a24cc
+        - subnet-29497e4d
+        - subnet-acef95f1
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
@@ -134,12 +134,22 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
-  process:
+  explode:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.aphid
+      Handler: toll_booth/alg_tasks/toll_booth.explode
       Runtime: python3.6
-      FunctionName: leech-process
+      FunctionName: leech-explode
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  credible_ws_extractor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
+      Runtime: python3.6
+      FunctionName: leech-extract-crediblews
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448

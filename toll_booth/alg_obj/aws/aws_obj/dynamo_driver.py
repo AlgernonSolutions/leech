@@ -5,7 +5,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge, IdentifierStem
 
 
 class DynamoParameters:
@@ -43,6 +43,15 @@ class DynamoDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
+    def get_extractor_function_names(self, identifier_stem):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+        params = DynamoParameters(identifier_stem.for_dynamo, identifier_stem)
+        results = self._table.get_item(
+            Key=params.as_key
+        )
+        extractor_function_names = results['Item']['extractor_function_names']
+        return extractor_function_names
+
     def get_object(self, identifier_stem, id_value):
         if '#edge#' in identifier_stem:
             return self.get_edge(identifier_stem, id_value)
@@ -56,7 +65,7 @@ class DynamoDriver:
         query_args = {
             'Limit': 1,
             'ScanIndexForward': False,
-            'KeyConditionExpression': Key('identifier_stem').eq(identifier_stem),
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
             'TableName': self._table_name,
             'IndexName': index_name
         }
@@ -96,18 +105,18 @@ class DynamoDriver:
         results = self._table.scan(**scan_kwargs)
         return results['Items'], results.get('LastEvaluatedKey', None)
 
-    def put_vertex_seed(self, object_type, identifier_stem, id_value, stage_name):
+    def put_vertex_seed(self, identifier_stem, id_value, object_type, stage_name):
         now = self._get_decimal_timestamp()
         params = DynamoParameters(identifier_stem, id_value)
         seed = params.as_key
         seed.update({
             'id_value': id_value,
-            'object_type': object_type,
             'is_edge': False,
             'completed': False,
             'disposition': 'working',
             'last_stage_seen': stage_name,
             f'{stage_name}_clear_time': now,
+            'object_type': object_type,
             'last_seen_time': now
         })
         return self._table.put_item(
@@ -183,8 +192,6 @@ class DynamoDriver:
             f'{stage_name}_clear_time': now,
             'last_seen_time': now
         })
-        for property_name, object_property in edge.object_properties.items():
-            edge_entry[property_name] = object_property
         try:
             return self._table.put_item(
                 Item=edge_entry,
@@ -194,16 +201,17 @@ class DynamoDriver:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
 
-    def get_edge(self, edge_label, edge_internal_id):
-        results = self._table.get_item(Key=DynamoParameters(edge_label, edge_internal_id).as_key)
+    def get_edge(self, identifier_stem, edge_internal_id):
+        results = self._table.get_item(Key=DynamoParameters(identifier_stem, edge_internal_id).as_key)
         return PotentialEdge.from_json(results['Item'])
 
     def mark_ids_as_working(self, identifier_stem, id_values, object_type, stage_name='monitoring'):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         already_working = []
         not_working = []
         for id_value in id_values:
             try:
-                self.put_vertex_seed(object_type, identifier_stem, id_value, stage_name)
+                self.put_vertex_seed(identifier_stem, id_value, object_type, stage_name)
                 not_working.append(id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':

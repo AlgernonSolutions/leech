@@ -1,3 +1,5 @@
+import json
+import re
 from decimal import Decimal
 
 from toll_booth.alg_obj import AlgObject
@@ -79,14 +81,14 @@ class ObjectRegulator:
 
     def _create_identifier_stem(self, potential_object):
         try:
-            stem_values = []
+            stem_values = ['vertex']
             identifier_stem_key = self._schema_entry.identifier_stem
             for field_name in identifier_stem_key:
                 key_value = potential_object[field_name]
                 if isinstance(key_value, MissingObjectProperty):
                     return self._schema_entry.identifier_stem
                 stem_values.append(str(key_value))
-            stem_value = '.'.join(stem_values)
+            stem_value = f'#{"#".join(stem_values)}#'
             return stem_value
         except KeyError:
             return self._schema_entry.identifier_stem
@@ -345,6 +347,10 @@ class GraphObject(AlgObject):
     def id_value_field(self):
         return self._id_value_field
 
+    @property
+    def is_edge(self):
+        return '#edge#' in self._identifier_stem
+
     def __getitem__(self, item):
         try:
             return getattr(self, item)
@@ -396,7 +402,10 @@ class PotentialVertex(GraphObject):
 
 class PotentialEdge(GraphObject):
     def __init__(self, object_type, internal_id, object_properties, from_object, to_object):
-        super().__init__(object_type, object_properties, internal_id, object_type, internal_id, 'internal_id')
+        identifier_stem = IdentifierStem.from_raw(f'#edge#{object_type}#')
+        id_value = internal_id
+        id_value_field = 'internal_id'
+        super().__init__(object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field)
         self._from_object = from_object
         self._to_object = to_object
 
@@ -489,3 +498,57 @@ class MissingObjectProperty:
     @classmethod
     def is_missing(cls):
         return True
+
+
+class IdentifierStem:
+    def __init__(self, graph_type, object_type, paired_identifiers=None):
+        if not paired_identifiers:
+            paired_identifiers = {}
+        self._graph_type = graph_type
+        self._object_type = object_type
+        self._paired_identifiers = paired_identifiers
+
+    @classmethod
+    def from_raw(cls, identifier_stem):
+        if isinstance(identifier_stem, IdentifierStem):
+            return identifier_stem
+        pieces = identifier_stem.split('#')
+        graph_type = pieces[1]
+        object_type = pieces[2]
+        paired_identifiers = {}
+        pattern = re.compile('({(.*?)})')
+        potential_pairs = pattern.search(identifier_stem)
+        if potential_pairs:
+            paired_identifiers = json.loads(potential_pairs.group(0))
+        return cls(graph_type, object_type, paired_identifiers)
+
+    @property
+    def object_type(self):
+        return self._object_type
+
+    @property
+    def paired_identifiers(self):
+        return self._paired_identifiers
+
+    @property
+    def is_edge(self):
+        return self._graph_type == 'edge'
+
+    @property
+    def for_dynamo(self):
+        return f'#SOURCE{str(self)}'
+
+    @property
+    def for_extractor(self):
+        extractor_data = self._paired_identifiers.copy()
+        extractor_data.update({
+            'graph_type': self._graph_type,
+            'object_type': self._object_type
+        })
+        return extractor_data
+
+    def _string_paired_identifiers(self):
+        return json.dumps(self._paired_identifiers)
+
+    def __str__(self):
+        return f'''#{self._graph_type}#{self._object_type}#{self._string_paired_identifiers()}#'''
