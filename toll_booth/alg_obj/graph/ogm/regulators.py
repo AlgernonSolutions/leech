@@ -48,6 +48,7 @@ class ObjectRegulator:
                     )
                 property_value = SecretWhisperer.put_secret(entry_property, internal_id, property_data_type)
             returned_data[property_name] = property_value
+        return returned_data
 
     def _standardize_object_properties(self, graph_object):
         returned_properties = {}
@@ -351,7 +352,7 @@ class GraphObject(AlgObject):
 
     @property
     def is_edge(self):
-        return '#edge#' in self._identifier_stem
+        return '#edge#' in str(self._identifier_stem)
 
     def __getitem__(self, item):
         try:
@@ -378,7 +379,7 @@ class PotentialVertex(GraphObject):
     def is_identifiable(self):
         if not isinstance(self._internal_id, str):
             return False
-        if not isinstance(self._identifier_stem, str):
+        if not isinstance(self._identifier_stem, IdentifierStem):
             return False
         if self._id_value == self._id_value_field:
             return False
