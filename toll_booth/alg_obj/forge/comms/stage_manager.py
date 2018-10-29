@@ -1,4 +1,5 @@
 import json
+import os
 
 import boto3
 
@@ -52,3 +53,32 @@ class StageManager:
             'step_args': step_args
         }
         return cls._run(function_name, step_args, payload)
+
+    @classmethod
+    def bulk_mark_ids_as_working(cls, id_values, identifier_stem, object_type, stage_name):
+        from toll_booth.alg_obj.aws.aws_obj.matryoshka import Matryoshka, MatryoshkaCluster
+        batches = []
+        entries = []
+        counter = 0
+        receipt = {}
+        for id_value in id_values:
+            if len(entries) >= 20:
+                batches.append({'id_values': entries})
+                entries = []
+            counter += 1
+            receipt[str(counter)] = id_value
+            entries.append(id_value)
+        if entries:
+            batches.append({'id_values': entries})
+        send_task_name = 'bulk_dynamo_write'
+        lambda_arn = os.environ['WORK_FUNCTION']
+        task_constants = {
+            'identifier_stem': str(identifier_stem),
+            'object_type': object_type,
+            'stage_name': stage_name
+        }
+        m_cluster = MatryoshkaCluster.calculate_for_concurrency(
+            10, send_task_name, lambda_arn, task_args=batches, task_constants=task_constants, max_m_concurrency=25)
+        m = Matryoshka.for_root(m_cluster)
+        agg_results = m.aggregate_results
+        return agg_results

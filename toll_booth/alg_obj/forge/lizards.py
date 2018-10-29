@@ -2,7 +2,7 @@ import logging
 
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver, EmptyIndexException
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
@@ -25,11 +25,17 @@ class MonitorLizard:
 
     @xray_recorder.capture('lizard_monitor')
     def monitor(self):
-        max_local_id = self._get_current_local_max_id()
-        max_remote_id = self._get_current_remote_max_id()
+        remote_ids = self._get_current_remote_max_min_id()
+        try:
+            max_local_id = self._get_current_local_max_id()
+            max_remote_id = remote_ids['max']
+        except EmptyIndexException:
+            max_local_id = remote_ids['min']
+            max_remote_id = remote_ids['max']
         extraction_orders = []
         if max_remote_id > max_local_id:
             id_range = range(max_local_id+1, max_remote_id+1)
+            id_range = id_range[:self._sample_size]
             already_working, not_working = self._dynamo_driver.mark_ids_as_working(
                 self._identifier_stem, id_range, self._object_type)
             for id_value in not_working:
@@ -59,9 +65,9 @@ class MonitorLizard:
             self._identifier_stem, missing_id_value, extractor_name, extraction_profile, self._schema_entry)
 
     @xray_recorder.capture('lizard_get_remote_max')
-    def _get_current_remote_max_id(self):
-        max_id_value = StageManager.run_index_query(self._extractor_names['index_query'], self._extraction_profile)
-        return max_id_value
+    def _get_current_remote_max_min_id(self):
+        id_values = StageManager.run_index_query(self._extractor_names['index_query'], self._extraction_profile)
+        return id_values
 
     @xray_recorder.capture('lizard_get_local_max')
     def _get_current_local_max_id(self):

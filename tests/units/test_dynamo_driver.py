@@ -180,6 +180,12 @@ class TestDynamoDriver:
         }
         delete_vertex(table_name, {partition_key: 'stub', sort_key: '0'})
 
+    def test_bulk_mark_ids_as_working(self, delete_vertex):
+        from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
+
+        results = StageManager.bulk_mark_ids_as_working(id_range, vertex_identifier_stem, vertex_type, 'testing')
+        print(results)
+
     def test_mark_ids_as_working(self, delete_vertex):
         dynamo_driver = DynamoDriver(table_name)
         working_ids, not_working_ids = dynamo_driver.mark_ids_as_working(vertex_identifier_stem, id_range, vertex_type)
@@ -275,6 +281,3 @@ class TestEdgeRegulator:
         assert isinstance(potential_edge, PotentialEdge)
         assert potential_edge.from_object == vertex_internal_id
         assert potential_edge.to_object == other_internal_id
-
-
-
