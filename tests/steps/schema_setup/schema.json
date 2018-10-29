@@ -28,8 +28,8 @@
       ],
       "identifier_stem": [
         "id_source",
-        "object_type",
-        "id_type"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {

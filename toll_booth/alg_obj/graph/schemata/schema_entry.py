@@ -1,13 +1,11 @@
-from abc import ABC
-
-from toll_booth.alg_obj.aws.aws_obj.sapper import SchemaWhisperer
 from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.aws.aws_obj.sapper import SchemaWhisperer
 from toll_booth.alg_obj.graph.schemata.entry_property import SchemaPropertyEntry, EdgePropertyEntry
 from toll_booth.alg_obj.graph.schemata.indexes import SortedSetIndexEntry, UniqueIndexEntry
 from toll_booth.alg_obj.graph.schemata.rules import VertexRules
 
 
-class SchemaEntry(AlgObject, ABC):
+class SchemaEntry(AlgObject):
     def __init__(self, entry_name, internal_id_key, entry_properties, indexes, rules):
         self._entry_name = entry_name
         self._internal_id_key = internal_id_key
@@ -112,6 +110,10 @@ class SchemaVertexEntry(SchemaEntry):
         return self.entry_name
 
     @property
+    def object_type(self):
+        return self._vertex_name
+
+    @property
     def vertex_properties(self):
         return self.entry_properties
 
@@ -170,6 +172,10 @@ class SchemaEdgeEntry(SchemaEntry):
     @property
     def edge_label(self):
         return self.entry_name
+
+    @property
+    def object_type(self):
+        return self._entry_name
 
     @property
     def edge_properties(self):
