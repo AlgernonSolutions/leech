@@ -31,10 +31,10 @@ extraction_properties = {
         }
     ]
 }
-extracted_data={"source": {"id_value": 1941, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
+extracted_data = {"source": {"id_value": 1941, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
 internal_id_key = SchemaInternalIdKey(['id_source', 'id_type', 'id_value'])
 identifier_stem = SchemaIdentifierStem(['id_source', 'id_type', 'id_name'])
-schema_entry=SchemaVertexEntry(
+schema_entry = SchemaVertexEntry(
     vertex_name='ExternalId',
     vertex_properties=vertex_properties,
     internal_id_key=internal_id_key,
@@ -66,6 +66,7 @@ class TestActors:
             lizard = MonitorLizard(identifier_stem=identifier_stem_raw, sample_size=5)
             lizard.monitor()
 
+    @pytest.mark.dentist
     def test_dentist(self):
         dentist = Dentist(extraction_order)
         dentist.extract()
