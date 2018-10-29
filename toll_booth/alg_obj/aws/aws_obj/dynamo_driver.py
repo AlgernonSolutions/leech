@@ -47,6 +47,32 @@ class DynamoDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
+    def clear_identifier_stem(self, identifier_stem):
+        identified_values = self.get_identifier_stem(identifier_stem)
+        total = len(identified_values)
+        progress = 1
+        with self._table.batch_writer() as batch:
+            for identified_value in identified_values:
+                dynamo_params = DynamoParameters(identified_value['identifier_stem'], identified_value['sid_value'])
+                batch.delete_item(Key=dynamo_params.as_key)
+                print(f'{progress}/{total}')
+                progress += 1
+
+    def get_identifier_stem(self, identifier_stem):
+        results, token = self._get_identifier_stem(identifier_stem)
+        while token:
+            results.extend(self._get_identifier_stem(identifier_stem, token))
+        return results
+
+    def _get_identifier_stem(self, identifier_stem, token=None):
+        identifier_args = {
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem))
+        }
+        if token:
+            identifier_args['ExclusiveStartKey'] = token
+        results = self._table.query(**identifier_args)
+        return results['Items'], results.get('LastEvaluatedKey', None)
+
     def get_extractor_function_names(self, identifier_stem):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         params = DynamoParameters(identifier_stem.for_dynamo, identifier_stem)
