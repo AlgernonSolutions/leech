@@ -5,7 +5,6 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge, IdentifierStem
 
 
@@ -213,9 +212,6 @@ class DynamoDriver:
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         already_working = []
         not_working = []
-        aggregated_reults = StageManager.bulk_mark_ids_as_working(id_values, identifier_stem, object_type, stage_name)
-        for result in aggregated_reults:
-            print(result)
         for id_value in id_values:
             try:
                 self.put_vertex_seed(identifier_stem, id_value, object_type, stage_name)

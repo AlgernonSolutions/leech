@@ -45,7 +45,7 @@ class ExtractObjectOrder(MetalOrder):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['identifier_stem'], json_dict['id_value'], json_dict['extraction_source'],
+            json_dict['identifier_stem'], json_dict['id_value'], json_dict['extraction_function_name'],
             json_dict['extraction_properties'], json_dict['schema_entry']
         )
 
