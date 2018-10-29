@@ -3,6 +3,8 @@ import os
 
 import boto3
 
+from toll_booth.alg_obj.serializers import AlgEncoder
+
 
 class RemoteFunctionExecutionException(Exception):
     def __init__(self, function_name, function_args, status_code, function_error, log_result):
@@ -31,7 +33,7 @@ class StageManager:
         response = client.invoke(
             FunctionName=function_name,
             InvocationType='RequestResponse',
-            Payload=json.dumps(payload)
+            Payload=json.dumps(payload, cls=AlgEncoder)
         )
         if response['StatusCode'] != 200:
             raise RemoteFunctionExecutionException.generate(function_name, step_args, response)

@@ -75,7 +75,7 @@ class DynamoDriver:
         }
         results = self._table.query(**query_args)
         try:
-            return results['Items'][0]['id_value']
+            return int(results['Items'][0]['id_value'])
         except IndexError:
             raise EmptyIndexException
 
