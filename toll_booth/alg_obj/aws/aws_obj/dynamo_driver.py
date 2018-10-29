@@ -105,7 +105,7 @@ class DynamoDriver:
         results = self._table.scan(**scan_kwargs)
         return results['Items'], results.get('LastEvaluatedKey', None)
 
-    def put_vertex_seed(self, identifier_stem, id_value, stage_name):
+    def put_vertex_seed(self, identifier_stem, id_value, object_type, stage_name):
         now = self._get_decimal_timestamp()
         params = DynamoParameters(identifier_stem, id_value)
         seed = params.as_key
@@ -116,6 +116,7 @@ class DynamoDriver:
             'disposition': 'working',
             'last_stage_seen': stage_name,
             f'{stage_name}_clear_time': now,
+            'object_type': object_type,
             'last_seen_time': now
         })
         return self._table.put_item(
@@ -200,17 +201,17 @@ class DynamoDriver:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
 
-    def get_edge(self, edge_label, edge_internal_id):
-        results = self._table.get_item(Key=DynamoParameters(edge_label, edge_internal_id).as_key)
+    def get_edge(self, identifier_stem, edge_internal_id):
+        results = self._table.get_item(Key=DynamoParameters(identifier_stem, edge_internal_id).as_key)
         return PotentialEdge.from_json(results['Item'])
 
-    def mark_ids_as_working(self, identifier_stem, id_values, stage_name='monitoring'):
+    def mark_ids_as_working(self, identifier_stem, id_values, object_type, stage_name='monitoring'):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         already_working = []
         not_working = []
         for id_value in id_values:
             try:
-                self.put_vertex_seed(identifier_stem, id_value, stage_name)
+                self.put_vertex_seed(identifier_stem, id_value, object_type, stage_name)
                 not_working.append(id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
