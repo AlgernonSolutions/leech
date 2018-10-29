@@ -15,7 +15,8 @@ class Dentist:
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(**kwargs))
 
     def extract(self):
-        extracted_data = StageManager.run_extraction(self._extraction_function_name, self._extraction_properties)
+        extracted_data = StageManager.run_extraction(
+            self._extraction_function_name, self._extraction_properties)
         source_data = extracted_data['source']
         if len(source_data) > 1:
             raise InvalidExtractionMultipleSourceException(self._extraction_function_name, self._extraction_order)

@@ -19,7 +19,7 @@ class MonitorLizard:
         self._schema_entry = SchemaVertexEntry.get(self._object_type)
         self._dynamo_driver = DynamoDriver()
         self._extractor_names = self._dynamo_driver.get_extractor_function_names(identifier_stem)
-        self._extraction_profile = identifier_stem.for_extractor
+        self._extraction_profile = self._generate_extraction_profile()
         self._extraction_queue = kwargs.get('extraction_queue', ForgeQueue.get_for_extraction_queue(**kwargs))
         self._sample_size = kwargs.get('sample_size', 1000)
 
@@ -40,11 +40,12 @@ class MonitorLizard:
                 self._identifier_stem, id_range, self._object_type)
             for id_value in not_working:
                 extraction_orders.append(self._generate_extraction_order(id_value))
+            orders_to_be_sent = len(self._extraction_queue)
             self._send_extraction_orders(extraction_orders)
             logging.info(
                 f'completed monitoring for {self._schema_entry.entry_name}, '
                 f'remote: {max_remote_id}, local: {max_local_id}, '
-                f'{len(self._extraction_queue)} extraction orders to be sent, '
+                f'{orders_to_be_sent} extraction orders to be sent, '
                 f'{len(already_working)} values are already being processed')
             return
         logging.info(
@@ -63,6 +64,12 @@ class MonitorLizard:
         extraction_profile = self._extraction_profile
         return ExtractObjectOrder(
             self._identifier_stem, missing_id_value, extractor_name, extraction_profile, self._schema_entry)
+
+    @xray_recorder.capture('lizard_generate_extraction_properties')
+    def _generate_extraction_profile(self):
+        schema_extraction_properties = self._schema_entry.extract[self._extractor_names['type']]
+        schema_extraction_properties.update(self._identifier_stem.for_extractor)
+        return schema_extraction_properties
 
     @xray_recorder.capture('lizard_get_remote_max')
     def _get_current_remote_max_min_id(self):

@@ -1,4 +1,3 @@
-import pytest
 import json
 
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
