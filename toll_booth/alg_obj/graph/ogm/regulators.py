@@ -81,15 +81,15 @@ class ObjectRegulator:
 
     def _create_identifier_stem(self, potential_object):
         try:
-            stem_values = ['vertex']
+            paired_identifiers = {}
+
             identifier_stem_key = self._schema_entry.identifier_stem
             for field_name in identifier_stem_key:
                 key_value = potential_object[field_name]
                 if isinstance(key_value, MissingObjectProperty):
                     return self._schema_entry.identifier_stem
-                stem_values.append(str(key_value))
-            stem_value = f'#{"#".join(stem_values)}#'
-            return stem_value
+                paired_identifiers[field_name] = key_value
+            return IdentifierStem('vertex', self._schema_entry.object_type, paired_identifiers)
         except KeyError:
             return self._schema_entry.identifier_stem
 

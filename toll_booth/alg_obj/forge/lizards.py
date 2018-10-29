@@ -1,4 +1,5 @@
 import logging
+import os
 
 from aws_xray_sdk.core import xray_recorder
 
@@ -67,9 +68,10 @@ class MonitorLizard:
 
     @xray_recorder.capture('lizard_generate_extraction_properties')
     def _generate_extraction_profile(self):
+        extraction_properties = self._identifier_stem.for_extractor
         schema_extraction_properties = self._schema_entry.extract[self._extractor_names['type']]
-        schema_extraction_properties.update(self._identifier_stem.for_extractor)
-        return schema_extraction_properties
+        extraction_properties.update(schema_extraction_properties.extraction_properties)
+        return extraction_properties
 
     @xray_recorder.capture('lizard_get_remote_max')
     def _get_current_remote_max_min_id(self):

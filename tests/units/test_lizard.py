@@ -9,5 +9,5 @@ identifier_stem = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Em
 class TestLizard:
     def test_lizard(self):
         with patch(patches.x_ray_patch_begin), patch(patches.x_ray_patch_end):
-            lizard = MonitorLizard(identifier_stem=identifier_stem)
+            lizard = MonitorLizard(identifier_stem=identifier_stem, sample_size=5)
             lizard.monitor()
