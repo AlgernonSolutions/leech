@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, PotentialEdge
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, PotentialEdge, ObjectRegulator
 
 table_name = os.getenv('TABLE_NAME', 'TestGraphObjects')
 partition_key = os.getenv('PARTITION_KEY', 'identifier_stem')
@@ -249,3 +249,32 @@ class TestDynamoDriver:
         assert add_results['ResponseMetadata']['HTTPStatusCode'] == 200
         seed = boto3.resource('dynamodb').Table(table_name).get_item(Key=vertex_key)
         assert seed["Item"]['object_properties'] == vertex_properties
+
+
+class TestPotentialEdge:
+    def test_potential_edge_construction(self):
+        potential_edge = PotentialEdge(edge_label, edge_internal_id, edge_properties, from_object_id, to_object_id)
+        assert isinstance(potential_edge, PotentialEdge)
+
+    def test_potential_edge_construction_from_json(self):
+        potential_edge = PotentialEdge.from_json(edge)
+        assert isinstance(potential_edge, PotentialEdge)
+
+    def test_edge_identifier_stem_creation(self):
+        potential_edge = PotentialEdge.from_json(edge)
+        identifier_stem = potential_edge.identifier_stem
+        assert isinstance(identifier_stem, IdentifierStem)
+
+
+class TestEdgeRegulator:
+    def test_generate_potential_edge(self):
+        source_potential_vertex = PotentialVertex.from_json(vertex)
+        other_potential_vertex = PotentialVertex.from_json(other_vertex)
+        regulator = ObjectRegulator.get_for_object_type(edge_label)
+        potential_edge = regulator.generate_potential_edge(source_potential_vertex, other_potential_vertex, edge, False)
+        assert isinstance(potential_edge, PotentialEdge)
+        assert potential_edge.from_object == vertex_internal_id
+        assert potential_edge.to_object == other_internal_id
+
+
+

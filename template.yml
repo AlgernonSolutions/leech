@@ -144,7 +144,7 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
-  credible_ws_extractor:
+  credibleWsExtractor:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
