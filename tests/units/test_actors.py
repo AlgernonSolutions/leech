@@ -1,3 +1,4 @@
+import pytest
 from mock import patch
 
 from tests.steps.actor_setup import patches
@@ -69,6 +70,7 @@ class TestActors:
         dentist = Dentist(extraction_order)
         dentist.extract()
 
+    @pytest.mark.robot
     def test_disguised_robot(self):
         disguised_robot = DisguisedRobot(transform_order)
         disguised_robot.transform()
