@@ -1,4 +1,4 @@
-class AlgObject:
+class AlgObject(object):
     @classmethod
     def parse_json(cls, json_dict):
         raise NotImplementedError()

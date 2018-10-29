@@ -129,7 +129,7 @@ class VertexRegulator(ObjectRegulator):
         id_value = kwargs.get('id_value', self._create_id_value(object_properties))
         object_properties = self._obfuscate_sensitive_data(internal_id, object_properties)
         object_type = self._schema_entry.object_type
-        if_missing = self._schema_entry.if_missing
+        if_missing = self._rule_entry.if_absent
         id_value_field = self._schema_entry.id_value_field
         return PotentialVertex(
            object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field)
