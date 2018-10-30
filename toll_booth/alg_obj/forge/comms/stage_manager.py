@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 import boto3
@@ -54,7 +55,10 @@ class StageManager:
             'step_name': 'extraction',
             'step_args': step_args
         }
-        return cls._run(function_name, step_args, payload)
+        logging.info('started to run an extraction with payload: %s' % payload)
+        results = cls._run(function_name, step_args, payload)
+        logging.info('completed an extraction with payload: %s, results: %s' % (payload, results))
+        return results
 
     @classmethod
     def bulk_mark_ids_as_working(cls, id_values, identifier_stem, object_type, stage_name):

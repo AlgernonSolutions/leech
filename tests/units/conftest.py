@@ -119,3 +119,48 @@ def delete_vertex():
         client.delete_item(Key=vertex_key)
 
     yield _delete_vertex
+
+
+credible_ws_extractor = 'CredibleWebServiceExtractor'
+credible_ws_extractor_function = 'leech-extract-crediblews'
+ext_id_identifier_stem = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Clients\", \"id_name\": \"client_id\"}#'
+ext_id_id_value = 1941
+ext_id_extracted_data = {"source": {"id_value": ext_id_id_value, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
+
+
+@pytest.fixture(params=[
+    ext_id_identifier_stem
+])
+def identifier_stem(request):
+    return request.param[0]
+
+
+@pytest.fixture(params=[
+    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, credible_ws_extractor, credible_ws_extractor_function)
+])
+def extraction_order(request):
+    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
+    from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+
+    params = request.param
+    identifier_stem = IdentifierStem.from_raw(params[1])
+    schema_entry = SchemaEntry.get(params[0])
+    extraction_properties = identifier_stem.for_extractor
+    schema_extraction_properties = schema_entry.extract[params[3]]
+    extraction_properties.update(schema_extraction_properties.extraction_properties)
+    id_value = params[2]
+    extractor_function_name = params[4]
+    return ExtractObjectOrder(identifier_stem, id_value, extractor_function_name, extraction_properties, schema_entry)
+
+
+@pytest.fixture(params=[
+    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, ext_id_extracted_data)
+])
+def transform_order(request):
+    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
+    from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
+
+    params = request.param
+    schema_entry = SchemaEntry.get(params[0])
+    return TransformObjectOrder(params[1], params[2], params[3], schema_entry)
