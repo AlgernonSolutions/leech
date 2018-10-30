@@ -81,8 +81,9 @@ def explode(*args, **kwargs):
     for record in task_args['records']:
         dynamo_data = record['dynamodb']
         new_image, old_image, keys = dynamo_data.get('NewImage'), dynamo_data.get('OldImage'), dynamo_data.get('Keys')
-        disposition = new_image.get('disposition')
-        if disposition == {'S': 'graphing'}:
-            logging.info(f'based on the disposition of the NewImage, object should be pushed to the graph')
-            orders.send_mail('graphing', keys)
+        if new_image:
+            disposition = new_image.get('disposition')
+            if disposition == {'S': 'graphing'}:
+                logging.info(f'based on the disposition of the NewImage, object should be pushed to the graph')
+                orders.send_mail('graphing', keys)
     orders.close()
