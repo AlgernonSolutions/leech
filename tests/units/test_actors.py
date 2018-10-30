@@ -8,6 +8,7 @@ from toll_booth.alg_obj.forge.robot_in_disguise import DisguisedRobot
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 
 
+@pytest.mark.actors
 class TestActors:
     def test_lizard(self, identifier_stem):
         with patch(patches.x_ray_patch_begin), patch(patches.x_ray_patch_end):

@@ -124,19 +124,23 @@ def delete_vertex():
 credible_ws_extractor = 'CredibleWebServiceExtractor'
 credible_ws_extractor_function = 'leech-extract-crediblews'
 ext_id_identifier_stem = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Clients\", \"id_name\": \"client_id\"}#'
+change_identifier_stem = '#vertex#Change#{\"id_source\": \"MBI\", \"id_type\": \"ChangeLogDetail\", \"id_name\": \"changelogdetail_id\"}#'
 ext_id_id_value = 1941
+change_id_value = 1230
 ext_id_extracted_data = {"source": {"id_value": ext_id_id_value, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
 
 
 @pytest.fixture(params=[
-    ext_id_identifier_stem
+    ext_id_identifier_stem,
+    change_identifier_stem
 ])
 def identifier_stem(request):
-    return request.param[0]
+    return request.param
 
 
 @pytest.fixture(params=[
-    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, credible_ws_extractor, credible_ws_extractor_function)
+    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, credible_ws_extractor, credible_ws_extractor_function),
+    ('Change', change_identifier_stem, change_id_value, credible_ws_extractor, credible_ws_extractor_function)
 ])
 def extraction_order(request):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry

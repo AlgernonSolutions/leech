@@ -1,6 +1,8 @@
+import json
 import logging
 
 from toll_booth.alg_obj.forge.extractors.credible_ws import CredibleWebServiceExtractor
+from toll_booth.alg_obj.serializers import AlgEncoder
 
 root = logging.getLogger()
 if root.handlers:
@@ -21,5 +23,5 @@ def handler(event, context):
     if step_name == 'extraction':
         results = CredibleWebServiceExtractor.extract(**step_args)
         logging.info('completed an extraction for the CredibleWS Extractor, results: %s' % results)
-        return results
+        return json.dumps(results, cls=AlgEncoder)
     raise NotImplementedError('step named: %s is not registered with the system' % step_name)

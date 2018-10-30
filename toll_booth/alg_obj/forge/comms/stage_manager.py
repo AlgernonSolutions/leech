@@ -4,7 +4,7 @@ import os
 
 import boto3
 
-from toll_booth.alg_obj.serializers import AlgEncoder
+from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class RemoteFunctionExecutionException(Exception):
@@ -39,7 +39,7 @@ class StageManager:
         if response['StatusCode'] != 200:
             raise RemoteFunctionExecutionException.generate(function_name, step_args, response)
         result_stream = response['Payload'].read()
-        return json.loads(result_stream)
+        return json.loads(result_stream, cls=AlgDecoder)
 
     @classmethod
     def run_index_query(cls, function_name, step_args):
