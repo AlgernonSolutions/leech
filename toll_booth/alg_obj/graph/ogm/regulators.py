@@ -46,7 +46,7 @@ class ObjectRegulator:
                         f'could not be uniquely identified. sensitive properties use their parent objects identifier '
                         f'to guarantee uniqueness. object containing sensitive properties generally can not be stubbed'
                     )
-                property_value = SecretWhisperer.put_secret(entry_property, internal_id, property_data_type)
+                property_value = SecretWhisperer.put_secret(property_value, internal_id, property_data_type)
             returned_data[property_name] = property_value
         return returned_data
 
@@ -56,17 +56,24 @@ class ObjectRegulator:
             try:
                 test_property = graph_object[property_name]
             except KeyError:
-                returned_properties[property_name] = MissingObjectProperty
+                returned_properties[property_name] = MissingObjectProperty()
                 continue
             test_property = self._set_property_data_type(property_name, entry_property, test_property)
             returned_properties[property_name] = test_property
         return returned_properties
 
     def _create_internal_id(self, graph_object, for_known=False):
+        static_key_fields = {
+            'object_type': self._schema_entry.entry_name,
+            'id_value_field': self._schema_entry.id_value_field
+        }
         try:
             key_values = []
             internal_id_key = self._schema_entry.internal_id_key
             for field_name in internal_id_key:
+                if field_name in static_key_fields:
+                    key_values.append(str(static_key_fields[field_name]))
+                    continue
                 key_value = graph_object[field_name]
                 key_values.append(str(key_value))
             id_string = ''.join(key_values)
@@ -80,13 +87,16 @@ class ObjectRegulator:
                 )
             return self._internal_id_key
 
-    def _create_identifier_stem(self, potential_object):
+    def _create_identifier_stem(self, potential_object, object_data):
         try:
             paired_identifiers = {}
 
             identifier_stem_key = self._schema_entry.identifier_stem
             for field_name in identifier_stem_key:
-                key_value = potential_object[field_name]
+                try:
+                    key_value = potential_object[field_name]
+                except KeyError:
+                    key_value = object_data[field_name]
                 if isinstance(key_value, MissingObjectProperty):
                     return self._schema_entry.identifier_stem
                 paired_identifiers[field_name] = key_value
@@ -126,7 +136,7 @@ class VertexRegulator(ObjectRegulator):
     def create_potential_vertex(self, object_data, **kwargs):
         object_properties = self._standardize_object_properties(object_data)
         internal_id = kwargs.get('internal_id', self._create_internal_id(object_properties))
-        identifier_stem = kwargs.get('identifier_stem', self._create_identifier_stem(object_properties))
+        identifier_stem = kwargs.get('identifier_stem', self._create_identifier_stem(object_properties, object_data))
         id_value = kwargs.get('id_value', self._create_id_value(object_properties))
         object_properties = self._obfuscate_sensitive_data(internal_id, object_properties)
         object_type = self._schema_entry.object_type
@@ -311,7 +321,6 @@ class EdgeRegulator(ObjectRegulator):
 
 class GraphObject(AlgObject):
     def __init__(self, object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field):
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._object_type = object_type
         self._object_properties = object_properties
         self._internal_id = internal_id
@@ -498,13 +507,17 @@ class SensitiveData:
             print(e)
 
 
-class MissingObjectProperty:
+class MissingObjectProperty(AlgObject):
     @classmethod
     def is_missing(cls):
         return True
 
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls()
 
-class IdentifierStem:
+
+class IdentifierStem(AlgObject):
     def __init__(self, graph_type, object_type, paired_identifiers=None):
         if not paired_identifiers:
             paired_identifiers = {}
@@ -525,6 +538,13 @@ class IdentifierStem:
         if potential_pairs:
             paired_identifiers = json.loads(potential_pairs.group(0))
         return cls(graph_type, object_type, paired_identifiers)
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['graph_type'], json_dict['object_type'],
+            json_dict.get('paired_identifiers')
+        )
 
     @property
     def object_type(self):

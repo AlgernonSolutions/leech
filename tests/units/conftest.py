@@ -1,6 +1,10 @@
+import datetime
 import os
+from decimal import Decimal
 
 import pytest
+
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, MissingObjectProperty
 
 
 @pytest.fixture(scope='module')
@@ -127,8 +131,21 @@ ext_id_identifier_stem = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\
 change_identifier_stem = '#vertex#Change#{\"id_source\": \"MBI\", \"id_type\": \"ChangeLogDetail\", \"id_name\": \"changelogdetail_id\"}#'
 ext_id_id_value = 1941
 change_id_value = 1230
+change_internal_id = '7b4043d1fe270c1ed1f032f8ec31e899'
 ext_id_extracted_data = {"source": {"id_value": ext_id_id_value, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
+change_extracted_data = {'source': {'id_name': 'changelogdetail_id', 'id_type': 'ChangeLogDetail', 'id_source': 'MBI', 'detail_id': 1230, 'changelog_id': 177, 'data_dict_id': 49, 'detail_one_value': '', 'detail_one': '', 'detail_two': '301-537-8676'}, 'changed_target': [{'change_date_utc': datetime.datetime(2014, 7, 29, 14, 44, 44, 367000), 'client_id': '', 'clientvisit_id': '', 'emp_id': 3889, 'record_id': '', 'record_type': '', 'primarykey_name': ''}]}
+change_properties = {'detail_id': Decimal('1230'), 'id_source': 'MBI', 'changelog_id': Decimal('177'), 'data_dict_id': Decimal('49'), 'detail_one': 'e7b0192b71294db66f1ac4e0a9b36bff', 'detail_one_value': 'e7b0192b71294db66f1ac4e0a9b36bff', 'detail_two': 'e7b0192b71294db66f1ac4e0a9b36bff'}
+source_vertex = PotentialVertex('Change', change_internal_id, change_properties, None, change_identifier_stem, change_id_value, 'detail_id')
 
+first_potential_internal_id = 'ff9ccecb77051747a9ff6cc4169de27d'
+first_potential_vertex_properties = {'id_value': Decimal('3889'), 'id_source': 'MBI', 'id_type': 'Employees', 'id_name': 'emp_id'}
+first_potential_identifier_stem = '#vertex#ExternalId#{"id_source": "MBI", "id_type": "Employees", "id_name": "emp_id"}#'
+first_potential_vertex = PotentialVertex('ExternalId', first_potential_internal_id, first_potential_vertex_properties, 'create', first_potential_identifier_stem, 3889, 'id_value')
+
+second_potential_internal_id = 'c5bf540a3fb43491ad13e446cb9c3757'
+second_potential_vertex_properties = {'changelog_id': Decimal('177'), 'change_description': MissingObjectProperty(), 'change_date':MissingObjectProperty(), 'change_date_utc': MissingObjectProperty(), 'id_source': 'MBI'}
+second_potential_identifier_stem = ['id_source', 'id_type', 'id_name']
+second_potential_vertex = PotentialVertex('ExternalId', second_potential_internal_id, second_potential_vertex_properties, 'stub', second_potential_identifier_stem, 3889, 'id_value')
 
 @pytest.fixture(params=[
     ext_id_identifier_stem,
@@ -159,7 +176,8 @@ def extraction_order(request):
 
 
 @pytest.fixture(params=[
-    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, ext_id_extracted_data)
+    ('ExternalId', ext_id_identifier_stem, ext_id_id_value, ext_id_extracted_data),
+    ('Change', change_identifier_stem, change_id_value, change_extracted_data),
 ])
 def transform_order(request):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
@@ -168,3 +186,14 @@ def transform_order(request):
     params = request.param
     schema_entry = SchemaEntry.get(params[0])
     return TransformObjectOrder(params[1], params[2], params[3], schema_entry)
+
+
+@pytest.fixture(params=[
+    (source_vertex, first_potential_vertex_properties, None, change_extracted_data),
+    (source_vertex, second_potential_vertex, None, change_extracted_data),
+])
+def assimilate_order(request):
+    from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
+
+    params = request.param
+    return AssimilateObjectOrder(params[0], params[1], params[2], params[3])

@@ -11,13 +11,14 @@ from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 @pytest.mark.actors
 class TestActors:
     def test_lizard(self, identifier_stem):
-        with patch(patches.x_ray_patch_begin), patch(patches.x_ray_patch_end):
+        with patch(patches.x_ray_patch_begin), patch(patches.x_ray_patch_end), \
+             patch(patches.send_patch), patch(patches.dynamo_driver_mark_working_patch, return_value=([1, 2, 3, 4], [1, 2, 3])):
             lizard = MonitorLizard(identifier_stem=identifier_stem, sample_size=5)
             lizard.monitor()
 
     @pytest.mark.dentist
     def test_dentist(self, extraction_order):
-        with patch(patches.small_send_patch) as mock_send, patch(patches.dynamo_driver_stage_patch) as mock_stage:
+        with patch(patches.small_add_patch) as mock_send, patch(patches.dynamo_driver_stage_patch) as mock_stage:
             dentist = Dentist(extraction_order)
             dentist.extract()
             assert mock_send.called is True
@@ -43,5 +44,5 @@ class TestActors:
             assert isinstance(written_vertex, PotentialVertex)
             assert mock_write_args[1] == 'transformation'
 
-    def test_borg(self):
+    def test_borg(self, assimilate_order):
         pass
