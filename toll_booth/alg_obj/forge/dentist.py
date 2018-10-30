@@ -35,6 +35,6 @@ class Dentist:
             self._schema_entry
         )
         self._transform_queue.add_order(transform_order)
-        self._transform_queue.push_orders()
         self._dynamo_driver.mark_object_as_stage_cleared(
             self._extraction_order.identifier_stem, self._extraction_order.id_value, 'extraction')
+        self._transform_queue.push_orders()

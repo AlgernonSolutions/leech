@@ -7,7 +7,9 @@ import pytest
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, PotentialEdge, ObjectRegulator
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, PotentialEdge, ObjectRegulator, \
+    VertexRegulator
+from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
 
 table_name = os.getenv('TABLE_NAME', 'TestGraphObjects')
 partition_key = os.getenv('PARTITION_KEY', 'identifier_stem')
@@ -281,3 +283,15 @@ class TestEdgeRegulator:
         assert isinstance(potential_edge, PotentialEdge)
         assert potential_edge.from_object == vertex_internal_id
         assert potential_edge.to_object == other_internal_id
+
+
+@pytest.mark.vertex_regulator
+class TestVertexRegulator:
+    @pytest.mark.parametrize('vertex_data, object_type', [
+        ({'id_type': 'Clients', 'id_value': 1941, 'id_name': 'client_id', 'id_source': 'MBI'}, 'ExternalId')
+    ])
+    def test_generate_potential_vertex(self, vertex_data, object_type):
+        schema_entry = SchemaEntry.get(object_type)
+        regulator = VertexRegulator(schema_entry)
+        potential_vertex = regulator.create_potential_vertex(vertex_data)
+        assert isinstance(potential_vertex, PotentialVertex)

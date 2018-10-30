@@ -138,7 +138,8 @@
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {
@@ -272,7 +273,8 @@
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {

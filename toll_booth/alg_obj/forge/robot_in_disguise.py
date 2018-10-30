@@ -32,8 +32,8 @@ class DisguisedRobot:
             assimilate_order = AssimilateObjectOrder(source_vertex, potential_vertex, rule_entry, extracted_data)
             assimilate_orders.append(assimilate_order)
         self._assimilation_queue.add_orders(assimilate_orders)
-        self._assimilation_queue.push_orders()
         self._write_source_vertex(source_vertex)
+        self._assimilation_queue.push_orders()
 
     def _write_source_vertex(self, vertex):
         try:
