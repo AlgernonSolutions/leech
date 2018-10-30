@@ -78,7 +78,7 @@ def explode(*args, **kwargs):
     logging.info(f'started explode task with argsL {args}, kwargs: {kwargs}')
     orders = MailBoxes()
     task_args = kwargs['task_args']
-    for record in task_args['Records']:
+    for record in task_args['records']:
         dynamo_data = record['dynamodb']
         new_image, old_image, keys = dynamo_data['NewImage'], dynamo_data['OldImage'], dynamo_data['Keys']
         disposition = new_image.get('disposition')

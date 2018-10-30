@@ -41,7 +41,7 @@ Resources:
       Runtime: python3.6
       FunctionName: leech-extract
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
-      Timeout: 300
+      Timeout: 120
       MemorySize: 448
       Events:
         extraction:
@@ -118,6 +118,10 @@ Resources:
             Queue: arn:aws:sqs:us-east-1:803040539655:load
             BatchSize: 1
       Tracing: Active
+      Environment:
+        Variables:
+          NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+          GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
   audit:
     Type: AWS::Serverless::Function
     Properties:
@@ -152,10 +156,14 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Environment:
+        Variables:
+          NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+          GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
   explode:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.explode
+      Handler: toll_booth/alg_tasks/toll_booth.exploded
       Runtime: python3.6
       FunctionName: leech-explode
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
