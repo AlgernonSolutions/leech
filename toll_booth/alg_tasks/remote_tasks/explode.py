@@ -79,11 +79,13 @@ def explode(*args, **kwargs):
     orders = MailBoxes()
     task_args = kwargs['task_args']
     for record in task_args['records']:
+        event_type = record['eventName']
         dynamo_data = record['dynamodb']
         new_image, old_image, keys = dynamo_data.get('NewImage'), dynamo_data.get('OldImage'), dynamo_data.get('Keys')
-        if new_image:
-            disposition = new_image.get('disposition')
-            if disposition == {'S': 'graphing'}:
+        if event_type == 'MODIFY':
+            new_disposition = new_image.get('disposition')
+            old_disposition = old_image.get('disposition')
+            if new_disposition == {'S': 'graphing'} and old_disposition == {'S': 'working'}:
                 logging.info(f'based on the disposition of the NewImage, object should be pushed to the graph')
                 orders.send_mail('graphing', keys)
     orders.close()

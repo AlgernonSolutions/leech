@@ -41,9 +41,8 @@ class DynamoDriver:
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
 
-    def __init__(self, table_name=None):
-        if not table_name:
-            table_name = os.getenv('TABLE_NAME', 'GraphObjects')
+    def __init__(self, **kwargs):
+        table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'GraphObjects'))
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
@@ -154,8 +153,9 @@ class DynamoDriver:
         )
 
     def get_vertex(self, identifier_stem, id_value):
+        params = DynamoParameters(identifier_stem, id_value)
         results = self._table.get_item(
-            Key=DynamoParameters(identifier_stem, id_value).as_key
+            Key=params.as_key
         )
         try:
             vertex_information = results['Item']

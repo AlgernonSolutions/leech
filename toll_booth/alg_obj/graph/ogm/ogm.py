@@ -1,8 +1,12 @@
+import json
+import logging
+
 from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexDriver
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentEdgeConnection
 from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
+from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 class Ogm:
@@ -16,11 +20,13 @@ class Ogm:
     def graph_object(self, potential_object):
         command_generator = CommandGenerator.get_for_obj_type(potential_object.object_type)
         graph_command = command_generator.create_command(potential_object)
-        self._graph_object(graph_command)
+        logging.info(f'generated graph command: {graph_command} for potential object: {potential_object.to_json}')
+        return self._graph_object(graph_command)
 
     def _graph_object(self, graph_command):
-        with self._trident_driver as trident:
-            trident.execute(graph_command)
+        results = self._trident_driver.execute(graph_command)
+        logging.info(f'submitted graph command: {graph_command} with results: {json.dumps(results, cls=AlgEncoder)}')
+        return results
 
 
 class OgmReader:
