@@ -170,8 +170,7 @@ class DynamoDriver:
         if not vertex.is_properties_complete:
             raise RuntimeError(
                 f'could not derive all properties for ruled vertex type: {vertex.object_type}')
-        update_expression = '''SET #i=:i, #o=:v, #d=:d, #lst=:t, #sc=:t, #ot=:ot, #im=:im, #c=:c, #lss=:lss, 
-        #idf=:idf, #id=:id '''
+        update_expression = 'SET #i=:i, #o=:v, #d=:d, #lst=:t, #sc=:t, #ot=:ot, #im=:im, #c=:c, #lss=:lss,#idf=:idf, #id=:id '
         params = DynamoParameters(vertex.identifier_stem, vertex.id_value)
         return self._table.update_item(
             Key=params.as_key,

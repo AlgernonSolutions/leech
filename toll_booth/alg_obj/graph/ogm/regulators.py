@@ -311,6 +311,7 @@ class EdgeRegulator(ObjectRegulator):
 
 class GraphObject(AlgObject):
     def __init__(self, object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._object_type = object_type
         self._object_properties = object_properties
         self._internal_id = internal_id

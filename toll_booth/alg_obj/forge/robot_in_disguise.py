@@ -21,7 +21,7 @@ class DisguisedRobot:
     def transform(self):
         regulator = VertexRegulator(self._schema_entry)
         source_vertex = regulator.create_potential_vertex(self._source_vertex_data)
-        logging.info('generated source vertex in transform step, source_vertex: %s' % source_vertex)
+        logging.info('generated source vertex in transform step, source_vertex: %s' % source_vertex.to_json)
         extracted_data = self._extracted_data
         assimilate_orders = []
         arbiter = RuleArbiter(source_vertex, self._schema_entry)
