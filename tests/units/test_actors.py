@@ -17,7 +17,7 @@ class TestActors:
 
     @pytest.mark.dentist
     def test_dentist(self, extraction_order):
-        with patch(patches.send_patch) as mock_send, patch(patches.dynamo_driver_stage_patch) as mock_stage:
+        with patch(patches.small_send_patch) as mock_send, patch(patches.dynamo_driver_stage_patch) as mock_stage:
             dentist = Dentist(extraction_order)
             dentist.extract()
             assert mock_send.called is True

@@ -57,6 +57,7 @@ class StageManager:
         }
         logging.info('started to run an extraction with payload: %s' % payload)
         results = cls._run(function_name, step_args, payload)
+        results = json.loads(results, cls=AlgDecoder)
         logging.info('completed an extraction with payload: %s, results: %s' % (payload, results))
         return results
 
