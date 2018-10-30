@@ -70,17 +70,17 @@ class MailBoxes:
             counter += 1
 
     def _send_for_processing(self):
-        raise NotImplementedError()
+        pass
 
 
 @remote_task
 def explode(*args, **kwargs):
-    logging.info(f'started explode task with argsL {args}, kwargs: {kwargs}')
+    logging.info(f'started explode task with args: {args}, kwargs: {kwargs}')
     orders = MailBoxes()
     task_args = kwargs['task_args']
     for record in task_args['records']:
         dynamo_data = record['dynamodb']
-        new_image, old_image, keys = dynamo_data['NewImage'], dynamo_data['OldImage'], dynamo_data['Keys']
+        new_image, old_image, keys = dynamo_data.get('NewImage'), dynamo_data.get('OldImage'), dynamo_data.get('Keys')
         disposition = new_image.get('disposition')
         if disposition == {'S': 'graphing'}:
             logging.info(f'based on the disposition of the NewImage, object should be pushed to the graph')
