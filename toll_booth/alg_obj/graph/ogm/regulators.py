@@ -387,9 +387,13 @@ class PotentialVertex(GraphObject):
 
     @property
     def is_identifiable(self):
+        try:
+            identifier_stem = IdentifierStem.from_raw(self._identifier_stem)
+        except AttributeError:
+            return False
         if not isinstance(self._internal_id, str):
             return False
-        if not isinstance(self._identifier_stem, IdentifierStem):
+        if not isinstance(identifier_stem, IdentifierStem):
             return False
         if self._id_value == self._id_value_field:
             return False

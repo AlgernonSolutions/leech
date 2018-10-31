@@ -1,18 +1,12 @@
+import pytest
+
 from toll_booth.alg_tasks.extractors import credible_ws
 
-payload = {
-    'step_name': 'index_query',
-    'step_args': {
-        'id_source': 'MBI',
-        'id_type': 'Employees',
-        'id_name': 'emp_id',
-        'graph_type': 'vertex',
-        'object_type': 'ExternalId'
-    }
-}
 
-
+@pytest.mark.credible_ws
 class TestCredibleWS:
-    def test_get_index_max_min(self):
-        results = credible_ws.handler(payload, [])
-        assert isinstance(results, int)
+    def test_get_index_max_min(self, credible_ws_payload):
+        results = credible_ws.handler(credible_ws_payload, [])
+        assert isinstance(results['max'], int)
+        assert isinstance(results['min'], int)
+        assert results['max'] >= results['min']

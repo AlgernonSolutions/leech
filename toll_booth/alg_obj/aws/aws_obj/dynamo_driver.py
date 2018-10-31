@@ -291,8 +291,9 @@ class DynamoDriver:
         )
 
     def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
+        object_properties = {x: y for x, y in stub_properties.items() if not hasattr(y, 'is_missing')}
         stub = {
-            'object_properties': stub_properties,
+            'object_properties': object_properties,
             'source_internal_id': source_internal_id,
             'rule_name': rule_name
         }

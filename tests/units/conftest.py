@@ -1,22 +1,43 @@
-import datetime
 import os
-from decimal import Decimal
 
 import pytest
+from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, MissingObjectProperty
+from tests.units.test_data.actor_data import *
+from tests.units.test_data.dynamo_stream_events import *
+from tests.units.test_data.potential_vertexes import *
 
 
 @pytest.fixture(scope='module')
 def blank_table():
+    table_name = os.getenv('blank_table_name')
+    import boto3
+    client = boto3.client('dynamodb')
+
+    try:
+        _create_table(client, table_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'ResourceInUseException':
+            raise e
+        try:
+            client.delete_table(TableName=table_name)
+        except ClientError:
+            pass
+        waiter = client.get_waiter('table_not_exists')
+        waiter.wait(TableName=table_name, WaiterConfig={'Delay': 10})
+        _create_table(client, table_name)
+
+    yield
+
+    client.delete_table(TableName=table_name)
+
+
+def _create_table(client, table_name):
     indexed_field = os.getenv('indexed_field', 'id_value')
-    table_name = os.getenv('table_name')
     partition_key = os.getenv('partition_key')
     sort_key = os.getenv('sort_key')
     index_name = os.getenv('index_name')
-    import boto3
 
-    client = boto3.client('dynamodb')
     client.create_table(
         AttributeDefinitions=[
             {'AttributeName': partition_key, 'AttributeType': 'S'},
@@ -47,10 +68,6 @@ def blank_table():
     )
     waiter = client.get_waiter('table_exists')
     waiter.wait(TableName=table_name, WaiterConfig={'Delay': 10})
-
-    yield
-
-    client.delete_table(TableName=table_name)
 
 
 @pytest.fixture
@@ -116,7 +133,6 @@ def delete_test_edge():
 
 @pytest.fixture
 def delete_vertex():
-
     def _delete_vertex(table_name, vertex_key):
         import boto3
         client = boto3.resource('dynamodb').Table(table_name)
@@ -124,28 +140,6 @@ def delete_vertex():
 
     yield _delete_vertex
 
-
-credible_ws_extractor = 'CredibleWebServiceExtractor'
-credible_ws_extractor_function = 'leech-extract-crediblews'
-ext_id_identifier_stem = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Clients\", \"id_name\": \"client_id\"}#'
-change_identifier_stem = '#vertex#Change#{\"id_source\": \"MBI\", \"id_type\": \"ChangeLogDetail\", \"id_name\": \"changelogdetail_id\"}#'
-ext_id_id_value = 1941
-change_id_value = 1230
-change_internal_id = '7b4043d1fe270c1ed1f032f8ec31e899'
-ext_id_extracted_data = {"source": {"id_value": ext_id_id_value, "id_type": "Clients", "id_name": "client_id", "id_source": "MBI"}}
-change_extracted_data = {'source': {'id_name': 'changelogdetail_id', 'id_type': 'ChangeLogDetail', 'id_source': 'MBI', 'detail_id': 1230, 'changelog_id': 177, 'data_dict_id': 49, 'detail_one_value': '', 'detail_one': '', 'detail_two': '301-537-8676'}, 'changed_target': [{'change_date_utc': datetime.datetime(2014, 7, 29, 14, 44, 44, 367000), 'client_id': '', 'clientvisit_id': '', 'emp_id': 3889, 'record_id': '', 'record_type': '', 'primarykey_name': ''}]}
-change_properties = {'detail_id': Decimal('1230'), 'id_source': 'MBI', 'changelog_id': Decimal('177'), 'data_dict_id': Decimal('49'), 'detail_one': 'e7b0192b71294db66f1ac4e0a9b36bff', 'detail_one_value': 'e7b0192b71294db66f1ac4e0a9b36bff', 'detail_two': 'e7b0192b71294db66f1ac4e0a9b36bff'}
-source_vertex = PotentialVertex('Change', change_internal_id, change_properties, None, change_identifier_stem, change_id_value, 'detail_id')
-
-first_potential_internal_id = 'ff9ccecb77051747a9ff6cc4169de27d'
-first_potential_vertex_properties = {'id_value': Decimal('3889'), 'id_source': 'MBI', 'id_type': 'Employees', 'id_name': 'emp_id'}
-first_potential_identifier_stem = '#vertex#ExternalId#{"id_source": "MBI", "id_type": "Employees", "id_name": "emp_id"}#'
-first_potential_vertex = PotentialVertex('ExternalId', first_potential_internal_id, first_potential_vertex_properties, 'create', first_potential_identifier_stem, 3889, 'id_value')
-
-second_potential_internal_id = 'c5bf540a3fb43491ad13e446cb9c3757'
-second_potential_vertex_properties = {'changelog_id': Decimal('177'), 'change_description': MissingObjectProperty(), 'change_date':MissingObjectProperty(), 'change_date_utc': MissingObjectProperty(), 'id_source': 'MBI'}
-second_potential_identifier_stem = ['id_source', 'id_type', 'id_name']
-second_potential_vertex = PotentialVertex('ExternalId', second_potential_internal_id, second_potential_vertex_properties, 'stub', second_potential_identifier_stem, 3889, 'id_value')
 
 @pytest.fixture(params=[
     ext_id_identifier_stem,
@@ -189,11 +183,75 @@ def transform_order(request):
 
 
 @pytest.fixture(params=[
-    (source_vertex, first_potential_vertex_properties, None, change_extracted_data),
-    (source_vertex, second_potential_vertex, None, change_extracted_data),
+    (source_vertex, first_potential_vertex, first_rule, change_extracted_data),
 ])
-def assimilate_order(request):
+def identifiable_assimilate_order(request):
     from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 
     params = request.param
     return AssimilateObjectOrder(params[0], params[1], params[2], params[3])
+
+
+@pytest.fixture(params=[
+    (source_vertex, second_potential_vertex, second_rule, change_extracted_data),
+])
+def stubbed_assimilate_order(request):
+    from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
+
+    params = request.param
+    return AssimilateObjectOrder(params[0], params[1], params[2], params[3])
+
+
+@pytest.fixture(params=[
+    ('MBI', 'Employees', 'emp_id', 'vertex', 'ExternalId'),
+    ('MBI', 'Clients', 'client_id', 'vertex', 'ExternalId'),
+    ('MBI', 'ClientVisit', 'clientvisit_id', 'vertex', 'ExternalId'),
+    ('MBI', 'ChangeLogDetail', 'changelogdetail_id', 'vertex', 'Change')
+])
+def credible_ws_payload(request):
+    params = request.param
+    return {
+        'step_name': 'index_query',
+        'step_args': {
+            'id_source': params[0],
+            'id_type': params[1],
+            'id_name': params[2],
+            'graph_type': params[3],
+            'object_type': params[4]
+        }
+    }
+
+
+@pytest.fixture(params=[
+    insert_event, remove_event, graphing_event
+])
+def dynamo_stream_event(request):
+    return request.param
+
+
+@pytest.fixture(params=[
+    ('1002', '#vertex#ExternalId#{"id_source": "MBI", "id_type": "Clients", "id_name": "client_id"}#')
+])
+def load_order(request):
+    params = request.param
+    return {
+        'task_name': 'load',
+        'task_args': {
+            'keys': {
+                'sid_value': {'S': params[0]},
+                'identifier_stem': {
+                    'S': params[1]
+                }
+            },
+            'table_name': 'GraphObjects'
+        }
+    }
+
+
+@pytest.fixture(params=[
+    external_id_potential_vertex,
+    change_potential_vertex,
+    changelog_potential_vertex
+])
+def potential_vertex(request):
+    return request.param

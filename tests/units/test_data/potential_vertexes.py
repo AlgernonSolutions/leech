@@ -1,0 +1,5 @@
+from tests.units.test_data.actor_data import source_vertex, first_potential_vertex, second_potential_vertex
+
+change_potential_vertex = source_vertex
+external_id_potential_vertex = first_potential_vertex
+changelog_potential_vertex = second_potential_vertex

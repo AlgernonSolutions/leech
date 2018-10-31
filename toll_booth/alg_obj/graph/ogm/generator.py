@@ -20,6 +20,8 @@ class CommandGenerator:
         for property_name, property_value in graph_object.object_properties.items():
             if property_value is None:
                 continue
+            if hasattr(property_value, 'is_missing'):
+                continue
             property_commands.append(
                 f".property('{property_name}', {self._derive_property_value(property_name, property_value)})")
         return ''.join(property_commands)

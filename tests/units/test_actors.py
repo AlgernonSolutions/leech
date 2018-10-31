@@ -2,17 +2,20 @@ import pytest
 from mock import patch
 
 from tests.steps.actor_setup import patches
+from toll_booth.alg_obj.forge.borgs import SevenOfNine
 from toll_booth.alg_obj.forge.dentist import Dentist
 from toll_booth.alg_obj.forge.lizards import MonitorLizard
 from toll_booth.alg_obj.forge.robot_in_disguise import DisguisedRobot
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge
 
 
 @pytest.mark.actors
 class TestActors:
+    @pytest.mark.lizard
     def test_lizard(self, identifier_stem):
         with patch(patches.x_ray_patch_begin), patch(patches.x_ray_patch_end), \
-             patch(patches.send_patch), patch(patches.dynamo_driver_mark_working_patch, return_value=([1, 2, 3, 4], [1, 2, 3])):
+             patch(patches.send_patch), patch(patches.dynamo_driver_mark_working_patch,
+                                              return_value=([1, 2, 3, 4], [1, 2, 3])):
             lizard = MonitorLizard(identifier_stem=identifier_stem, sample_size=5)
             lizard.monitor()
 
@@ -44,5 +47,40 @@ class TestActors:
             assert isinstance(written_vertex, PotentialVertex)
             assert mock_write_args[1] == 'transformation'
 
-    def test_borg(self, assimilate_order):
-        pass
+    @pytest.mark.borg
+    def test_borg_assimilate_identifiable_potential(self, identifiable_assimilate_order):
+        with patch(patches.dynamo_driver_write_patch) as vertex_write, \
+                patch(patches.dynamo_driver_write_edge_patch) as edge_write, \
+                patch(patches.dynamo_driver_mark_stub_patch) as stub_write:
+            borg = SevenOfNine(identifiable_assimilate_order)
+            borg.assimilate()
+            assert stub_write.called is False
+
+            vertex_write_commands = vertex_write.call_args[0]
+            assert vertex_write.called is True
+            assert vertex_write_commands[0] == identifiable_assimilate_order.potential_vertex
+            assert vertex_write_commands[1] == 'assimilation'
+
+            edge_write_commands = edge_write.call_args[0]
+            assert edge_write.called is True
+            assert isinstance(edge_write_commands[0], PotentialEdge)
+            assert edge_write_commands[1] == 'assimilation'
+
+    @pytest.mark.borg
+    def test_borg_assimilate_stubbed_potential(self, stubbed_assimilate_order):
+        with patch(patches.dynamo_driver_write_patch) as vertex_write, \
+                patch(patches.dynamo_driver_write_edge_patch) as edge_write, \
+                patch(patches.dynamo_driver_mark_stub_patch) as stub_write:
+            borg = SevenOfNine(stubbed_assimilate_order)
+            borg.assimilate()
+            assert vertex_write.called is False
+
+            stub_write_commands = stub_write.call_args[0]
+            source_vertex = stubbed_assimilate_order.source_vertex
+            potential_vertex = stubbed_assimilate_order.potential_vertex
+            rule_entry = stubbed_assimilate_order.rule_entry
+            assert stub_write.called is True
+            assert stub_write_commands[0] == potential_vertex.object_type
+            assert isinstance(stub_write_commands[1], dict)
+            assert stub_write_commands[2] == source_vertex.internal_id
+            assert stub_write_commands[3] == rule_entry.edge_type

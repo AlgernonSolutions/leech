@@ -22,7 +22,7 @@ class SevenOfNine:
         self._note_potential_vertex()
 
     def _derive_vertexes(self):
-        if self._potential_vertex.is_identifiable:
+        if self._potential_vertex.is_identifiable and self._potential_vertex.is_properties_complete:
             return [self._potential_vertex]
         found_vertexes = self._dynamo_driver.find_potential_vertexes(self._potential_vertex.object_properties)
         if found_vertexes:
