@@ -172,6 +172,7 @@ def extraction_order(request):
 @pytest.fixture(params=[
     ('ExternalId', ext_id_identifier_stem, ext_id_id_value, ext_id_extracted_data),
     ('Change', change_identifier_stem, change_id_value, change_extracted_data),
+    ('Change', change_identifier_stem, second_change_id_value, second_change_extracted_data),
 ])
 def transform_order(request):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry

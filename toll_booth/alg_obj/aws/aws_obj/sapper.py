@@ -1,7 +1,7 @@
 import os
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.graph import InternalId
@@ -146,12 +146,14 @@ class SecretWhisperer:
         table = resource.Table(cls._sensitive_table_name)
         id_string = ''.join([source_internal_id, data_type])
         internal_id = InternalId(id_string).id_value
+        secret = {
+            'insensitive': internal_id,
+            'sensitive': sensitive_property
+        }
         try:
-            table.update_item(
-                Key={'insensitive': internal_id},
-                UpdateExpression='SET sensitive_entry = if_not_exists(sensitive_entry, :s)',
-                ExpressionAttributeValues={':s': sensitive_property},
-                ReturnValues='NONE'
+            table.put_item(
+                Item=secret,
+                ConditionExpression=Attr('insensitive').ne(internal_id)
             )
         except ClientError as e:
             print(e)

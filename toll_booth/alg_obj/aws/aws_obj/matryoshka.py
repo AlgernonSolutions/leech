@@ -27,14 +27,14 @@ class Matryoshka(AlgObject):
             for plan_id, plan_entry in self._m_plan.items():
                 plan = {'plan_id': plan_id, 'm_plan': plan_entry}
                 self._work.put(plan)
-            print('this matryoshka is a branch, going to set up more workers')
+            logging.info('this matryoshka is a branch, going to set up more workers')
             self._completed_results = self._unpack()
         except AttributeError:
             task_args = self._m_plan
             if not task_args:
                 task_args = [{}]
             self._task_args = task_args
-            print(
+            logging.info(
                 'this matryoshka is a worker, it is going to perform the task given it: %s:%s' % (task_name, task_args))
             self._completed_results = self._spin()
 

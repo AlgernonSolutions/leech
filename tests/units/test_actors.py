@@ -2,6 +2,7 @@ import pytest
 from mock import patch
 
 from tests.steps.actor_setup import patches
+from tests.steps.outside_setup.boto import intercept
 from toll_booth.alg_obj.forge.borgs import SevenOfNine
 from toll_booth.alg_obj.forge.dentist import Dentist
 from toll_booth.alg_obj.forge.lizards import MonitorLizard
@@ -35,7 +36,7 @@ class TestActors:
 
     @pytest.mark.robot
     def test_disguised_robot(self, transform_order):
-        with patch(patches.send_patch) as mock_send, patch(patches.dynamo_driver_write_patch) as mock_write:
+        with patch(patches.send_patch) as mock_send, patch(patches.dynamo_driver_write_patch) as mock_write, patch(patches.boto_patch, side_effect=intercept):
             disguised_robot = DisguisedRobot(transform_order)
             disguised_robot.transform()
             assert mock_send.called is True
