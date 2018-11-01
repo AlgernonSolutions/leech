@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from toll_booth.alg_obj.serializers import AlgEncoder
@@ -20,7 +21,7 @@ class OrderSwarm:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             import traceback
-            print('exception while running the swarm send: %s, %s' % (exc_type, exc_val))
+            logging.error('exception while running the swarm send: %s, %s' % (exc_type, exc_val))
             traceback.print_exc()
         if self._outbound_orders:
             self.send()
@@ -60,11 +61,11 @@ class OrderSwarm:
         send_task_name = 'send_message_batch'
         lambda_arn = os.environ['WORK_FUNCTION']
         task_params = {'target_queue_url': self._queue_url}
-        print('preparing to send a batch of messages through the swarm')
+        logging.info('preparing to send a batch of messages through the swarm')
         m_cluster = MatryoshkaCluster.calculate_for_concurrency(
             100, send_task_name, lambda_arn, task_args=batches, task_constants=task_params, max_m_concurrency=25)
         m = Matryoshka.for_root(m_cluster)
-        print('completed the swarm send')
+        logging.info('completed the swarm send')
         agg_results = m.aggregate_results
         failed_messages = []
         for result in agg_results:
@@ -73,16 +74,16 @@ class OrderSwarm:
             except TypeError:
                 pass
         if failed_messages:
-            print('some messages failed, going to retry')
+            logging.warning('some messages failed, going to retry')
             for failed_message in failed_messages:
                 message_id = failed_message['Id']
                 our_fault = failed_message['SenderFault']
                 if not our_fault:
                     self.add_order(receipt[message_id])
                 else:
-                    print('a message failed on our error: %s' % failed_message)
+                    logging.error('a message failed on our error: %s' % failed_message)
             self._current_retries += 1
             if self._current_retries > self._max_retries:
-                print('reached maximum retry count, still have errors: %s' % self._outbound_orders)
+                logging.error('reached maximum retry count, still have errors: %s' % self._outbound_orders)
                 return
             self.send()
