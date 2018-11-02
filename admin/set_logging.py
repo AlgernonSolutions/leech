@@ -1,5 +1,6 @@
 import logging
 
+
 def set_logging():
     root = logging.getLogger()
     if root.handlers:

@@ -170,6 +170,16 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+  log:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/log_process.handler
+      Runtime: python3.6
+      FunctionName: leech-process-log
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 128
+      Tracing: Active
   credibleWsExtractor:
     Type: AWS::Serverless::Function
     Properties:

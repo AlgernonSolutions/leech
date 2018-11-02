@@ -4,15 +4,27 @@ import logging
 from toll_booth.alg_obj.serializers import GqlDecoder
 from toll_booth.alg_tasks.worker import Worker
 
-root = logging.getLogger()
-if root.handlers:
-    for handler in root.handlers:
-        root.removeHandler(handler)
-logging.basicConfig(format='[%(levelname)s] %(asctime)s %(message)s', level=logging.INFO)
-logging.getLogger('aws_xray_sdk').setLevel(logging.WARNING)
-logging.getLogger('botocore').setLevel(logging.WARNING)
+
+def lambda_logged(lambda_function):
+    def wrapper(*args):
+        event = args[0]
+        context = args[1]
+        root = logging.getLogger()
+        if root.handlers:
+            for handler in root.handlers:
+                root.removeHandler(handler)
+        logging.basicConfig(format='[%(levelname)s] ||' +
+                                   f'function_name:{context.function_name}|function_arn{context.invoked_function_arn}|request_id:{context.aws_request_id}' +
+                                   '|| %(asctime)s %(message)s', level=logging.INFO)
+        logging.getLogger('aws_xray_sdk').setLevel(logging.WARNING)
+        logging.getLogger('botocore').setLevel(logging.WARNING)
+
+        return lambda_function(event, context)
+
+    return wrapper
 
 
+@lambda_logged
 def work(event, context):
     """
     the entry point for lambda functions that perform data modification or are compute intensive
@@ -34,6 +46,7 @@ def work(event, context):
     return results
 
 
+@lambda_logged
 def queued(event, context):
     import json
     from toll_booth.alg_obj.serializers import AlgDecoder
@@ -46,6 +59,7 @@ def queued(event, context):
     return results
 
 
+@lambda_logged
 def aphid(event, context):
     logging.info(f'starting an aphid call with event: {event}')
     event = {
@@ -58,6 +72,7 @@ def aphid(event, context):
     return results
 
 
+@lambda_logged
 def exploded(event, context):
     logging.info('received a call to process a dynamo entry, event: %s' % event)
 
@@ -71,16 +86,3 @@ def exploded(event, context):
     work_results = work(new_event, context)
     logging.info('completed a call to process a dynamo entry, results: %s' % work_results)
     return work_results
-
-
-def _map_aphid(event):
-    resource = event['resource']
-    method = event['httpMethod']
-    if method == 'POST':
-        if resource == '/schemata/schema':
-            return 'update_schema'
-        if resource == '/schemata/pattern':
-            return 'update_pattern'
-    if method == 'GET':
-        if resource == '/schemata/schema':
-            return 'get_schema'

@@ -4,7 +4,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-from toll_booth.admin.set_logging import set_logging
+from admin.set_logging import set_logging
 
 logs_client = boto3.client('logs')
 iam_client = boto3.client('iam')
@@ -12,7 +12,7 @@ iam_client = boto3.client('iam')
 log_trust_policy = {
   "Statement": {
     "Effect": "Allow",
-    "Principal": { "Service": "logs.us-east-1.amazonaws.com" },
+    "Principal": {"Service": "logs.us-east-1.amazonaws.com"},
     "Action": "sts:AssumeRole"
   }
 }
@@ -20,9 +20,9 @@ log_trust_policy = {
 fire_hose_trust_policy = {
   "Statement": {
     "Effect": "Allow",
-    "Principal": { "Service": "firehose.amazonaws.com" },
+    "Principal": {"Service": "firehose.amazonaws.com"},
     "Action": "sts:AssumeRole",
-    "Condition": { "StringEquals": { "sts:ExternalId":"803040539655" } }
+    "Condition": {"StringEquals": {"sts:ExternalId": "803040539655"}}
   }
 }
 
@@ -36,34 +36,48 @@ fire_hose_permissions_policy = {
           "s3:GetObject",
           "s3:ListBucket",
           "s3:ListBucketMultipartUploads",
-          "s3:PutObject" ],
+          "s3:PutObject"
+      ],
       "Resource": [
           "arn:aws:s3:::alg_leech",
-          "arn:aws:s3:::alg_leech/*" ]
+          "arn:aws:s3:::alg_leech/*"
+      ]
     }
   ]
 }
 
 log_permission_policy = {
-    "Statement":[
+    "Statement": [
       {
-        "Effect":"Allow",
-        "Action":["firehose:*"],
-        "Resource":["arn:aws:firehose:us-east-1:803040539655:*"]
+        "Effect": "Allow",
+        "Action": ["firehose:*"],
+        "Resource": ["arn:aws:firehose:us-east-1:803040539655:*"]
       },
       {
-        "Effect":"Allow",
-        "Action":["iam:PassRole"],
-        "Resource":["arn:aws:iam::803040539655:role/CWLtoKinesisFirehoseRole"]
+        "Effect": "Allow",
+        "Action": ["iam:PassRole"],
+        "Resource": ["arn:aws:iam::803040539655:role/CWLtoKinesisFirehoseRole"]
       }
     ]
 }
 
+lambda_function_names = [
+    'leech-monitor',
+    'leech-extract',
+    'leech-transform',
+    'leech-assimilate',
+    'leech-load',
+    'leech-explode',
+    'leech-aphid',
+    'leech-extract-crediblews',
+    'leech-work'
+]
 
-def put_subscription_filter():
+
+def put_subscription_filter(lambda_function_name):
     return logs_client.put_subscription_filter(
-        logGroupName='/aws/lambda/leech-monitor',
-        filterName='fire',
+        logGroupName=f'/aws/lambda/{lambda_function_name}',
+        filterName=f'fire-{lambda_function_name}',
         filterPattern='',
         destinationArn='arn:aws:firehose:us-east-1:803040539655:deliverystream/lambda',
         roleArn='arn:aws:iam::803040539655:role/CWLtoKinesisFirehoseRole'
@@ -139,9 +153,18 @@ if __name__ == '__main__':
         logging.info('going to add the fire hose to s3 role to the fire hose service')
         put_fire_hose_policy()
         logging.info('added the fire hose to s3 role')
-    except ClientError:
+    except ClientError as e:
         print()
-    try:
-        put_subscription_filter()
-    except ClientError:
-        print()
+
+    for function_name in lambda_function_names:
+        try:
+            logging.info(
+                f'going to subscribe the cloud watch stream to the fire hose for function named: {function_name}')
+            put_subscription_filter(function_name)
+            logging.info(
+                f'completed the subscription')
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'LimitExceededException':
+                raise e
+            logging.info(f'function named {function_name} already has a subscription, '
+                         f'if you want to replace it, manually remove the existing one first')

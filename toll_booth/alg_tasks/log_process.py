@@ -9,23 +9,37 @@ patterns = {
     'report': '(((Duration:\s)(?P<duration>\w+\.\w+))+)|((Billed Duration:\s)(?P<billed_duration>\w+))|((Memory\sSize:\s)(?P<memory_size>\w+))|((Max\sMemory\sUsed:\s)(?P<memory_used>\w+))',
     'log_timestamp': '(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3})',
     'log_level': '(\[\w+\])',
-    'lambda': '(?P<status>(START)|(END)|(REPORT))\s(RequestId):\s(?P<request_id>\S+)'
+    'lambda': '(?P<status>(START)|(END)|(REPORT))\s(RequestId):\s(?P<request_id>\S+)',
+    'python_lambda': '((\|)(\|function_name:\s(?P<function_name>\w+))|(\|function_arn:\s(?P<function_arn>[\w:,-]+))|(\|request_id:\s(?P<request_id>[\w\d-]+))(\|\|))'
 
 }
 
 
 def transform_python_log(message, log_level_match, log_timestamp_match):
+    lambda_pattern = re.compile(patterns['python_lambda'])
+    lambda_match = lambda_pattern.search(message)
+    lambda_section_pattern = re.compile('(\|\|.+\|\|)')
+    lambda_section = lambda_section_pattern.search(message).group()
     log_level_identifier = log_level_match.group()
     log_level = log_level_identifier[1:len(log_level_identifier) - 1]
     log_timestamp = log_timestamp_match.group()
     log_message = message.replace(log_level_identifier, '')
     log_message = log_message.replace(log_timestamp, '')
+    log_message = log_message.replace(lambda_section, '')
     log_message = log_message.strip()
-    return json.dumps({
+    python_log = {
         'log_level': log_level,
         'log_timestamp': log_timestamp,
         'log_message': log_message
-    })
+    }
+    if lambda_match:
+        python_log['lambda_function_name'] = lambda_match.group('function_name')
+        field_names = ['function_arn', 'request_id']
+        for field_name in field_names:
+            lambda_match = lambda_pattern.search(message, lambda_match.start() + 1)
+            field_value = lambda_match.group(field_name)
+            python_log[field_name] = field_value
+    return json.dumps(python_log)
 
 
 def transform_lambda_record(lambda_timestamp, message, lambda_match):
@@ -47,16 +61,6 @@ def transform_lambda_record(lambda_timestamp, message, lambda_match):
 
 
 def transform_log_event(log_event):
-    """Transform each log event.
-
-    The default implementation below just extracts the message and appends a newline to it.
-
-    Args:
-    log_event (dict): The original log event. Structure is {"id": str, "timestamp": long, "message": str}
-
-    Returns:
-    str: The transformed log event.
-    """
     message = log_event['message']
     log_timestamp_pattern = re.compile(patterns['log_timestamp'])
     log_timestamp_match = log_timestamp_pattern.search(message)
@@ -78,10 +82,6 @@ def process_records(records):
         data = json.loads(decompressed_data)
 
         record_id = r['recordId']
-        """
-        CONTROL_MESSAGE are sent by CWL to check if the subscription is reachable.
-        They do not contain actual data.
-        """
         if data['messageType'] == 'CONTROL_MESSAGE':
             yield {
                 'result': 'Dropped',

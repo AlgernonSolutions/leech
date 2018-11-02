@@ -6,7 +6,7 @@ import boto3
 from jsonref import JsonRef
 from jsonschema import validate
 
-from toll_booth.admin.set_logging import set_logging
+from admin.set_logging import set_logging
 from toll_booth.alg_obj.graph.schemata.schema import Schema
 
 
