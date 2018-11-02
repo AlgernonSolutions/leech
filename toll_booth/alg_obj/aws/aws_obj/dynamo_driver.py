@@ -274,6 +274,22 @@ class DynamoDriver:
             ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
         )
 
+    def mark_object_as_graphed(self, identifier_stem, id_value):
+        stage_name = 'graphing'
+        return self._table.update_item(
+            Key=DynamoParameters(identifier_stem, id_value).as_key,
+            UpdateExpression='SET last_stage_seen = :s, last_seen_time = :t, #sc = :t, disposition = :d',
+            ExpressionAttributeValues={
+                ':s': stage_name,
+                ':t': self._get_decimal_timestamp(),
+                ':d': 'processing'
+            },
+            ExpressionAttributeNames={
+                '#sc': f'{stage_name}_clear_time'
+            },
+            ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
+        )
+
     def add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
         try:
             return self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)

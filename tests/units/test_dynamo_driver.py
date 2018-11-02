@@ -167,6 +167,25 @@ class TestDynamoDriver:
         test_timestamp = datetime.datetime.fromtimestamp(last_seen_timestamp)
         assert test_timestamp
 
+    def test_mark_vertex_as_graphed(self, put_vertex):
+        import boto3
+        import datetime
+
+        put_vertex(blank_table_name, vertex, vertex_key)
+        dynamo_driver = DynamoDriver(table_name=blank_table_name)
+        test_mark = dynamo_driver.mark_object_as_graphed(vertex_identifier_stem, vertex_id_value)
+        assert test_mark['ResponseMetadata']['HTTPStatusCode'] == 200
+        client = boto3.resource('dynamodb').Table(blank_table_name)
+        vertex_get = client.get_item(Key=vertex_key)
+        test_vertex = vertex_get['Item']
+        assert test_vertex['last_stage_seen'] == 'graphing'
+        last_seen_timestamp = test_vertex['last_seen_time']
+        stage_clear_timestamp = test_vertex['graphing_clear_time']
+        assert last_seen_timestamp == stage_clear_timestamp
+        test_timestamp = datetime.datetime.fromtimestamp(last_seen_timestamp)
+        assert test_timestamp
+        assert test_vertex['disposition'] == 'processing'
+
     def test_find_potential_vertexes(self, put_vertexes):
         put_vertexes(blank_table_name, vertex, id_range, sort_key, vertex_key)
         dynamo_driver = DynamoDriver(table_name=blank_table_name)
