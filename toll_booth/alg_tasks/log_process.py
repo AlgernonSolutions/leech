@@ -95,8 +95,7 @@ def process_records(records):
         elif data['messageType'] == 'DATA_MESSAGE':
             data = ''.join([transform_log_event(e) for e in data['logEvents']])
             encoded_data = data.encode()
-            compressed_data = gzip.compress(encoded_data, 6)
-            data = base64.b64encode(compressed_data).decode()
+            data = base64.b64encode(encoded_data).decode()
 
             yield {
                 'data': data,

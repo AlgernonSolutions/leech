@@ -24,7 +24,8 @@ class TestLogProcess:
     )
     @pytest.mark.log_process
     def test_log_process(self, event):
-        handler(event, [])
+        results = handler(event, [])
+        print(results)
 
     @pytest.mark.parametrize(
         'message', [
