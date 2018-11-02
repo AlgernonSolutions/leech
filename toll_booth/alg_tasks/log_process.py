@@ -15,7 +15,7 @@ patterns = {
 }
 
 
-def transform_python_log(message, log_level_match, log_timestamp_match):
+def transform_python_log(timestamp, message, log_level_match, log_timestamp_match):
     lambda_pattern = re.compile(patterns['python_lambda'])
     lambda_match = lambda_pattern.search(message)
     lambda_section_pattern = re.compile('(\|\|.+\|\|)')
@@ -28,6 +28,7 @@ def transform_python_log(message, log_level_match, log_timestamp_match):
     log_message = log_message.replace(lambda_section, '')
     log_message = log_message.strip()
     python_log = {
+        'timestamp': timestamp,
         'log_level': log_level,
         'log_timestamp': log_timestamp,
         'log_message': log_message
@@ -68,11 +69,12 @@ def transform_log_event(log_event):
     log_level_match = log_level_pattern.search(message)
     lambda_invocation_pattern = re.compile(patterns['lambda'])
     lambda_match = lambda_invocation_pattern.search(message)
+    log_timestamp = log_event['timestamp']
     if log_level_match and log_timestamp_match:
-        return transform_python_log(message, log_level_match, log_timestamp_match)
+        return transform_python_log(log_timestamp, message, log_level_match, log_timestamp_match)
     if lambda_match:
-        return transform_lambda_record(log_event['timestamp'], message, lambda_match)
-    return json.dumps({'message': message})
+        return transform_lambda_record(log_timestamp, message, lambda_match)
+    return json.dumps({'message': message, 'timestamp': log_timestamp})
 
 
 def process_records(records):

@@ -46,3 +46,5 @@ class TestLogProcess:
         assert 'request_id' in log_object
         assert re.compile('[\w\d-]+').match(log_object['request_id'])
         assert 'log_message' in log_object
+        assert 'timestamp' in log_object
+        assert isinstance(log_object['timestamp'], int)
