@@ -19,13 +19,15 @@ def transform_python_log(timestamp, message, log_level_match, log_timestamp_matc
     lambda_pattern = re.compile(patterns['python_lambda'])
     lambda_match = lambda_pattern.search(message)
     lambda_section_pattern = re.compile('(\|\|.+\|\|)')
-    lambda_section = lambda_section_pattern.search(message).group()
+    lambda_section_match = lambda_section_pattern.search(message)
     log_level_identifier = log_level_match.group()
     log_level = log_level_identifier[1:len(log_level_identifier) - 1]
     log_timestamp = log_timestamp_match.group()
     log_message = message.replace(log_level_identifier, '')
     log_message = log_message.replace(log_timestamp, '')
-    log_message = log_message.replace(lambda_section, '')
+    if lambda_section_match:
+        lambda_section = lambda_section_match.group()
+        log_message = log_message.replace(lambda_section, '')
     log_message = log_message.strip()
     python_log = {
         'timestamp': timestamp,

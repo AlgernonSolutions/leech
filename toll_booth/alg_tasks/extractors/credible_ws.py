@@ -3,15 +3,10 @@ import logging
 
 from toll_booth.alg_obj.forge.extractors.credible_ws import CredibleWebServiceExtractor
 from toll_booth.alg_obj.serializers import AlgEncoder
-
-root = logging.getLogger()
-if root.handlers:
-    for handler in root.handlers:
-        root.removeHandler(handler)
-logging.basicConfig(format='[%(levelname)s] %(asctime)s %(message)s', level=logging.INFO)
-logging.getLogger('aws_xray_sdk').setLevel(logging.INFO)
+from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
+@lambda_logged
 def handler(event, context):
     logging.info('called the handler for the CredibleWS Extractor, event: %s' % event)
     step_name = event['step_name']
