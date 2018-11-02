@@ -1,3 +1,5 @@
+import logging
+
 from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 from toll_booth.alg_tasks.task_obj import remote_task
@@ -5,7 +7,7 @@ from toll_booth.alg_tasks.task_obj import remote_task
 
 @remote_task
 def load(*args, **kwargs):
-    print('starting a load task with args/kwargs: %s/%s' % (args, kwargs))
+    logging.info('starting a load task with args/kwargs: %s/%s' % (args, kwargs))
     task_args = kwargs['task_args']
     dynamo_driver = DynamoDriver(**task_args)
     key_fields = task_args['keys']
