@@ -72,11 +72,12 @@ def transform_log_event(log_event):
     lambda_invocation_pattern = re.compile(patterns['lambda'])
     lambda_match = lambda_invocation_pattern.search(message)
     log_timestamp = log_event['timestamp']
+    transformed_log = json.dumps({'message': message, 'timestamp': log_timestamp})
     if log_level_match and log_timestamp_match:
-        return transform_python_log(log_timestamp, message, log_level_match, log_timestamp_match)
+        transformed_log = transform_python_log(log_timestamp, message, log_level_match, log_timestamp_match)
     if lambda_match:
-        return transform_lambda_record(log_timestamp, message, lambda_match)
-    return json.dumps({'message': message, 'timestamp': log_timestamp})
+        transformed_log = transform_lambda_record(log_timestamp, message, lambda_match)
+    return transformed_log + '\n'
 
 
 def process_records(records):
@@ -92,8 +93,7 @@ def process_records(records):
                 'recordId': record_id
             }
         elif data['messageType'] == 'DATA_MESSAGE':
-            data = ','.join([transform_log_event(e) for e in data['logEvents']])
-            data = data + ','
+            data = ''.join([transform_log_event(e) for e in data['logEvents']])
             encoded_data = data.encode()
             compressed_data = gzip.compress(encoded_data, 6)
             data = base64.b64encode(compressed_data).decode()
