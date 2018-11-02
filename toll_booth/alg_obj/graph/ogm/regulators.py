@@ -35,7 +35,7 @@ class ObjectRegulator:
         for property_name, entry_property in self._entry_properties_schema.items():
             property_data_type = entry_property.property_data_type
             property_value = graph_object_properties[property_name]
-            if entry_property.sensitive:
+            if property_value and entry_property.sensitive:
                 if hasattr(property_value, 'is_missing'):
                     raise RuntimeError(
                         f'object property named {property_name} is listed as being sensitive, but the value for it '
