@@ -174,12 +174,17 @@ class DynamoDriver:
                 f'could not derive all properties for ruled vertex type: {vertex.object_type}')
         update_expression = 'SET #i=:i, #o=:v, #d=:d, #lst=:t, #sc=:t, #ot=:ot, #im=:im, #c=:c, #lss=:lss,#idf=:idf, #id=:id '
         params = DynamoParameters(vertex.identifier_stem, vertex.id_value)
+        object_properties = {}
+        for property_name, object_property in vertex.object_properties.items():
+            if object_property == '':
+                object_property = None
+            object_properties[property_name] = object_property
         return self._table.update_item(
             Key=params.as_key,
             UpdateExpression=update_expression,
             ExpressionAttributeValues={
                 ':ot': vertex.object_type,
-                ':v': vertex.object_properties,
+                ':v': object_properties,
                 ':i': vertex.internal_id,
                 ':im': vertex.if_missing,
                 ':d': 'graphing',
