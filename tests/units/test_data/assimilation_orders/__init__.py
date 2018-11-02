@@ -1,0 +1,3 @@
+from tests.units.test_data.assimilation_orders.first_stub_assimilation_order import first_stub_assimilate_order
+from tests.units.test_data.assimilation_orders.second_stub_assimilation_order import second_stub_assimilate_order
+from tests.units.test_data.assimilation_orders.first_identifiable_assimilation_order import first_identifiable_assimilation_order

@@ -28,8 +28,8 @@
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name",
-        "id_type"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {
@@ -132,13 +132,14 @@
       ],
       "internal_id_key": [
         "id_source",
-        "self.vertex_name",
+        "object_type",
         "changelog_id",
         "detail_id"
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {
@@ -267,12 +268,13 @@
       ],
       "internal_id_key": [
         "id_source",
-        "self.vertex_name",
+        "object_type",
         "changelog_id"
       ],
       "identifier_stem": [
         "id_source",
-        "self.vertex_name"
+        "id_type",
+        "id_name"
       ],
       "indexes": [
         {
@@ -610,9 +612,9 @@
     "changelog_query": "SELECT changelog_id FROM ChangeLogDetail WHERE changelogdetail_id = {id_value}",
     "changelog_changed_query": "SELECT cl.client_id, cl.clientvisit_id, cl.emp_id, cl.record_id, ct.record_type, ct.primarykey_name FROM ChangeLog as cl INNER JOIN ChangeLogType as ct ON cl.changelogtype_id = ct.changelogtype_id WHERE cl.changelog_id = {id_value}",
     "change_changed_query": "SELECT cl.change_date_utc, cl.client_id, cl.clientvisit_id, cl.emp_id, cl.record_id, ct.record_type, ct.primarykey_name FROM ChangeLog as cl INNER JOIN ChangeLogDetail as cd ON cl.changelog_id = cd.changelog_id INNER JOIN ChangeLogType as ct ON cl.changelogtype_id = ct.changelogtype_id WHERE cd.changelogdetail_id = {id_value}",
-    "changelog_vertex_query": "SELECT '{id_source}' as id_source, cl.changelog_id, ct.description as change_description, cl.change_date, cl.change_date_utc FROM ChangeLog as cl LEFT OUTER JOIN ChangeLogType as ct ON cl.changelogtype_id = ct.changelogtype_id LEFT OUTER JOIN ChangeLogDetail as cd ON cl.changelog_id = cd.changelog_id WHERE cl.changelog_id = {id_value}",
+    "changelog_vertex_query": "SELECT '{id_name}' as id_name, '{id_type}' as id_type, '{id_source}' as id_source, cl.changelog_id, ct.description as change_description, cl.change_date, cl.change_date_utc FROM ChangeLog as cl LEFT OUTER JOIN ChangeLogType as ct ON cl.changelogtype_id = ct.changelogtype_id LEFT OUTER JOIN ChangeLogDetail as cd ON cl.changelog_id = cd.changelog_id WHERE cl.changelog_id = {id_value}",
     "by_emp_id_query": "SELECT by_emp_id as id_value FROM ChangeLog WHERE changelog_id = {id_value}",
-    "change_vertex_query": "SELECT '{id_source}' as id_source, changelogdetail_id as detail_id, changelog_id, data_dict_id, detail1_value as detail_one_value, detail1 as detail_one, detail2 as detail_two FROM ChangeLogDetail WHERE changelogdetail_id = {id_value}",
+    "change_vertex_query": "SELECT '{id_name}' as id_name, '{id_type}' as id_type, '{id_source}' as id_source, changelogdetail_id as detail_id, changelog_id, data_dict_id, detail1_value as detail_one_value, detail1 as detail_one, detail2 as detail_two FROM ChangeLogDetail WHERE changelogdetail_id = {id_value}",
     "external_id_vertex_query": "SELECT  {id_name} as id_value, '{object_type}' as id_type, '{id_name}' as id_name, '{id_source}' as id_source FROM {object_type} WHERE {id_name} = {id_value}"
   }
 }

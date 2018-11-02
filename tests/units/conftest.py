@@ -4,6 +4,8 @@ import pytest
 from botocore.exceptions import ClientError
 
 from tests.units.test_data.actor_data import *
+from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order, \
+    first_stub_assimilate_order, second_stub_assimilate_order
 from tests.units.test_data.dynamo_stream_events import *
 from tests.units.test_data.potential_vertexes import *
 
@@ -184,23 +186,18 @@ def transform_order(request):
 
 
 @pytest.fixture(params=[
-    (source_vertex, first_potential_vertex, first_rule, change_extracted_data),
+    first_identifiable_assimilation_order,
 ])
 def identifiable_assimilate_order(request):
-    from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
-
-    params = request.param
-    return AssimilateObjectOrder(params[0], params[1], params[2], params[3])
+    return request.param
 
 
 @pytest.fixture(params=[
-    (source_vertex, second_potential_vertex, second_rule, change_extracted_data),
+    first_stub_assimilate_order,
+    second_stub_assimilate_order
 ])
 def stubbed_assimilate_order(request):
-    from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
-
-    params = request.param
-    return AssimilateObjectOrder(params[0], params[1], params[2], params[3])
+    return request.param
 
 
 @pytest.fixture(params=[

@@ -169,7 +169,7 @@ class TestDynamoDriver:
     def test_find_potential_vertexes(self, put_vertexes):
         put_vertexes(blank_table_name, vertex, id_range, sort_key, vertex_key)
         dynamo_driver = DynamoDriver(table_name=blank_table_name)
-        potential_vertexes = dynamo_driver.find_potential_vertexes(vertex_properties)
+        potential_vertexes = dynamo_driver.find_potential_vertexes(vertex_type, vertex_properties)
         for potential_vertex in potential_vertexes:
             assert potential_vertex.id_value in id_range
             for property_name, test_property in vertex_properties.items():

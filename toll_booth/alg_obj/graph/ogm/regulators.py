@@ -401,7 +401,7 @@ class PotentialVertex(GraphObject):
 
     @property
     def is_properties_complete(self):
-        for object_property in self._object_properties:
+        for property_name, object_property in self._object_properties.items():
             if hasattr(object_property, 'is_missing'):
                 return False
         return True

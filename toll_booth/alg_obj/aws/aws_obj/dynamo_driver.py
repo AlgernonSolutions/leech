@@ -104,17 +104,19 @@ class DynamoDriver:
         except IndexError:
             raise EmptyIndexException
 
-    def find_potential_vertexes(self, vertex_properties):
-        potential_vertexes, token = self._scan_vertexes(vertex_properties)
+    def find_potential_vertexes(self, object_type, vertex_properties):
+        potential_vertexes, token = self._scan_vertexes(object_type, vertex_properties)
         while token:
-            more_vertexes, token = self._scan_vertexes(vertex_properties, token)
+            more_vertexes, token = self._scan_vertexes(object_type, vertex_properties, token)
             potential_vertexes.extend(more_vertexes)
         return [PotentialVertex.from_json(x) for x in potential_vertexes]
 
-    def _scan_vertexes(self, vertex_properties, token=None):
-        filter_properties = []
+    def _scan_vertexes(self, object_type, vertex_properties, token=None):
+        filter_properties = [f'begins_with(identifier_stem, :is)']
         expression_names = {}
-        expression_values = {}
+        expression_values = {
+            ':is': f'#vertex#{object_type}#'
+        }
         pointer = 1
         for property_name, vertex_property in vertex_properties.items():
             if hasattr(vertex_property, 'is_missing'):

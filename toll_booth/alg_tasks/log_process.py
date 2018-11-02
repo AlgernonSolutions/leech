@@ -1,50 +1,3 @@
-"""
-For processing data sent to Firehose by Cloudwatch Logs subscription filters.
-
-Cloudwatch Logs sends to Firehose records that look like this:
-
-{
-  "messageType": "DATA_MESSAGE",
-  "owner": "123456789012",
-  "logGroup": "log_group_name",
-  "logStream": "log_stream_name",
-  "subscriptionFilters": [
-    "subscription_filter_name"
-  ],
-  "logEvents": [
-    {
-      "id": "01234567890123456789012345678901234567890123456789012345",
-      "timestamp": 1510109208016,
-      "message": "log message 1"
-    },
-    {
-      "id": "01234567890123456789012345678901234567890123456789012345",
-      "timestamp": 1510109208017,
-      "message": "log message 2"
-    }
-    ...
-  ]
-}
-
-The data is additionally compressed with GZIP.
-
-The code below will:
-
-1) Gunzip the data
-2) Parse the json
-3) Set the result to ProcessingFailed for any record whose messageType is not DATA_MESSAGE, thus redirecting them to the
-   processing error output. Such records do not contain any log events. You can modify the code to set the result to
-   Dropped instead to get rid of these records completely.
-4) For records whose messageType is DATA_MESSAGE, extract the individual log events from the logEvents field, and pass
-   each one to the transformLogEvent method. You can modify the transformLogEvent method to perform custom
-   transformations on the log events.
-5) Concatenate the result from (4) together and set the result as the data of the record returned to Firehose. Note that
-   this step will not add any delimiters. Delimiters should be appended by the logic within the transformLogEvent
-   method.
-6) Any additional records which exceed 6MB will be re-ingested back into Firehose.
-
-"""
-
 import base64
 import json
 import gzip
@@ -75,10 +28,11 @@ def transform_python_log(message, log_level_match, log_timestamp_match):
     })
 
 
-def transform_lambda_record(message, lambda_match):
+def transform_lambda_record(lambda_timestamp, message, lambda_match):
     report_pattern = re.compile(patterns['report'], re.MULTILINE)
     report_match = report_pattern.search(message)
     lambda_log = {
+        'timestamp': lambda_timestamp,
         'request_id': lambda_match.group('request_id'),
         'lambda_status': lambda_match.group('status')
     }
@@ -113,7 +67,7 @@ def transform_log_event(log_event):
     if log_level_match and log_timestamp_match:
         return transform_python_log(message, log_level_match, log_timestamp_match)
     if lambda_match:
-        return transform_lambda_record(message, lambda_match)
+        return transform_lambda_record(log_event['timestamp'], message, lambda_match)
     return json.dumps({'message': message})
 
 

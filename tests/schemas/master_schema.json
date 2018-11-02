@@ -578,7 +578,7 @@
           "type": "string"
         },
         "edge_properties": {
-          "description": "an array of entry properties assigned to the edge",
+          "description": "an array of edge properties",
           "type": "array",
           "items": {
             "$ref": "#/definitions/edge_entry_property"
