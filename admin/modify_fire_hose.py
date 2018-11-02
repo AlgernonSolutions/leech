@@ -29,6 +29,14 @@ fire_hose_trust_policy = {
 fire_hose_permissions_policy = {
   "Statement": [
     {
+      "Sid": "",
+      "Effect": "Allow",
+      "Action": [
+          "glue:GetTableVersions"
+      ],
+      "Resource": "*"
+    },
+    {
       "Effect": "Allow",
       "Action": [
           "s3:AbortMultipartUpload",
@@ -42,6 +50,52 @@ fire_hose_permissions_policy = {
           "arn:aws:s3:::alg_leech",
           "arn:aws:s3:::alg_leech/*"
       ]
+    },
+    {
+        "Sid": "",
+        "Effect": "Allow",
+        "Action": [
+            "lambda:InvokeFunction",
+            "lambda:GetFunctionConfiguration"
+        ],
+        "Resource": "arn:aws:lambda:us-east-1:803040539655:function:leech-process-log:$LATEST"
+    },
+    {
+        "Sid": "",
+        "Effect": "Allow",
+        "Action": [
+            "logs:PutLogEvents"
+        ],
+        "Resource": [
+            "arn:aws:logs:us-east-1:803040539655:log-group:/aws/kinesisfirehose/lambda:log-stream:*"
+        ]
+    },
+    {
+        "Sid": "",
+        "Effect": "Allow",
+        "Action": [
+            "kinesis:DescribeStream",
+            "kinesis:GetShardIterator",
+            "kinesis:GetRecords"
+        ],
+        "Resource": "arn:aws:kinesis:us-east-1:803040539655:stream/*"
+    },
+    {
+        "Effect": "Allow",
+        "Action": [
+            "kms:Decrypt"
+        ],
+        "Resource": [
+            "arn:aws:kms:region:accountid:key/*"
+        ],
+        "Condition": {
+            "StringEquals": {
+                "kms:ViaService": "kinesis.us-east-1.amazonaws.com"
+            },
+            "StringLike": {
+                "kms:EncryptionContext:aws:kinesis:arn": "arn:aws:kinesis:us-east-1:803040539655:stream/*"
+            }
+        }
     }
   ]
 }

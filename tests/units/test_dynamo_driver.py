@@ -100,6 +100,7 @@ class TestDynamoDriver:
         assert fetched_seed['is_edge'] is False
         delete_vertex(blank_table_name, vertex_key)
 
+    @pytest.mark.put_stub
     def test_stub_vertex_put(self, delete_vertex):
         stub_type = 'TestStub'
         rule_name = 'TestStubRule'
