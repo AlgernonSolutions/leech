@@ -123,7 +123,6 @@ class SchemaWhisperer:
             return True
         import traceback
         traceback.print_exc()
-        print(exc_type)
 
 
 class SecretWhisperer:
@@ -138,7 +137,7 @@ class SecretWhisperer:
             Select='ALL_ATTRIBUTES',
             KeyConditionExpression=Key('insensitive').eq(internal_id)
         )
-        print(results)
+        return results['Item']['sensitive']
 
     @classmethod
     def put_secret(cls, sensitive_property, source_internal_id, data_type):
@@ -156,5 +155,6 @@ class SecretWhisperer:
                 ConditionExpression=Attr('insensitive').ne(internal_id)
             )
         except ClientError as e:
-            print(e)
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e
         return internal_id
