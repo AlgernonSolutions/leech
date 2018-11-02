@@ -113,6 +113,8 @@ class ObjectRegulator:
     @classmethod
     def _set_property_data_type(cls, property_name, entry_property, test_property):
         property_data_type = entry_property.property_data_type
+        if test_property == '':
+            return None
         if property_data_type == 'Number':
             return Decimal(test_property)
         if property_data_type == 'String':
