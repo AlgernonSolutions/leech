@@ -1,9 +1,8 @@
 import logging
-import os
 
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver, EmptyIndexException
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver, EmptyIndexException
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager

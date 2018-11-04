@@ -1,6 +1,6 @@
 import logging
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 from toll_booth.alg_tasks.task_obj import remote_task
 

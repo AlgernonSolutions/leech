@@ -1,4 +1,4 @@
-from toll_booth.alg_obj.aws.aws_obj.dynamo_scanner import LeechScanner
+from toll_booth.alg_obj.aws.sapper.dynamo_scanner import LeechScanner
 
 
 def show_leech_stages():

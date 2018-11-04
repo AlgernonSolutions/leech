@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 
 from tests.units.test_data.dynamo_data import *
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver, EmptyIndexException
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver, EmptyIndexException
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, PotentialEdge, ObjectRegulator, \
     VertexRegulator
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry

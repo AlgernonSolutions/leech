@@ -1,4 +1,4 @@
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
 from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
@@ -35,6 +35,6 @@ class Dentist:
             self._schema_entry
         )
         self._transform_queue.add_order(transform_order)
-        self._dynamo_driver.mark_object_as_stage_cleared(
-            self._extraction_order.identifier_stem, self._extraction_order.id_value, 'extraction')
+        self._dynamo_driver.set_extracted_data(
+            self._extraction_order.identifier_stem, self._extraction_order.id_value, extracted_data)
         self._transform_queue.push_orders()

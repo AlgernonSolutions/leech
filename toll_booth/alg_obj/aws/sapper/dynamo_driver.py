@@ -141,13 +141,11 @@ class DynamoDriver:
         seed = params.as_key
         seed.update({
             'id_value': id_value,
-            'is_edge': False,
-            'completed': False,
             'disposition': 'working',
             'last_stage_seen': stage_name,
-            f'{stage_name}_clear_time': now,
+            'progress': {'monitoring': now},
             'object_type': object_type,
-            'last_seen_time': now
+            'last_time_seen': now
         })
         return self._table.put_item(
             Item=seed,
@@ -165,14 +163,15 @@ class DynamoDriver:
             return None
         return PotentialVertex.from_json(vertex_information)
 
-    def write_vertex(self, vertex, stage_name):
+    def set_transform_results(self, vertex, potentials):
         if not vertex.is_identifiable:
             raise RuntimeError(
                 f'could not uniquely identify a ruled vertex for type: {vertex.object_type}')
         if not vertex.is_properties_complete:
             raise RuntimeError(
                 f'could not derive all properties for ruled vertex type: {vertex.object_type}')
-        update_expression = 'SET #i=:i, #o=:v, #d=:d, #lst=:t, #sc=:t, #ot=:ot, #im=:im, #c=:c, #lss=:lss,#idf=:idf, #id=:id '
+        stage_name = 'transformation'
+        update_expression = 'SET #i=:i, #o=:v, #d=:d, #lts=:t, #sc=:t, #lss=:lss, #p=:p'
         params = DynamoParameters(vertex.identifier_stem, vertex.id_value)
         object_properties = {}
         for property_name, object_property in vertex.object_properties.items():
@@ -183,31 +182,23 @@ class DynamoDriver:
             Key=params.as_key,
             UpdateExpression=update_expression,
             ExpressionAttributeValues={
-                ':ot': vertex.object_type,
                 ':v': object_properties,
                 ':i': vertex.internal_id,
-                ':im': vertex.if_missing,
                 ':d': 'graphing',
-                ':c': False,
                 ':t': self._get_decimal_timestamp(),
                 ':lss': stage_name,
-                ':idf': vertex.id_value_field,
-                ':id': vertex.id_value
+                ':p': self._format_potentials(potentials)
             },
             ExpressionAttributeNames={
                 '#i': 'internal_id',
                 '#o': 'object_properties',
                 '#d': 'disposition',
-                '#lst': 'last_seen_time',
-                '#sc': f'{stage_name}_clear_time',
+                '#lts': 'last_time_seen',
+                '#sc': f'progress.{stage_name}',
                 '#lss': 'last_stage_seen',
-                '#ot': 'object_type',
-                '#im': 'if_missing',
-                '#c': 'completed',
-                '#idf': 'id_value_field',
-                '#id': 'id_value'
+                '#p': 'potentials'
             },
-            ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
+            ConditionExpression=Attr(f'progress.{stage_name}').not_exists()
         )
 
     def write_edge(self, edge, stage_name):
@@ -268,15 +259,15 @@ class DynamoDriver:
     def mark_object_as_stage_cleared(self, identifier_stem, id_value, stage_name):
         return self._table.update_item(
             Key=DynamoParameters(identifier_stem, id_value).as_key,
-            UpdateExpression='SET last_stage_seen = :s, last_seen_time = :t, #sc = :t',
+            UpdateExpression='SET last_stage_seen = :s, last_time_seen = :t, #sc = :t',
             ExpressionAttributeValues={
                 ':s': stage_name,
                 ':t': self._get_decimal_timestamp()
             },
             ExpressionAttributeNames={
-                '#sc': f'{stage_name}_clear_time'
+                '#sc': f'progress.{stage_name}'
             },
-            ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
+            ConditionExpression=Attr(f'progress.{stage_name}').not_exists()
         )
 
     def mark_object_as_graphed(self, identifier_stem, id_value):
@@ -310,7 +301,25 @@ class DynamoDriver:
             UpdateExpression=update_components[2],
             ExpressionAttributeValues=update_components[1],
             ExpressionAttributeNames=update_components[0],
-            ConditionExpression=Attr('vertex_properties').not_exists() & Attr('object_properties').not_exists()
+            ConditionExpression=Attr('object_properties').not_exists()
+        )
+
+    def set_extracted_data(self, identifier_stem, id_value, extracted_data):
+        params = DynamoParameters(identifier_stem, id_value)
+        return self._table.update_item(
+            Key=params.as_key,
+            UpdateExpression='SET extracted_data = :ex, #p = :t, #lss = :t, #lts = :s',
+            ExpressionAttributeValues={
+                ':ex': extracted_data,
+                ':t': self._get_decimal_timestamp(),
+                ':s': 'extraction'
+            },
+            ExpressionAttributeNames={
+                '#p': 'progress.extraction',
+                '#lss': 'last_stage_seen',
+                '#lts': 'last_time_seen'
+            },
+            ConditionExpression=Attr('extracted_data').not_exists()
         )
 
     def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
@@ -349,6 +358,55 @@ class DynamoDriver:
             },
             ConditionExpression=Attr(object_type).not_exists()
         )
+
+    def _format_potentials(self, potentials):
+        formatted = []
+        for potential in potentials:
+            formatted.append({
+                'rule_entry': self._format_rule_entry(potential[1]),
+                'potential_vertex': self._format_potential_vertex(potential[0])
+            })
+        return formatted
+
+    @classmethod
+    def _format_potential_vertex(cls, potential_vertex):
+        object_properties = {}
+        for property_name, object_property in potential_vertex.object_properties.items():
+            if object_property == '' or hasattr(object_property, 'is_missing'):
+                object_property = None
+            object_properties[property_name] = object_property
+        return {
+            'identifier_stem': potential_vertex.identifier_stem,
+            'sid_value': str(potential_vertex.id_value),
+            'id_value': potential_vertex.id_value,
+            'internal_id': potential_vertex.internal_id,
+            'object_properties': object_properties
+        }
+
+    @classmethod
+    def _format_rule_entry(cls, rule_entry):
+        return {
+            'target_type': rule_entry.target_type,
+            'edge_type': rule_entry.edge_type,
+            'target_constants': rule_entry.target_constants,
+            'target_specifiers': cls._format_specifiers(rule_entry.target_specifiers),
+            'if_absent': rule_entry.if_missing,
+            'inbound': rule_entry.inbound
+        }
+
+    @classmethod
+    def _format_specifiers(cls, target_specifiers):
+        return [cls._format_specifier(x) for x in target_specifiers]
+
+    @classmethod
+    def _format_specifier(cls, target_specifier):
+        return {
+            'specifier_name': target_specifier.specifier_name,
+            'specifier_type': target_specifier.specifier_type,
+            'shared_properties': getattr(target_specifier, 'shared_properties', None),
+            'extracted_properties': getattr(target_specifier, 'extracted_properties', None),
+            'function_name': getattr(target_specifier, 'function_name', None)
+        }
 
     @classmethod
     def _get_decimal_timestamp(cls):

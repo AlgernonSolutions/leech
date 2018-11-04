@@ -2,7 +2,7 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
 
 
 def bulk_dynamo_write(*args, **kwargs):
