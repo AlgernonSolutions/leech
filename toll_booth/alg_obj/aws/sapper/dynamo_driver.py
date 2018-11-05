@@ -8,6 +8,96 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge, IdentifierStem
 
 
+def leeched(production_function):
+    def wrapper(*args, **kwargs):
+        if 'leech_record' in kwargs:
+            return production_function(*args, **kwargs)
+        identifier_stem = kwargs.get('identifier_stem')
+        id_value = kwargs.get('id_value')
+        vertex_properties = kwargs.get('vertex_properties', {})
+        record = LeechRecord(identifier_stem, id_value, vertex_properties=vertex_properties)
+        return production_function(*args, leech_record=record)
+    return wrapper
+
+
+class LeechRecord:
+    def __init__(self, identifier_stem, id_value, **kwargs):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+        self._identifier_stem = identifier_stem
+        self._id_value = id_value
+        self._dynamo_parameters = DynamoParameters(identifier_stem, id_value)
+        self._object_properties = kwargs.get('object_properties', {})
+        self._object_type = identifier_stem.object_type
+
+    def vertex_data(self, stage_name):
+        now = self._get_decimal_timestamp()
+        return {
+            'id_value': self._id_value,
+            'disposition': 'working',
+            'last_stage_seen': stage_name,
+            'object_type': self._object_type,
+            'last_time_seen': now,
+            'completed': False,
+            'progress': {stage_name: now}
+        }
+
+    @property
+    def identifier_stem(self):
+        return self._identifier_stem
+
+    @property
+    def object_type(self):
+        return self._object_type
+
+    @property
+    def object_properties(self):
+        return self._object_properties
+
+    @property
+    def for_seed(self):
+        seed = self._dynamo_parameters.as_key
+        seed.update(self.vertex_data('monitoring'))
+        return {
+            'Item': seed,
+            'ConditionExpression': self._dynamo_parameters.as_no_overwrite
+        }
+
+    @property
+    def for_blank(self):
+        set_command = 'SET #c=:c, #d=:d, #lss=:s, #lts=:t'
+        return {
+            'Key': self._dynamo_parameters.as_key,
+            'UpdateExpression': set_command,
+            'ExpressionAttributeValues': {
+                ':c': True,
+                ':d': 'blank',
+                ':t': self._get_decimal_timestamp(),
+                ':s': 'transformation'
+            },
+            'ExpressionAttributeNames': {
+                '#c': 'completed',
+                '#d': 'disposition',
+                '#lss': 'last_stage_seen',
+                '#lts': 'last_time_seen'
+            },
+            'ConditionExpression': Attr('disposition').ne('blank')
+        }
+
+    def for_update(self):
+        return {
+            'Key': self._dynamo_parameters.as_key,
+            'UpdateExpression': 'SET ',
+            'ExpressionAttributeValues': {
+
+            }
+        }
+
+    @classmethod
+    def _get_decimal_timestamp(cls):
+        import datetime
+        return Decimal(datetime.datetime.now().timestamp())
+
+
 class EmptyIndexException(Exception):
     pass
 
@@ -135,22 +225,9 @@ class DynamoDriver:
         results = self._table.scan(**scan_kwargs)
         return results['Items'], results.get('LastEvaluatedKey', None)
 
-    def put_vertex_seed(self, identifier_stem, id_value, object_type, stage_name):
-        now = self._get_decimal_timestamp()
-        params = DynamoParameters(identifier_stem, id_value)
-        seed = params.as_key
-        seed.update({
-            'id_value': id_value,
-            'disposition': 'working',
-            'last_stage_seen': stage_name,
-            'progress': {'monitoring': now},
-            'object_type': object_type,
-            'last_time_seen': now
-        })
-        return self._table.put_item(
-            Item=seed,
-            ConditionExpression=params.as_no_overwrite
-        )
+    @leeched
+    def put_vertex_seed(self, leech_record):
+        return self._table.put_item(leech_record.for_seed)
 
     def get_vertex(self, identifier_stem, id_value):
         params = DynamoParameters(identifier_stem, id_value)
@@ -230,13 +307,13 @@ class DynamoDriver:
         results = self._table.get_item(Key=DynamoParameters(identifier_stem, edge_internal_id).as_key)
         return PotentialEdge.from_json(results['Item'])
 
-    def mark_ids_as_working(self, identifier_stem, id_values, object_type, stage_name='monitoring'):
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+    @leeched
+    def mark_ids_as_working(self, id_values, leech_record):
         already_working = []
         not_working = []
         for id_value in id_values:
             try:
-                self.put_vertex_seed(identifier_stem, id_value, object_type, stage_name)
+                self.put_vertex_seed(leech_record=leech_record)
                 not_working.append(id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
@@ -244,17 +321,9 @@ class DynamoDriver:
                 already_working.append(id_value)
         return already_working, not_working
 
-    def mark_object_as_blank(self, identifier_stem, id_value):
-        return self._table.update_item(
-            Key=DynamoParameters(identifier_stem, id_value).as_key,
-            UpdateExpression='SET completed = :c, disposition = :d, last_stage_seen = :s, last_seen_time = :t',
-            ExpressionAttributeValues={
-                ':c': True,
-                ':d': 'blank',
-                ':s': 'extraction',
-                ':t': self._get_decimal_timestamp()
-            }
-        )
+    @leeched
+    def mark_object_as_blank(self, leech_record):
+        return self._table.update_item(leech_record.for_blank)
 
     def mark_object_as_stage_cleared(self, identifier_stem, id_value, stage_name):
         return self._table.update_item(
@@ -270,6 +339,7 @@ class DynamoDriver:
             ConditionExpression=Attr(f'progress.{stage_name}').not_exists()
         )
 
+    @leeched
     def mark_object_as_graphed(self, identifier_stem, id_value):
         stage_name = 'graphing'
         return self._table.update_item(
