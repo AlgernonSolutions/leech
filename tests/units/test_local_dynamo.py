@@ -30,28 +30,65 @@ class TestDynamoDriver:
             dynamo_commands = mock_boto.call_args[0]
             dynamo_args = dynamo_commands[0]
             dynamo_kwargs = dynamo_commands[1]
-            assert dynamo_args == 'PutItem'
+            assert dynamo_args == 'UpdateItem'
             assert dynamo_kwargs['TableName'] == blank_table_name
-            dynamo_item = dynamo_kwargs['Item']
-
-            for expected_key in expected_seed_keys:
-                assert expected_key in dynamo_item
-            dynamo_condition = dynamo_kwargs['ConditionExpression']
-            assert dynamo_condition
+            assert dynamo_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem),
+                                            'sid_value': str(vertex_id_value)}
+            update_expression = dynamo_kwargs['UpdateExpression']
+            update_names = dynamo_kwargs['ExpressionAttributeNames']
+            update_values = dynamo_kwargs['ExpressionAttributeValues']
+            assert '#c=:c' in update_expression
+            assert '#p=:t' in update_expression
+            assert '#d=:d' in update_expression
+            assert '#lts=:t' in update_expression
+            assert '#lss=:s' in update_expression
+            assert '#ot=:ot' in update_expression
+            assert '#id=:id' in update_expression
+            assert update_names['#d'] == 'disposition'
+            assert update_names['#lss'] == 'last_stage_seen'
+            assert update_names['#lts'] == 'last_time_seen'
+            assert update_names['#c'] == 'completed'
+            assert update_names['#id'] == 'id_value'
+            assert update_values[':c'] is False
+            assert update_values[':d'] == 'working'
+            assert update_values[':s'] == 'monitoring'
+            assert isinstance(update_values[':t'], Decimal)
 
     @pytest.mark.mark_ids
     def test_mark_ids_as_working(self):
         with patch(patches.boto_patch, side_effect=intercept) as mock_boto:
             dynamo_driver = LeechDriver(table_name=blank_table_name)
-            results = dynamo_driver.mark_ids_as_working(id_range, identifier_stem=vertex_identifier_stem, id_value=vertex_id_value)
+            results = dynamo_driver.mark_ids_as_working(id_range, identifier_stem=vertex_identifier_stem,
+                                                        id_value=vertex_id_value)
             assert results == ([], list(id_range))
             assert mock_boto.called is True
             assert mock_boto.call_count == len(id_range)
             for boto_call in mock_boto.call_args_list:
-                call_args = boto_call[0]
-                assert call_args[0] == 'PutItem'
-                for expected_key in expected_seed_keys:
-                    assert expected_key in call_args[1]['Item']
+                dynamo_commands = boto_call[0]
+                dynamo_args = dynamo_commands[0]
+                dynamo_kwargs = dynamo_commands[1]
+                assert dynamo_args == 'UpdateItem'
+                assert dynamo_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem),
+                                                'sid_value': str(vertex_id_value)}
+                update_expression = dynamo_kwargs['UpdateExpression']
+                update_names = dynamo_kwargs['ExpressionAttributeNames']
+                update_values = dynamo_kwargs['ExpressionAttributeValues']
+                assert '#c=:c' in update_expression
+                assert '#p=:t' in update_expression
+                assert '#d=:d' in update_expression
+                assert '#lts=:t' in update_expression
+                assert '#lss=:s' in update_expression
+                assert '#ot=:ot' in update_expression
+                assert '#id=:id' in update_expression
+                assert update_names['#d'] == 'disposition'
+                assert update_names['#lss'] == 'last_stage_seen'
+                assert update_names['#lts'] == 'last_time_seen'
+                assert update_names['#c'] == 'completed'
+                assert update_names['#id'] == 'id_value'
+                assert update_values[':c'] is False
+                assert update_values[':d'] == 'working'
+                assert update_values[':s'] == 'monitoring'
+                assert isinstance(update_values[':t'], Decimal)
 
     @pytest.mark.mark_blank
     def test_mark_object_as_blank(self):
@@ -62,7 +99,8 @@ class TestDynamoDriver:
             boto_args = mock_boto.call_args[0][0]
             boto_kwargs = mock_boto.call_args[0][1]
             assert boto_args == 'UpdateItem'
-            assert boto_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem), 'sid_value': str(vertex_id_value)}
+            assert boto_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem),
+                                          'sid_value': str(vertex_id_value)}
             update_expression = boto_kwargs['UpdateExpression']
             assert '#c=:c' in update_expression
             assert '#p=:t' in update_expression
@@ -119,8 +157,9 @@ class TestDynamoDriver:
             boto_args = mock_boto.call_args[0][0]
             boto_kwargs = mock_boto.call_args[0][1]
             assert boto_args == 'UpdateItem'
-            assert boto_kwargs['Key'] == {'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#',
-                                          'sid_value': str(1230)}
+            assert boto_kwargs['Key'] == {
+                'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#',
+                'sid_value': str(1230)}
             update_expression = boto_kwargs['UpdateExpression']
             assert '#ps=:ps' in update_expression
             assert '#o=:v' in update_expression
@@ -135,7 +174,7 @@ class TestDynamoDriver:
             test_disposition = update_values[':d']
             test_timestamp = update_values[':t']
             test_potentials = update_values[':ps']
-            for test_potential in test_potentials:
+            for rule_name, test_potential in test_potentials.items():
                 assert test_potential['assimilated'] is False
             assert 'detail_id' in test_vertex_properties
             assert 'id_source' in test_vertex_properties
@@ -148,4 +187,3 @@ class TestDynamoDriver:
             assert isinstance(test_timestamp, Decimal)
             assert update_values[':s'] == 'transformation'
             assert test_disposition == 'graphing'
-

@@ -1,3 +1,4 @@
+import json
 import os
 from decimal import Decimal
 
@@ -29,18 +30,6 @@ class LeechRecord:
         self._object_properties = kwargs.get('object_properties', {})
         self._object_type = identifier_stem.object_type
 
-    def vertex_data(self, stage_name):
-        now = self._get_decimal_timestamp()
-        return {
-            'id_value': self._id_value,
-            'disposition': 'working',
-            'last_stage_seen': stage_name,
-            'object_type': self._object_type,
-            'last_time_seen': now,
-            'completed': False,
-            'progress': {stage_name: now}
-        }
-
     @property
     def identifier_stem(self):
         return self._identifier_stem
@@ -55,12 +44,21 @@ class LeechRecord:
 
     @property
     def for_seed(self):
-        seed = self._dynamo_parameters.as_key
-        seed.update(self.vertex_data('monitoring'))
-        return {
-            'Item': seed,
-            'ConditionExpression': self._dynamo_parameters.as_no_overwrite
-        }
+        base = self._for_update('monitoring')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #id=:id, #d=:d, #ot=:ot, #c=:c'
+        base['ExpressionAttributeNames'].update({
+            '#id': 'id_value',
+            '#d': 'disposition',
+            '#ot': 'object_type',
+            '#c': 'completed'
+        })
+        base['ExpressionAttributeValues'].update({
+            ':id': self._id_value,
+            ':d': 'working',
+            ':ot': self._object_type,
+            ':c': False
+        })
+        return base
 
     @property
     def for_blank(self):
@@ -82,6 +80,61 @@ class LeechRecord:
         base['UpdateExpression'] = base['UpdateExpression'] + ', #d=:d'
         base['ExpressionAttributeNames']['#d'] = 'disposition'
         base['ExpressionAttributeValues'][':d'] = 'processing'
+        return base
+
+    def for_created_vertex(self, potential_vertex):
+        base = self._for_update('assimilation')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #id=:id, #d=:d, #ot=:ot, #c=:c'
+        base['ExpressionAttributeNames'].update({
+            '#id': 'id_value',
+            '#d': 'disposition',
+            '#ot': 'object_type',
+            '#i': 'internal_id',
+            '#o': 'object_properties',
+            '#c': 'completed'
+        })
+        base['ExpressionAttributeValues'].update({
+            ':id': potential_vertex.id_value,
+            ':d': 'graphing',
+            ':ot': potential_vertex.object_type,
+            ':i': potential_vertex.internal_id,
+            ':v': self._clean_object_properties(potential_vertex.object_properties),
+            ':c': False
+        })
+        base['ConditionExpression'] = base['ConditionExpression'] & Attr('identifier_stem').not_exists() & Attr(
+            'sid_value').not_exists()
+        return base
+
+    def for_stub(self, potential_vertex):
+        base = self._for_update('assimilation')
+        stub_parameters = self._calculate_stub_parameters(potential_vertex)
+        expression_names = {
+            '#d': 'disposition',
+            '#ot': 'object_type',
+            '#o': 'object_properties',
+            '#c': 'completed'
+        }
+        expression_values = {
+            ':d': 'graphing',
+            ':ot': potential_vertex.object_type,
+            ':v': self._clean_object_properties(potential_vertex.object_properties),
+            ':c': False
+        }
+        update_expression = ', #o=:v, #d=:d, #ot=:ot, #c=:c'
+        if potential_vertex.is_internal_id_set:
+            update_expression += ', #i=:i'
+            expression_names['#i'] = 'internal_id'
+            expression_values[':i'] = potential_vertex.internal_id
+        if potential_vertex.is_id_value_set:
+            update_expression += ', #id=:id'
+            expression_names['#id'] = 'id_value'
+            expression_values[':id'] = potential_vertex.id_value
+        base['Key'] = stub_parameters.as_key
+        base['UpdateExpression'] = base['UpdateExpression'] + update_expression
+        base['ExpressionAttributeNames'].update(expression_names)
+        base['ExpressionAttributeValues'].update(expression_values)
+        base['ConditionExpression'] = base['ConditionExpression'] & Attr('identifier_stem').not_exists() & Attr(
+            'sid_value').not_exists()
         return base
 
     def for_extraction(self, extracted_data):
@@ -126,6 +179,26 @@ class LeechRecord:
         }
 
     @classmethod
+    def _calculate_stub_parameters(cls, potential_vertex):
+        return DynamoParameters(
+            cls._calculate_stub_identifier_stem(potential_vertex),
+            cls._calculate_stub_sid(potential_vertex)
+        )
+
+    @classmethod
+    def _calculate_stub_identifier_stem(cls, potential_vertex):
+        if potential_vertex.is_identifiable:
+            return potential_vertex.identifier_stem
+        return IdentifierStem('vertex', 'stub')
+
+    @classmethod
+    def _calculate_stub_sid(cls, potential_vertex):
+        if potential_vertex.is_identifiable:
+            return str(potential_vertex.id_value)
+        object_properties = cls._clean_object_properties(potential_vertex.object_properties)
+        return json.dumps(object_properties)
+
+    @classmethod
     def _get_decimal_timestamp(cls):
         import datetime
         return Decimal(datetime.datetime.now().timestamp())
@@ -141,14 +214,16 @@ class LeechRecord:
             cleaned[property_name] = object_property
         return cleaned
 
-    def _format_potentials(self, potentials):
-        formatted = []
+    @classmethod
+    def _format_potentials(cls, potentials):
+        formatted = {}
         for potential in potentials:
-            formatted.append({
-                'rule_entry': self._format_rule_entry(potential[1]),
-                'potential_vertex': self._format_potential_vertex(potential[0]),
+            rule_entry = potential[1]
+            formatted[rule_entry.edge_type] = {
+                'rule_entry': cls._format_rule_entry(rule_entry),
+                'potential_vertex': cls._format_potential_vertex(potential[0]),
                 'assimilated': False
-            })
+            }
         return formatted
 
     @classmethod
@@ -232,7 +307,7 @@ class LeechDriver:
 
     @leeched
     def put_vertex_seed(self, leech_record):
-        return self._table.put_item(**leech_record.for_seed)
+        return self._table.update_item(**leech_record.for_seed)
 
     @leeched
     def mark_ids_as_working(self, id_values, leech_record):
@@ -274,6 +349,19 @@ class LeechDriver:
     def set_assimilation_results(self, leech_record):
         pass
 
+    @leeched
+    def check_vertex_exists(self, leech_record):
+        results = self._table.get_item(**leech_record.for_exists_check)
+        if results.get('Item', None):
+            return True
+        return False
+
+    @leeched
+    def set_assimilated_vertex(self, potential_vertex, is_stub, leech_record):
+        if is_stub is True:
+            return self._table.update_item(**leech_record.for_stub(potential_vertex))
+        return self._table.update_item(**leech_record.for_created_vertex(potential_vertex))
+
     def get_extractor_function_names(self, identifier_stem):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         params = DynamoParameters(identifier_stem.for_dynamo, identifier_stem)
@@ -307,10 +395,11 @@ class LeechDriver:
         return [PotentialVertex.from_json(x) for x in potential_vertexes]
 
     def _scan_vertexes(self, object_type, vertex_properties, token=None):
-        filter_properties = [f'begins_with(identifier_stem, :is)']
+        filter_properties = [f'(begins_with(identifier_stem, :is) OR begins_with(identifier_stem, :stub))']
         expression_names = {}
         expression_values = {
-            ':is': f'#vertex#{object_type}#'
+            ':is': f'#vertex#{object_type}#',
+            ':stub': '#vertex#stub#',
         }
         pointer = 1
         for property_name, vertex_property in vertex_properties.items():

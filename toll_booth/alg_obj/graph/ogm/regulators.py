@@ -1,5 +1,6 @@
 import json
 import re
+from collections import OrderedDict
 from decimal import Decimal
 
 from toll_booth.alg_obj import AlgObject
@@ -393,11 +394,11 @@ class PotentialVertex(GraphObject):
             identifier_stem = IdentifierStem.from_raw(self._identifier_stem)
         except AttributeError:
             return False
-        if not isinstance(self._internal_id, str):
+        if not self.is_internal_id_set:
             return False
         if not isinstance(identifier_stem, IdentifierStem):
             return False
-        if self._id_value == self._id_value_field:
+        if not self.is_id_value_set:
             return False
         return True
 
@@ -407,6 +408,14 @@ class PotentialVertex(GraphObject):
             if hasattr(object_property, 'is_missing'):
                 return False
         return True
+
+    @property
+    def is_id_value_set(self):
+        return self._id_value == self._id_value_field
+
+    @property
+    def is_internal_id_set(self):
+        return isinstance(self._internal_id, str)
 
     @property
     def if_missing(self):
@@ -526,7 +535,7 @@ class MissingObjectProperty(AlgObject):
 class IdentifierStem(AlgObject):
     def __init__(self, graph_type, object_type, paired_identifiers=None):
         if not paired_identifiers:
-            paired_identifiers = {}
+            paired_identifiers = OrderedDict()
         self._graph_type = graph_type
         self._object_type = object_type
         self._paired_identifiers = paired_identifiers
@@ -542,7 +551,7 @@ class IdentifierStem(AlgObject):
         pattern = re.compile('({(.*?)})')
         potential_pairs = pattern.search(identifier_stem)
         if potential_pairs:
-            paired_identifiers = json.loads(potential_pairs.group(0))
+            paired_identifiers = json.loads(potential_pairs.group(0), object_pairs_hook=OrderedDict)
         return cls(graph_type, object_type, paired_identifiers)
 
     @classmethod
