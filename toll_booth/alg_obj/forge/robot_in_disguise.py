@@ -2,7 +2,7 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.graph.ogm.arbiter import RuleArbiter
@@ -16,7 +16,7 @@ class DisguisedRobot:
         self._extracted_data = metal_order.extracted_data
         self._schema_entry = metal_order.schema_entry
         self._source_vertex_data = metal_order.extracted_data['source']
-        self._dynamo_driver = DynamoDriver()
+        self._dynamo_driver = LeechDriver()
 
     def transform(self):
         regulator = VertexRegulator(self._schema_entry)

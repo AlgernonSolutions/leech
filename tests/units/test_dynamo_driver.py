@@ -18,6 +18,23 @@ filled_table_name = os.getenv('TABLE_NAME')
 @pytest.mark.usefixtures('blank_table')
 @pytest.mark.dynamo
 class TestDynamoDriver:
+    @pytest.mark.seed
+    def test_vertex_seed_put(self, delete_vertex):
+        dynamo_driver = DynamoDriver(table_name=blank_table_name)
+        put_results = dynamo_driver.put_vertex_seed(identifier_stem=vertex_identifier_stem, id_value=vertex_id_value)
+        assert put_results['ResponseMetadata']['HTTPStatusCode'] == 200
+        client = boto3.resource('dynamodb').Table(blank_table_name)
+        get_seeds = client.get_item(
+            Key=vertex_key
+        )
+        fetched_seed = get_seeds['Item']
+        assert fetched_seed['object_type'] == vertex_type
+        assert str(fetched_seed['identifier_stem']) == str(vertex_identifier_stem)
+        assert int(fetched_seed['id_value']) == vertex_id_value
+        assert fetched_seed['completed'] is False
+        assert fetched_seed['is_edge'] is False
+        delete_vertex(blank_table_name, vertex_key)
+
     def test_vertex_get(self, put_vertex):
         put_vertex(blank_table_name, vertex, vertex_key)
         dynamo_driver = DynamoDriver(table_name=blank_table_name)
@@ -82,23 +99,6 @@ class TestDynamoDriver:
         with pytest.raises(ClientError) as e:
             dynamo_driver.write_vertex(test_vertex, 'testing')
         assert e.typename == 'ConditionalCheckFailedException'
-
-    def test_vertex_seed_put(self, delete_vertex):
-        dynamo_driver = DynamoDriver(table_name=blank_table_name)
-        put_results = dynamo_driver.put_vertex_seed(
-            vertex_identifier_stem, vertex_id_value, vertex_type, stage_name='testing')
-        assert put_results['ResponseMetadata']['HTTPStatusCode'] == 200
-        client = boto3.resource('dynamodb').Table(blank_table_name)
-        get_seeds = client.get_item(
-            Key=vertex_key
-        )
-        fetched_seed = get_seeds['Item']
-        assert fetched_seed['object_type'] == vertex_type
-        assert str(fetched_seed['identifier_stem']) == str(vertex_identifier_stem)
-        assert int(fetched_seed['id_value']) == vertex_id_value
-        assert fetched_seed['completed'] is False
-        assert fetched_seed['is_edge'] is False
-        delete_vertex(blank_table_name, vertex_key)
 
     @pytest.mark.put_stub
     def test_stub_vertex_put(self, delete_vertex):

@@ -64,38 +64,132 @@ class LeechRecord:
 
     @property
     def for_blank(self):
-        set_command = 'SET #c=:c, #d=:d, #lss=:s, #lts=:t'
+        base = self._for_update('transformation')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #c=:c, #d=:d'
+        base['ExpressionAttributeNames'].update({
+            '#c': 'completed',
+            '#d': 'disposition'
+        })
+        base['ExpressionAttributeValues'].update({
+            ':c': True,
+            ':d': 'blank'
+        })
+        return base
+
+    @property
+    def for_graphed(self):
+        base = self._for_update('graphing')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #d=:d'
+        base['ExpressionAttributeNames']['#d'] = 'disposition'
+        base['ExpressionAttributeValues'][':d'] = 'processing'
+        return base
+
+    def for_extraction(self, extracted_data):
+        base = self._for_update('extraction')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #ex=:ex'
+        base['ExpressionAttributeValues'][':ex'] = extracted_data
+        base['ExpressionAttributeNames']['#ex'] = 'extracted_data'
+        return base
+
+    def for_transformation(self, vertex, potentials):
+        base = self._for_update('transformation')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #d=:d, #ps=:ps'
+        base['ExpressionAttributeNames'].update({
+            '#i': 'internal_id',
+            '#o': 'object_properties',
+            '#d': 'disposition',
+            '#ps': 'potentials'
+        })
+        base['ExpressionAttributeValues'].update({
+            ':i': vertex.internal_id,
+            ':v': self._clean_object_properties(vertex.object_properties),
+            ':d': 'graphing',
+            ':ps': self._format_potentials(potentials)
+        })
+        return base
+
+    def _for_update(self, stage_name):
+        progress = f'progress.{stage_name}'
         return {
             'Key': self._dynamo_parameters.as_key,
-            'UpdateExpression': set_command,
-            'ExpressionAttributeValues': {
-                ':c': True,
-                ':d': 'blank',
-                ':t': self._get_decimal_timestamp(),
-                ':s': 'transformation'
-            },
+            'UpdateExpression': 'SET #lss=:s, #lts=:t, #p=:t',
             'ExpressionAttributeNames': {
-                '#c': 'completed',
-                '#d': 'disposition',
+                '#p': progress,
                 '#lss': 'last_stage_seen',
                 '#lts': 'last_time_seen'
             },
-            'ConditionExpression': Attr('disposition').ne('blank')
-        }
-
-    def for_update(self):
-        return {
-            'Key': self._dynamo_parameters.as_key,
-            'UpdateExpression': 'SET ',
             'ExpressionAttributeValues': {
-
-            }
+                ':t': self._get_decimal_timestamp(),
+                ':s': stage_name
+            },
+            'ConditionExpression': Attr(progress).not_exists()
         }
 
     @classmethod
     def _get_decimal_timestamp(cls):
         import datetime
         return Decimal(datetime.datetime.now().timestamp())
+
+    @classmethod
+    def _clean_object_properties(cls, object_properties):
+        cleaned = {}
+        for property_name, object_property in object_properties.items():
+            if object_property == '':
+                object_property = None
+            if hasattr(object_property, 'is_missing'):
+                object_property = None
+            cleaned[property_name] = object_property
+        return cleaned
+
+    def _format_potentials(self, potentials):
+        formatted = []
+        for potential in potentials:
+            formatted.append({
+                'rule_entry': self._format_rule_entry(potential[1]),
+                'potential_vertex': self._format_potential_vertex(potential[0]),
+                'assimilated': False
+            })
+        return formatted
+
+    @classmethod
+    def _format_potential_vertex(cls, potential_vertex):
+        object_properties = {}
+        for property_name, object_property in potential_vertex.object_properties.items():
+            if object_property == '' or hasattr(object_property, 'is_missing'):
+                object_property = None
+            object_properties[property_name] = object_property
+        return {
+            'identifier_stem': potential_vertex.identifier_stem,
+            'sid_value': str(potential_vertex.id_value),
+            'id_value': potential_vertex.id_value,
+            'internal_id': potential_vertex.internal_id,
+            'object_properties': object_properties
+        }
+
+    @classmethod
+    def _format_rule_entry(cls, rule_entry):
+        return {
+            'target_type': rule_entry.target_type,
+            'edge_type': rule_entry.edge_type,
+            'target_constants': rule_entry.target_constants,
+            'target_specifiers': cls._format_specifiers(rule_entry.target_specifiers),
+            'if_absent': rule_entry.if_absent,
+            'inbound': rule_entry.inbound
+        }
+
+    @classmethod
+    def _format_specifiers(cls, target_specifiers):
+        return [cls._format_specifier(x) for x in target_specifiers]
+
+    @classmethod
+    def _format_specifier(cls, target_specifier):
+        return {
+            'specifier_name': target_specifier.specifier_name,
+            'specifier_type': target_specifier.specifier_type,
+            'shared_properties': getattr(target_specifier, 'shared_properties', None),
+            'extracted_properties': getattr(target_specifier, 'extracted_properties', None),
+            'function_name': getattr(target_specifier, 'function_name', None)
+        }
 
 
 class EmptyIndexException(Exception):
@@ -127,7 +221,7 @@ class DynamoParameters:
         return Attr(self._partition_key_name).not_exists() & Attr(self._sort_key_name).not_exists()
 
 
-class DynamoDriver:
+class LeechDriver:
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
 
@@ -136,31 +230,49 @@ class DynamoDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
-    def clear_identifier_stem(self, identifier_stem):
-        identified_values = self.get_identifier_stem(identifier_stem)
-        total = len(identified_values)
-        progress = 1
-        with self._table.batch_writer() as batch:
-            for identified_value in identified_values:
-                dynamo_params = DynamoParameters(identified_value['identifier_stem'], identified_value['sid_value'])
-                batch.delete_item(Key=dynamo_params.as_key)
-                print(f'{progress}/{total}')
-                progress += 1
+    @leeched
+    def put_vertex_seed(self, leech_record):
+        return self._table.put_item(**leech_record.for_seed)
 
-    def get_identifier_stem(self, identifier_stem):
-        results, token = self._get_identifier_stem(identifier_stem)
-        while token:
-            results.extend(self._get_identifier_stem(identifier_stem, token))
-        return results
+    @leeched
+    def mark_ids_as_working(self, id_values, leech_record):
+        already_working = []
+        not_working = []
+        for id_value in id_values:
+            try:
+                self.put_vertex_seed(leech_record=leech_record)
+                not_working.append(id_value)
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                    raise e
+                already_working.append(id_value)
+        return already_working, not_working
 
-    def _get_identifier_stem(self, identifier_stem, token=None):
-        identifier_args = {
-            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem))
-        }
-        if token:
-            identifier_args['ExclusiveStartKey'] = token
-        results = self._table.query(**identifier_args)
-        return results['Items'], results.get('LastEvaluatedKey', None)
+    @leeched
+    def mark_object_as_blank(self, leech_record):
+        return self._table.update_item(**leech_record.for_blank)
+
+    @leeched
+    def mark_object_as_graphed(self, leech_record):
+        return self._table.update_item(**leech_record.for_graphed)
+
+    @leeched
+    def set_extraction_results(self, extracted_data, leech_record):
+        return self._table.update_item(**leech_record.for_extraction(extracted_data))
+
+    @leeched
+    def set_transform_results(self, vertex, potentials, leech_record):
+        if not vertex.is_identifiable:
+            raise RuntimeError(
+                f'could not uniquely identify a ruled vertex for type: {vertex.object_type}')
+        if not vertex.is_properties_complete:
+            raise RuntimeError(
+                f'could not derive all properties for ruled vertex type: {vertex.object_type}')
+        return self._table.update_item(**leech_record.for_transformation(vertex, potentials))
+
+    @leeched
+    def set_assimilation_results(self, leech_record):
+        pass
 
     def get_extractor_function_names(self, identifier_stem):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
@@ -170,13 +282,6 @@ class DynamoDriver:
         )
         extractor_function_names = results['Item']['extractor_function_names']
         return extractor_function_names
-
-    def get_object(self, identifier_stem, id_value):
-        if '#edge#' in identifier_stem:
-            return self.get_edge(identifier_stem, id_value)
-        if '#vertex#' in identifier_stem:
-            return self.get_vertex(identifier_stem, id_value)
-        raise RuntimeError(f'could not ascertain the object type (vertex/edge) from identifier: {identifier_stem}')
 
     def query_index_value_max(self, identifier_stem, index_name=None):
         if not index_name:
@@ -225,9 +330,54 @@ class DynamoDriver:
         results = self._table.scan(**scan_kwargs)
         return results['Items'], results.get('LastEvaluatedKey', None)
 
-    @leeched
-    def put_vertex_seed(self, leech_record):
-        return self._table.put_item(leech_record.for_seed)
+
+class DynamoDriver:
+    _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
+    _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
+
+    def __init__(self, **kwargs):
+        table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'GraphObjects'))
+        self._table_name = table_name
+        self._table = boto3.resource('dynamodb').Table(self._table_name)
+
+    def delete_vertex(self, identifier_stem, id_value):
+        dynamo_params = DynamoParameters(identifier_stem, id_value)
+        return self._table.delete_item(
+            Key=dynamo_params.as_key
+        )
+
+    def clear_identifier_stem(self, identifier_stem):
+        identified_values = self.get_identifier_stem(identifier_stem)
+        total = len(identified_values)
+        progress = 1
+        with self._table.batch_writer() as batch:
+            for identified_value in identified_values:
+                dynamo_params = DynamoParameters(identified_value['identifier_stem'], identified_value['sid_value'])
+                batch.delete_item(Key=dynamo_params.as_key)
+                print(f'{progress}/{total}')
+                progress += 1
+
+    def get_identifier_stem(self, identifier_stem):
+        results, token = self._get_identifier_stem(identifier_stem)
+        while token:
+            results.extend(self._get_identifier_stem(identifier_stem, token))
+        return results
+
+    def _get_identifier_stem(self, identifier_stem, token=None):
+        identifier_args = {
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem))
+        }
+        if token:
+            identifier_args['ExclusiveStartKey'] = token
+        results = self._table.query(**identifier_args)
+        return results['Items'], results.get('LastEvaluatedKey', None)
+
+    def get_object(self, identifier_stem, id_value):
+        if '#edge#' in identifier_stem:
+            return self.get_edge(identifier_stem, id_value)
+        if '#vertex#' in identifier_stem:
+            return self.get_vertex(identifier_stem, id_value)
+        raise RuntimeError(f'could not ascertain the object type (vertex/edge) from identifier: {identifier_stem}')
 
     def get_vertex(self, identifier_stem, id_value):
         params = DynamoParameters(identifier_stem, id_value)
@@ -239,44 +389,6 @@ class DynamoDriver:
         except KeyError:
             return None
         return PotentialVertex.from_json(vertex_information)
-
-    def set_transform_results(self, vertex, potentials):
-        if not vertex.is_identifiable:
-            raise RuntimeError(
-                f'could not uniquely identify a ruled vertex for type: {vertex.object_type}')
-        if not vertex.is_properties_complete:
-            raise RuntimeError(
-                f'could not derive all properties for ruled vertex type: {vertex.object_type}')
-        stage_name = 'transformation'
-        update_expression = 'SET #i=:i, #o=:v, #d=:d, #lts=:t, #sc=:t, #lss=:lss, #p=:p'
-        params = DynamoParameters(vertex.identifier_stem, vertex.id_value)
-        object_properties = {}
-        for property_name, object_property in vertex.object_properties.items():
-            if object_property == '':
-                object_property = None
-            object_properties[property_name] = object_property
-        return self._table.update_item(
-            Key=params.as_key,
-            UpdateExpression=update_expression,
-            ExpressionAttributeValues={
-                ':v': object_properties,
-                ':i': vertex.internal_id,
-                ':d': 'graphing',
-                ':t': self._get_decimal_timestamp(),
-                ':lss': stage_name,
-                ':p': self._format_potentials(potentials)
-            },
-            ExpressionAttributeNames={
-                '#i': 'internal_id',
-                '#o': 'object_properties',
-                '#d': 'disposition',
-                '#lts': 'last_time_seen',
-                '#sc': f'progress.{stage_name}',
-                '#lss': 'last_stage_seen',
-                '#p': 'potentials'
-            },
-            ConditionExpression=Attr(f'progress.{stage_name}').not_exists()
-        )
 
     def write_edge(self, edge, stage_name):
         now = self._get_decimal_timestamp()
@@ -307,55 +419,6 @@ class DynamoDriver:
         results = self._table.get_item(Key=DynamoParameters(identifier_stem, edge_internal_id).as_key)
         return PotentialEdge.from_json(results['Item'])
 
-    @leeched
-    def mark_ids_as_working(self, id_values, leech_record):
-        already_working = []
-        not_working = []
-        for id_value in id_values:
-            try:
-                self.put_vertex_seed(leech_record=leech_record)
-                not_working.append(id_value)
-            except ClientError as e:
-                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
-                    raise e
-                already_working.append(id_value)
-        return already_working, not_working
-
-    @leeched
-    def mark_object_as_blank(self, leech_record):
-        return self._table.update_item(leech_record.for_blank)
-
-    def mark_object_as_stage_cleared(self, identifier_stem, id_value, stage_name):
-        return self._table.update_item(
-            Key=DynamoParameters(identifier_stem, id_value).as_key,
-            UpdateExpression='SET last_stage_seen = :s, last_time_seen = :t, #sc = :t',
-            ExpressionAttributeValues={
-                ':s': stage_name,
-                ':t': self._get_decimal_timestamp()
-            },
-            ExpressionAttributeNames={
-                '#sc': f'progress.{stage_name}'
-            },
-            ConditionExpression=Attr(f'progress.{stage_name}').not_exists()
-        )
-
-    @leeched
-    def mark_object_as_graphed(self, identifier_stem, id_value):
-        stage_name = 'graphing'
-        return self._table.update_item(
-            Key=DynamoParameters(identifier_stem, id_value).as_key,
-            UpdateExpression='SET last_stage_seen = :s, last_seen_time = :t, #sc = :t, disposition = :d',
-            ExpressionAttributeValues={
-                ':s': stage_name,
-                ':t': self._get_decimal_timestamp(),
-                ':d': 'processing'
-            },
-            ExpressionAttributeNames={
-                '#sc': f'{stage_name}_clear_time'
-            },
-            ConditionExpression=Attr(f'{stage_name}_clear_time').not_exists()
-        )
-
     def add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
         try:
             return self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)
@@ -372,24 +435,6 @@ class DynamoDriver:
             ExpressionAttributeValues=update_components[1],
             ExpressionAttributeNames=update_components[0],
             ConditionExpression=Attr('object_properties').not_exists()
-        )
-
-    def set_extracted_data(self, identifier_stem, id_value, extracted_data):
-        params = DynamoParameters(identifier_stem, id_value)
-        return self._table.update_item(
-            Key=params.as_key,
-            UpdateExpression='SET extracted_data = :ex, #p = :t, #lss = :t, #lts = :s',
-            ExpressionAttributeValues={
-                ':ex': extracted_data,
-                ':t': self._get_decimal_timestamp(),
-                ':s': 'extraction'
-            },
-            ExpressionAttributeNames={
-                '#p': 'progress.extraction',
-                '#lss': 'last_stage_seen',
-                '#lts': 'last_time_seen'
-            },
-            ConditionExpression=Attr('extracted_data').not_exists()
         )
 
     def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
@@ -428,60 +473,6 @@ class DynamoDriver:
             },
             ConditionExpression=Attr(object_type).not_exists()
         )
-
-    def _format_potentials(self, potentials):
-        formatted = []
-        for potential in potentials:
-            formatted.append({
-                'rule_entry': self._format_rule_entry(potential[1]),
-                'potential_vertex': self._format_potential_vertex(potential[0])
-            })
-        return formatted
-
-    @classmethod
-    def _format_potential_vertex(cls, potential_vertex):
-        object_properties = {}
-        for property_name, object_property in potential_vertex.object_properties.items():
-            if object_property == '' or hasattr(object_property, 'is_missing'):
-                object_property = None
-            object_properties[property_name] = object_property
-        return {
-            'identifier_stem': potential_vertex.identifier_stem,
-            'sid_value': str(potential_vertex.id_value),
-            'id_value': potential_vertex.id_value,
-            'internal_id': potential_vertex.internal_id,
-            'object_properties': object_properties
-        }
-
-    @classmethod
-    def _format_rule_entry(cls, rule_entry):
-        return {
-            'target_type': rule_entry.target_type,
-            'edge_type': rule_entry.edge_type,
-            'target_constants': rule_entry.target_constants,
-            'target_specifiers': cls._format_specifiers(rule_entry.target_specifiers),
-            'if_absent': rule_entry.if_missing,
-            'inbound': rule_entry.inbound
-        }
-
-    @classmethod
-    def _format_specifiers(cls, target_specifiers):
-        return [cls._format_specifier(x) for x in target_specifiers]
-
-    @classmethod
-    def _format_specifier(cls, target_specifier):
-        return {
-            'specifier_name': target_specifier.specifier_name,
-            'specifier_type': target_specifier.specifier_type,
-            'shared_properties': getattr(target_specifier, 'shared_properties', None),
-            'extracted_properties': getattr(target_specifier, 'extracted_properties', None),
-            'function_name': getattr(target_specifier, 'function_name', None)
-        }
-
-    @classmethod
-    def _get_decimal_timestamp(cls):
-        import datetime
-        return Decimal(datetime.datetime.now().timestamp())
 
     @classmethod
     def _generate_update_property_components(cls, object_properties):

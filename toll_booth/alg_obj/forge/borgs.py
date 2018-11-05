@@ -1,6 +1,6 @@
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 from toll_booth.alg_obj.graph.ogm.regulators import EdgeRegulator
 
 
@@ -11,7 +11,7 @@ class SevenOfNine:
         self._potential_vertex = metal_order.potential_vertex
         self._rule_entry = metal_order.rule_entry
         self._extracted_data = metal_order.extracted_data
-        self._dynamo_driver = DynamoDriver()
+        self._dynamo_driver = LeechDriver()
 
     def assimilate(self):
         edge_regulator = EdgeRegulator.get_for_object_type(self._rule_entry.edge_type, self._rule_entry)

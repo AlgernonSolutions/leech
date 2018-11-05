@@ -201,10 +201,12 @@ def intercept(*args):
         table_name = query_args['TableName']
         if table_name == 'Sensitives':
             return None
+        if table_name == 'TestGraphObjects':
+            return None
     if operation_name == 'DeleteTopic':
         return None
     if operation_name == 'Subscribe':
         return None
     if operation_name == 'PutItem':
-       return None
+        return None
     raise NotImplementedError(f'cannot find an intercept command for {args}')
