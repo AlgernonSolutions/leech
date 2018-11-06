@@ -2,7 +2,7 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 from toll_booth.alg_obj.forge.comms.orders import AssimilateObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.graph.ogm.arbiter import RuleArbiter
@@ -16,7 +16,7 @@ class DisguisedRobot:
         self._extracted_data = metal_order.extracted_data
         self._schema_entry = metal_order.schema_entry
         self._source_vertex_data = metal_order.extracted_data['source']
-        self._dynamo_driver = DynamoDriver()
+        self._dynamo_driver = LeechDriver()
 
     def transform(self):
         regulator = VertexRegulator(self._schema_entry)
@@ -32,12 +32,12 @@ class DisguisedRobot:
             assimilate_order = AssimilateObjectOrder(source_vertex, potential_vertex, rule_entry, extracted_data)
             assimilate_orders.append(assimilate_order)
         self._assimilation_queue.add_orders(assimilate_orders)
-        self._write_source_vertex(source_vertex)
+        self._write_results(source_vertex, potentials)
         self._assimilation_queue.push_orders()
 
-    def _write_source_vertex(self, vertex):
+    def _write_results(self, vertex, potentials):
         try:
-            self._dynamo_driver.write_vertex(vertex, 'transformation')
+            self._dynamo_driver.set_transform_results(vertex, potentials)
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e

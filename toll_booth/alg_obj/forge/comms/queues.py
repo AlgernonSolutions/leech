@@ -3,7 +3,7 @@ import os
 
 import boto3
 
-from toll_booth.alg_obj.aws.aws_obj.bees import OrderSwarm
+from toll_booth.alg_obj.aws.matryoshkas.bees import OrderSwarm
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 

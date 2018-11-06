@@ -1,9 +1,8 @@
 import logging
-import os
 
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.aws.aws_obj.dynamo_driver import DynamoDriver, EmptyIndexException
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver, EmptyIndexException
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
@@ -18,7 +17,7 @@ class MonitorLizard:
         self._identifier_stem = identifier_stem
         self._object_type = identifier_stem.object_type
         self._schema_entry = SchemaVertexEntry.get(self._object_type)
-        self._dynamo_driver = DynamoDriver()
+        self._dynamo_driver = LeechDriver()
         self._extractor_names = self._dynamo_driver.get_extractor_function_names(identifier_stem)
         self._extraction_profile = self._generate_extraction_profile()
         self._extraction_queue = kwargs.get('extraction_queue', ForgeQueue.get_for_extraction_queue(**kwargs))

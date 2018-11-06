@@ -1,7 +1,7 @@
 import json
 
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.aws_obj.squirrel import SneakyKipper
+from toll_booth.alg_obj.aws.squirrels.squirrel import SneakyKipper
 
 
 class PaginationToken(AlgObject):

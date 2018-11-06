@@ -1,4 +1,3 @@
-from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.utils import convert_credible_datetime_to_gremlin
 
 trident_queries = {
@@ -120,7 +119,7 @@ trident_queries = {
 }
 
 
-class TridentAdd(AlgObject):
+class TridentAdd:
     property_command = ".property('{property_name}', {property_value})"
 
     @property
@@ -157,7 +156,7 @@ class TridentAdd(AlgObject):
         return base_command
 
 
-class TridentEdgeAdd(TridentAdd):
+class TridentEdgeAdd:
     base_command = "g.E('{_internal_id}')" \
                    ".fold()" \
                    ".coalesce(" \
@@ -198,7 +197,7 @@ class TridentEdgeAdd(TridentAdd):
         return self._edge_properties
 
 
-class StubVertexAdd(AlgObject):
+class StubVertexAdd:
     _base_command = "g.V()" \
                     ".hasLabel('stub')" \
                     ".has('object_type', '{entry_name}')" \
@@ -233,7 +232,7 @@ class StubVertexAdd(AlgObject):
         return self._command
 
 
-class DynamicVertexAdd(AlgObject):
+class DynamicVertexAdd:
     _base_command = "g.V('{_internal_id}')" \
                     ".fold()" \
                     ".coalesce(unfold(), addV('{_entry_name}').property(id,'{_internal_id}'){properties})"

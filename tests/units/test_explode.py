@@ -1,7 +1,7 @@
 import pytest
 from mock import patch
 
-from tests.steps.actor_setup import patches
+from tests.units.test_data import patches
 from toll_booth.alg_tasks.remote_tasks.explode import explode
 
 

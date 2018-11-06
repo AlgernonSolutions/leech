@@ -4,7 +4,7 @@ from xml.dom import minidom
 import requests
 import dateutil.parser
 
-from toll_booth.alg_obj.aws.aws_obj.squirrel import Opossum
+from toll_booth.alg_obj.aws.squirrels.squirrel import Opossum
 
 
 class CredibleDriver:

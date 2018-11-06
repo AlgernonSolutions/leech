@@ -1,8 +1,8 @@
 import pytest
 from mock import patch
 
-from tests.steps.actor_setup import patches
-from tests.steps.outside_setup.boto import intercept
+from tests.units.test_data import patches
+from tests.units.test_data.data_setup.boto import intercept
 from toll_booth.alg_obj.forge.borgs import SevenOfNine
 from toll_booth.alg_obj.forge.dentist import Dentist
 from toll_booth.alg_obj.forge.lizards import MonitorLizard

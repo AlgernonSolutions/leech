@@ -191,7 +191,8 @@ def fully_queued(production_function, task_constants, worker_params, context):
         returns True if the function runs successfully and the results sent to the queue
         returns Exception as string if the function fails
     """
-    from toll_booth.alg_obj.aws.aws_obj import MessagePull, OutboundMessage, MessageSwarm
+    from toll_booth.alg_obj.aws.aws_obj import MessagePull, OutboundMessage
+    from toll_booth.alg_obj.aws.matryoshkas.message_swarm import MessageSwarm
     message_pull = MessagePull.get_from_queue(
         num_messages=worker_params.num_messages, wait_time=worker_params.wait_time,
         queue_url=worker_params.source_queue_url)
@@ -223,7 +224,8 @@ def fully_queued(production_function, task_constants, worker_params, context):
 
 
 def queue_targeted(production_function, task_args, task_constants, worker_params, context):
-    from toll_booth.alg_obj.aws.aws_obj import OutboundMessage, MessageSwarm
+    from toll_booth.alg_obj.aws.aws_obj import OutboundMessage
+    from toll_booth.alg_obj.aws.matryoshkas.message_swarm import MessageSwarm
     swarm = MessageSwarm(worker_params.target_queue_url)
     try:
         results = production_function(
