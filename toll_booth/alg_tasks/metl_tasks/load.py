@@ -13,7 +13,7 @@ def load(*args, **kwargs):
     key_fields = task_args['keys']
     keys = {
         'identifier_stem': key_fields['identifier_stem']['S'],
-        'sid_value': key_fields['sid_value']['S']
+        'id_value': key_fields['sid_value']['S']
     }
     potential_object = dynamo_driver.get_object(**keys)
     ogm = Ogm(**task_args)

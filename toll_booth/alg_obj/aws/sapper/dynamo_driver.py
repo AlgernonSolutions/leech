@@ -63,7 +63,7 @@ class LeechRecord:
 
     @property
     def for_blank(self):
-        base = self._for_update('transformation')
+        base = self._for_update('extraction')
         base['UpdateExpression'] = base['UpdateExpression'] + ', #c=:c, #d=:d'
         base['ExpressionAttributeNames'].update({
             '#c': 'completed',
@@ -177,7 +177,7 @@ class LeechRecord:
         return base
 
     def _for_update(self, stage_name):
-        progress = f'progress.{stage_name}'
+        progress = 'progress'
         now = self._get_decimal_timestamp()
         return {
             'Key': self._dynamo_parameters.as_key,
