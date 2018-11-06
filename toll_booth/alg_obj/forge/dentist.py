@@ -20,13 +20,11 @@ class Dentist:
         source_data = extracted_data['source']
         if len(source_data) > 1:
             raise InvalidExtractionMultipleSourceException(self._extraction_function_name, self._extraction_order)
+        if not source_data:
+            return self._mark_object_blank()
         for entry in source_data:
             if not entry:
-                self._dynamo_driver.mark_object_as_blank(
-                    identifier_stem=self._extraction_order.identifier_stem,
-                    id_value=self._extraction_order.id_value
-                )
-                return
+                return self._mark_object_blank()
             extracted_data['source'] = entry
             break
         transform_order = TransformObjectOrder(
@@ -41,3 +39,9 @@ class Dentist:
             identifier_stem=self._extraction_order.identifier_stem,
             id_value=self._extraction_order.id_value)
         self._transform_queue.push_orders()
+
+    def _mark_object_blank(self):
+        return self._dynamo_driver.mark_object_as_blank(
+            identifier_stem=self._extraction_order.identifier_stem,
+            id_value=self._extraction_order.id_value
+        )
