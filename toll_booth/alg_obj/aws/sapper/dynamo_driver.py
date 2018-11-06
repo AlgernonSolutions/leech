@@ -83,6 +83,10 @@ class LeechRecord:
         base['ExpressionAttributeValues'][':d'] = 'processing'
         return base
 
+    @property
+    def for_key(self):
+        return self._dynamo_parameters.as_key
+
     def for_created_vertex(self, potential_vertex):
         base = self._for_update('assimilation')
         base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #id=:id, #d=:d, #ot=:ot, #c=:c'
@@ -354,11 +358,9 @@ class LeechDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
-    def get_object(self, identifier_stem, id_value):
-        params = DynamoParameters(identifier_stem, id_value)
-        results = self._table.get_item(
-            Key=params.as_key
-        )
+    @leeched
+    def get_object(self, leech_record):
+        results = self._table.get_item(**leech_record.fo_key)
         try:
             vertex_information = results['Item']
         except KeyError:
