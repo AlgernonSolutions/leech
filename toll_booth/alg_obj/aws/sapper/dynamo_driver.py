@@ -192,7 +192,7 @@ class LeechRecord:
                 ':s': stage_name,
                 ':p': {stage_name: now}
             },
-            'ConditionExpression': Attr(progress).not_exists()
+            'ConditionExpression': Attr(f'progress.{stage_name}').not_exists()
         }
 
     @classmethod
