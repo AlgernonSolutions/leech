@@ -37,7 +37,7 @@ class MonitorLizard:
             id_range = range(max_local_id+1, max_remote_id+1)
             id_range = id_range[:self._sample_size]
             already_working, not_working = self._dynamo_driver.mark_ids_as_working(
-                self._identifier_stem, id_range, self._object_type)
+                id_range, identifier_stem=self._identifier_stem)
             for id_value in not_working:
                 extraction_orders.append(self._generate_extraction_order(id_value))
             orders_to_be_sent = len(self._extraction_queue)
