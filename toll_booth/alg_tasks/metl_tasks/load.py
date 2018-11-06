@@ -18,5 +18,7 @@ def load(*args, **kwargs):
     potential_object = dynamo_driver.get_object(**keys)
     ogm = Ogm(**task_args)
     graph_results = ogm.graph_object(potential_object)
-    dynamo_driver.mark_object_as_graphed(potential_object.identifier_stem, potential_object.id_value)
+    dynamo_driver.mark_object_as_graphed(
+        identifier_stem=potential_object.identifier_stem,
+        id_value=potential_object.id_value)
     return graph_results

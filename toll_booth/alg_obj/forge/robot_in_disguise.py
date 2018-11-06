@@ -37,7 +37,10 @@ class DisguisedRobot:
 
     def _write_results(self, vertex, potentials):
         try:
-            self._dynamo_driver.set_transform_results(vertex, potentials)
+            self._dynamo_driver.set_transform_results(
+                vertex, potentials,
+                identifier_stem=vertex.identifier_stem,
+                id_value=vertex.id_value)
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e

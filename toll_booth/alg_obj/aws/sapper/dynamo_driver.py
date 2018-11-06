@@ -415,13 +415,6 @@ class LeechDriver:
         return self._table.update_item(**leech_record.for_assimilation(ruled_edge_type, assimilation_results))
 
     @leeched
-    def check_vertex_exists(self, leech_record):
-        results = self._table.get_item(**leech_record.for_exists_check)
-        if results.get('Item', None):
-            return True
-        return False
-
-    @leeched
     def set_assimilated_vertex(self, potential_vertex, is_stub, leech_record):
         if is_stub is True:
             return self._table.update_item(**leech_record.for_stub(potential_vertex))

@@ -23,7 +23,8 @@ class Dentist:
         for entry in source_data:
             if not entry:
                 self._dynamo_driver.mark_object_as_blank(
-                    self._extraction_order.identifier_stem, self._extraction_order.id_value
+                    identifier_stem=self._extraction_order.identifier_stem,
+                    id_value=self._extraction_order.id_value
                 )
                 return
             extracted_data['source'] = entry
@@ -36,5 +37,7 @@ class Dentist:
         )
         self._transform_queue.add_order(transform_order)
         self._dynamo_driver.set_extraction_results(
-            self._extraction_order.identifier_stem, self._extraction_order.id_value, extracted_data)
+            extracted_data,
+            identifier_stem=self._extraction_order.identifier_stem,
+            id_value=self._extraction_order.id_value)
         self._transform_queue.push_orders()
