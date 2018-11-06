@@ -177,23 +177,29 @@ class LeechRecord:
         return base
 
     def _for_update(self, stage_name):
-        progress = 'progress'
         now = self._get_decimal_timestamp()
-        return {
+        progress_name = f'progress.{stage_name}'
+        progress_value = now
+        if stage_name == 'extraction':
+            progress_name = 'progress'
+            progress_value = {stage_name: now}
+        update_args = {
             'Key': self._dynamo_parameters.as_key,
             'UpdateExpression': 'SET #lss=:s, #lts=:t, #p=:p',
             'ExpressionAttributeNames': {
-                '#p': progress,
+                '#p': progress_name,
                 '#lss': 'last_stage_seen',
                 '#lts': 'last_time_seen'
             },
             'ExpressionAttributeValues': {
                 ':t': now,
                 ':s': stage_name,
-                ':p': {stage_name: now}
+                ':p': progress_value
             },
             'ConditionExpression': Attr(f'progress.{stage_name}').not_exists()
         }
+
+        return update_args
 
     @classmethod
     def _calculate_stub_parameters(cls, potential_vertex):
