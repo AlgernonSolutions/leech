@@ -178,17 +178,19 @@ class LeechRecord:
 
     def _for_update(self, stage_name):
         progress = f'progress.{stage_name}'
+        now = self._get_decimal_timestamp()
         return {
             'Key': self._dynamo_parameters.as_key,
-            'UpdateExpression': 'SET #lss=:s, #lts=:t, #p=:t',
+            'UpdateExpression': 'SET #lss=:s, #lts=:t, #p=:p',
             'ExpressionAttributeNames': {
                 '#p': progress,
                 '#lss': 'last_stage_seen',
                 '#lts': 'last_time_seen'
             },
             'ExpressionAttributeValues': {
-                ':t': self._get_decimal_timestamp(),
-                ':s': stage_name
+                ':t': now,
+                ':s': stage_name,
+                ':p': {stage_name: now}
             },
             'ConditionExpression': Attr(progress).not_exists()
         }
