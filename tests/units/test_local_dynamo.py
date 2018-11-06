@@ -3,9 +3,6 @@ from decimal import Decimal
 import pytest
 from mock import patch
 
-
-
-
 from tests.units.test_data import patches
 from tests.units.test_data.assimilation_orders.first_identifiable_assimilation_order import \
     rule_entry as first_rule_entry
@@ -24,45 +21,11 @@ expected_seed_keys = [
 
 @pytest.mark.local_dynamo
 class TestDynamoDriver:
-    @pytest.mark.put_seed
-    def test_seed_put(self):
-        with patch(patches.boto_patch, side_effect=intercept) as mock_boto:
-            dynamo_driver = LeechDriver(table_name=blank_table_name)
-            dynamo_driver.put_vertex_seed(identifier_stem=vertex_identifier_stem, id_value=vertex_id_value)
-            assert mock_boto.called is True
-            dynamo_commands = mock_boto.call_args[0]
-            dynamo_args = dynamo_commands[0]
-            dynamo_kwargs = dynamo_commands[1]
-            assert dynamo_args == 'UpdateItem'
-            assert dynamo_kwargs['TableName'] == blank_table_name
-            assert dynamo_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem),
-                                            'sid_value': str(vertex_id_value)}
-            update_expression = dynamo_kwargs['UpdateExpression']
-            update_names = dynamo_kwargs['ExpressionAttributeNames']
-            update_values = dynamo_kwargs['ExpressionAttributeValues']
-            assert '#c=:c' in update_expression
-            assert '#p=:t' in update_expression
-            assert '#d=:d' in update_expression
-            assert '#lts=:t' in update_expression
-            assert '#lss=:s' in update_expression
-            assert '#ot=:ot' in update_expression
-            assert '#id=:id' in update_expression
-            assert update_names['#d'] == 'disposition'
-            assert update_names['#lss'] == 'last_stage_seen'
-            assert update_names['#lts'] == 'last_time_seen'
-            assert update_names['#c'] == 'completed'
-            assert update_names['#id'] == 'id_value'
-            assert update_values[':c'] is False
-            assert update_values[':d'] == 'working'
-            assert update_values[':s'] == 'monitoring'
-            assert isinstance(update_values[':t'], Decimal)
-
     @pytest.mark.mark_ids
     def test_mark_ids_as_working(self):
         with patch(patches.boto_patch, side_effect=intercept) as mock_boto:
             dynamo_driver = LeechDriver(table_name=blank_table_name)
-            results = dynamo_driver.mark_ids_as_working(id_range, identifier_stem=vertex_identifier_stem,
-                                                        id_value=vertex_id_value)
+            results = dynamo_driver.mark_ids_as_working(id_range, identifier_stem=vertex_identifier_stem)
             assert results == ([], list(id_range))
             assert mock_boto.called is True
             assert mock_boto.call_count == len(id_range)
@@ -71,8 +34,8 @@ class TestDynamoDriver:
                 dynamo_args = dynamo_commands[0]
                 dynamo_kwargs = dynamo_commands[1]
                 assert dynamo_args == 'UpdateItem'
-                assert dynamo_kwargs['Key'] == {'identifier_stem': str(vertex_identifier_stem),
-                                                'sid_value': str(vertex_id_value)}
+                assert dynamo_kwargs['Key']['identifier_stem'] == str(vertex_identifier_stem)
+                assert int(dynamo_kwargs['Key']['sid_value']) in id_range
                 update_expression = dynamo_kwargs['UpdateExpression']
                 update_names = dynamo_kwargs['ExpressionAttributeNames']
                 update_values = dynamo_kwargs['ExpressionAttributeValues']
@@ -220,7 +183,8 @@ class TestDynamoDriver:
             for entry in update_values[':iv']:
                 test_edge = entry['edge']
                 test_vertex = entry['vertex']
-                for key_value in ['identifier_stem', 'sid_value', 'internal_id', 'object_properties', 'from_object', 'to_object']:
+                for key_value in ['identifier_stem', 'sid_value', 'internal_id', 'object_properties', 'from_object',
+                                  'to_object']:
                     assert key_value in test_edge
                 for key_value in ['identifier_stem', 'sid_value', 'id_value', 'internal_id', 'object_properties']:
                     assert key_value in test_vertex

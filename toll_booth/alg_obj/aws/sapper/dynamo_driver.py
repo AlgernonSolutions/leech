@@ -42,9 +42,10 @@ class LeechRecord:
     def object_properties(self):
         return self._object_properties
 
-    @property
-    def for_seed(self):
+    def for_seed(self, id_value):
+        dynamo_parameters = DynamoParameters(self._identifier_stem, id_value)
         base = self._for_update('monitoring')
+        base['Key'] = dynamo_parameters.as_key
         base['UpdateExpression'] = base['UpdateExpression'] + ', #id=:id, #d=:d, #ot=:ot, #c=:c'
         base['ExpressionAttributeNames'].update({
             '#id': 'id_value',
@@ -53,7 +54,7 @@ class LeechRecord:
             '#c': 'completed'
         })
         base['ExpressionAttributeValues'].update({
-            ':id': self._id_value,
+            ':id': id_value,
             ':d': 'working',
             ':ot': self._object_type,
             ':c': False
@@ -370,8 +371,8 @@ class LeechDriver:
         }
 
     @leeched
-    def put_vertex_seed(self, leech_record):
-        return self._table.update_item(**leech_record.for_seed)
+    def put_vertex_seed(self, id_value, leech_record):
+        return self._table.update_item(**leech_record.for_seed(id_value))
 
     @leeched
     def mark_ids_as_working(self, id_values, leech_record):
@@ -379,7 +380,7 @@ class LeechDriver:
         not_working = []
         for id_value in id_values:
             try:
-                self.put_vertex_seed(leech_record=leech_record)
+                self._table.update_item(**leech_record.for_seed(id_value))
                 not_working.append(id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
