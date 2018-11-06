@@ -4,7 +4,7 @@ import boto3
 import jsonref
 from jsonschema import validate
 
-from toll_booth.alg_obj.aws.aws_obj.sapper import SchemaWhisperer
+from toll_booth.alg_obj.aws.sapper.schema_whisperer import SchemaWhisperer
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, SchemaEdgeEntry
 

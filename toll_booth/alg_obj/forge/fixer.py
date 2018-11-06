@@ -3,7 +3,7 @@ import os
 
 import boto3
 
-from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 from toll_booth.alg_obj.aws.sapper.dynamo_scanner import DynamoScanner
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
@@ -14,7 +14,7 @@ from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 class Fixer:
     def __init__(self, **kwargs):
         self._scanner = DynamoScanner(kwargs.get('index_name', 'stalled'))
-        self._driver = DynamoDriver()
+        self._driver = LeechDriver()
         self._load_graph_orders = []
         self._graph_counter = 0
         self._load_queue_url = os.getenv('LOAD_URL', 'https://sqs.us-east-1.amazonaws.com/803040539655/load')
@@ -95,8 +95,7 @@ class Fixer:
         self._extraction_queue.add_order(extraction_order)
 
     def _transform(self, stalled_object):
-        self._driver.delete_vertex(stalled_object['identifier_stem'], stalled_object['id_value'])
-        self._extract(stalled_object)
+        pass
 
     def _process(self, stalled_object):
         pass

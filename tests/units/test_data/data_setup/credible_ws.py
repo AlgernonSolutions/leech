@@ -1,7 +1,7 @@
 import random
 from datetime import datetime
 
-from tests.steps.schema_setup.schema_entry import MockVertexSchemaEntry
+from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry
 
 mock_credible_data = {
     'String': {

@@ -2,10 +2,9 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
-import boto3
 from dateutil.tz import tzlocal
 
-from tests.steps.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
+from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
 
 
 class MockBoto:

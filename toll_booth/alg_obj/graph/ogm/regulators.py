@@ -4,7 +4,7 @@ from collections import OrderedDict
 from decimal import Decimal
 
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.aws_obj.sapper import SecretWhisperer
+from toll_booth.alg_obj.aws.sapper.secrets import SecretWhisperer
 from toll_booth.alg_obj.graph import InternalId
 
 
@@ -411,7 +411,7 @@ class PotentialVertex(GraphObject):
 
     @property
     def is_id_value_set(self):
-        return self._id_value == self._id_value_field
+        return self._id_value != self._id_value_field
 
     @property
     def is_internal_id_set(self):

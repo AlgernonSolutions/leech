@@ -6,7 +6,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, PotentialEdge, IdentifierStem
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem
 
 
 def leeched(production_function):
@@ -161,6 +161,20 @@ class LeechRecord:
         })
         return base
 
+    def for_assimilation(self, ruled_edge_type, assimilation_results):
+        base = self._for_update('assimilation')
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #iv=:iv, #a=:a'
+        base['ExpressionAttributeNames'].update({
+            '#iv': f'{ruled_edge_type}.identified_vertexes',
+            '#a': 'assimilated'
+        })
+        # noinspection PyTypeChecker
+        base['ExpressionAttributeValues'].update({
+            ':iv': self._format_assimilation_results(assimilation_results),
+            ':a': True
+        })
+        return base
+
     def _for_update(self, stage_name):
         progress = f'progress.{stage_name}'
         return {
@@ -227,6 +241,16 @@ class LeechRecord:
         return formatted
 
     @classmethod
+    def _format_assimilation_results(cls, assimilation_results):
+        formatted = []
+        for entry in assimilation_results:
+            formatted.append({
+                'edge': cls._format_potential_edge(entry['edge']),
+                'vertex': cls._format_potential_vertex(entry['vertex'])
+            })
+        return formatted
+
+    @classmethod
     def _format_potential_vertex(cls, potential_vertex):
         object_properties = {}
         for property_name, object_property in potential_vertex.object_properties.items():
@@ -239,6 +263,22 @@ class LeechRecord:
             'id_value': potential_vertex.id_value,
             'internal_id': potential_vertex.internal_id,
             'object_properties': object_properties
+        }
+
+    @classmethod
+    def _format_potential_edge(cls, potential_edge):
+        object_properties = {}
+        for property_name, object_property in potential_edge.object_properties.items():
+            if object_property == '' or hasattr(object_property, 'is_missing'):
+                object_property = None
+            object_properties[property_name] = object_property
+        return {
+            'identifier_stem': potential_edge.identifier_stem,
+            'sid_value': str(potential_edge.id_value),
+            'internal_id': potential_edge.internal_id,
+            'object_properties': object_properties,
+            'from_object': potential_edge.from_object,
+            'to_object': potential_edge.to_object
         }
 
     @classmethod
@@ -305,6 +345,30 @@ class LeechDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
+    def get_object(self, identifier_stem, id_value):
+        params = DynamoParameters(identifier_stem, id_value)
+        results = self._table.get_item(
+            Key=params.as_key
+        )
+        try:
+            vertex_information = results['Item']
+        except KeyError:
+            return None
+        source_vertex = PotentialVertex.from_json(vertex_information)
+        other_vertexes = []
+        edges = []
+        potentials = vertex_information.get('potentials', {})
+        for potential in potentials.values():
+            identified_vertexes = potential.get('identified_vertexes', [])
+            for identified in identified_vertexes:
+                other_vertexes.append(identified['vertex'])
+                edges.append(identified['edge'])
+        return {
+            'source': source_vertex,
+            'others': other_vertexes,
+            'edges': edges
+        }
+
     @leeched
     def put_vertex_seed(self, leech_record):
         return self._table.update_item(**leech_record.for_seed)
@@ -346,8 +410,8 @@ class LeechDriver:
         return self._table.update_item(**leech_record.for_transformation(vertex, potentials))
 
     @leeched
-    def set_assimilation_results(self, leech_record):
-        pass
+    def set_assimilation_results(self, ruled_edge_type, assimilation_results, leech_record):
+        return self._table.update_item(**leech_record.for_assimilation(ruled_edge_type, assimilation_results))
 
     @leeched
     def check_vertex_exists(self, leech_record):
@@ -420,7 +484,7 @@ class LeechDriver:
         return results['Items'], results.get('LastEvaluatedKey', None)
 
 
-class DynamoDriver:
+class UtilityDriver:
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
 
@@ -460,126 +524,3 @@ class DynamoDriver:
             identifier_args['ExclusiveStartKey'] = token
         results = self._table.query(**identifier_args)
         return results['Items'], results.get('LastEvaluatedKey', None)
-
-    def get_object(self, identifier_stem, id_value):
-        if '#edge#' in identifier_stem:
-            return self.get_edge(identifier_stem, id_value)
-        if '#vertex#' in identifier_stem:
-            return self.get_vertex(identifier_stem, id_value)
-        raise RuntimeError(f'could not ascertain the object type (vertex/edge) from identifier: {identifier_stem}')
-
-    def get_vertex(self, identifier_stem, id_value):
-        params = DynamoParameters(identifier_stem, id_value)
-        results = self._table.get_item(
-            Key=params.as_key
-        )
-        try:
-            vertex_information = results['Item']
-        except KeyError:
-            return None
-        return PotentialVertex.from_json(vertex_information)
-
-    def write_edge(self, edge, stage_name):
-        now = self._get_decimal_timestamp()
-        params = DynamoParameters(edge.identifier_stem, edge.internal_id)
-        edge_entry = params.as_key
-        edge_entry.update({
-            'object_type': edge.edge_label,
-            'internal_id': edge.internal_id,
-            'from_object': edge.from_object,
-            'to_object': edge.to_object,
-            'object_properties': edge.object_properties,
-            'disposition': 'graphing',
-            'completed': False,
-            'last_stage_seen': stage_name,
-            f'{stage_name}_clear_time': now,
-            'last_seen_time': now
-        })
-        try:
-            return self._table.put_item(
-                Item=edge_entry,
-                ConditionExpression=params.as_no_overwrite
-            )
-        except ClientError as e:
-            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
-                raise e
-
-    def get_edge(self, identifier_stem, edge_internal_id):
-        results = self._table.get_item(Key=DynamoParameters(identifier_stem, edge_internal_id).as_key)
-        return PotentialEdge.from_json(results['Item'])
-
-    def add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
-        try:
-            return self._add_stub_vertex(object_type, stub_properties, source_internal_id, rule_name)
-        except ClientError as e:
-            if e.response['Error']['Code'] != 'ValidationException':
-                raise e
-            self._add_stub_object_type(object_type, stub_properties, source_internal_id, rule_name)
-
-    def add_object_properties(self, identifier_stem, id_value, object_properties):
-        update_components = self._generate_update_property_components(object_properties)
-        return self._table.update_item(
-            Key=DynamoParameters(identifier_stem, id_value).as_key,
-            UpdateExpression=update_components[2],
-            ExpressionAttributeValues=update_components[1],
-            ExpressionAttributeNames=update_components[0],
-            ConditionExpression=Attr('object_properties').not_exists()
-        )
-
-    def _add_stub_vertex(self, object_type, stub_properties, source_internal_id, rule_name):
-        object_properties = {x: y for x, y in stub_properties.items() if not hasattr(y, 'is_missing')}
-        stub = {
-            'object_properties': object_properties,
-            'source_internal_id': source_internal_id,
-            'rule_name': rule_name
-        }
-        return self._table.update_item(
-            Key=DynamoParameters.for_stub().as_key,
-            UpdateExpression='SET #ot = list_append(#ot, :s)',
-            ExpressionAttributeValues={
-                ':s': [stub]
-            },
-            ExpressionAttributeNames={
-                '#ot': object_type
-            }
-        )
-
-    def _add_stub_object_type(self, object_type, stub_properties, source_internal_id, rule_name):
-        object_properties = {x: y for x, y in stub_properties.items() if not hasattr(y, 'is_missing')}
-        stub = {
-            'object_properties': object_properties,
-            'source_internal_id': source_internal_id,
-            'rule_name': rule_name
-        }
-        return self._table.update_item(
-            Key=DynamoParameters.for_stub().as_key,
-            UpdateExpression='SET #ot = :s',
-            ExpressionAttributeValues={
-                ':s': [stub]
-            },
-            ExpressionAttributeNames={
-                '#ot': object_type
-            },
-            ConditionExpression=Attr(object_type).not_exists()
-        )
-
-    @classmethod
-    def _generate_update_property_components(cls, object_properties):
-        update_parts = ['#v = :v', '#o = :v']
-        expression_values = {
-            ':v': object_properties
-        }
-        expression_names = {
-            '#v': 'vertex_properties',
-            '#o': 'object_properties'
-        }
-        counter = 0
-        for property_name, vertex_property in object_properties.items():
-            expression_name = f'#vp{counter}'
-            expression_value = f':vp{counter}'
-            expression_values[expression_value] = vertex_property
-            expression_names[expression_name] = property_name
-            update_parts.append(f'{expression_name} = {expression_value}')
-            counter += 1
-        update_expression = f'SET {", ".join(update_parts)}'
-        return expression_names, expression_values, update_expression

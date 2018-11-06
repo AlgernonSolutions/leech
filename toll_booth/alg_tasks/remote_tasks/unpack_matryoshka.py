@@ -1,6 +1,6 @@
 import logging
 
-from toll_booth.alg_obj.aws.aws_obj.matryoshka import Matryoshka
+from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka
 from toll_booth.alg_tasks.task_obj import remote_task
 
 

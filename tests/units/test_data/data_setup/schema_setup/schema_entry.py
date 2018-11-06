@@ -1,10 +1,10 @@
+from tests.units.test_data.data_setup.schema_setup.setup import get_test
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, SchemaEdgeEntry
 
 
 class MockVertexSchemaEntry:
     @classmethod
     def full_get(cls, object_type, as_dict=False):
-        from tests.steps.schema_setup import get_test
         schema = get_test()
         vertex_entries = schema['vertex']
         for vertex_entry in vertex_entries:
@@ -38,7 +38,6 @@ class MockEdgeSchemaEntry:
 
     @classmethod
     def full_get(cls, object_type, as_dict=False):
-        from tests.steps.schema_setup import get_test
         schema = get_test()
         edge_entries = schema['edge']
         for edge_entry in edge_entries:

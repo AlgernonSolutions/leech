@@ -1,5 +1,5 @@
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.aws_obj.sapper import SchemaWhisperer
+from toll_booth.alg_obj.aws.sapper.schema_whisperer import SchemaWhisperer
 from toll_booth.alg_obj.graph.schemata.entry_property import SchemaPropertyEntry, EdgePropertyEntry
 from toll_booth.alg_obj.graph.schemata.indexes import SortedSetIndexEntry, UniqueIndexEntry
 from toll_booth.alg_obj.graph.schemata.rules import VertexRules

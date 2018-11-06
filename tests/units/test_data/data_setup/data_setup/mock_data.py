@@ -2,7 +2,7 @@ from datetime import datetime
 
 from mock import MagicMock
 
-from tests.steps.schema_setup.schema_entry import MockVertexSchemaEntry
+from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry
 
 
 class MockExtractData:

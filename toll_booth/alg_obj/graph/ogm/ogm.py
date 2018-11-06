@@ -1,12 +1,9 @@
-import json
 import logging
 
-from toll_booth.alg_obj.aws.aws_obj.lockbox import IndexDriver
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentEdgeConnection
 from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
-from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 class Ogm:
@@ -17,33 +14,49 @@ class Ogm:
         results = self._trident_driver.execute(query, False)
         return results
 
-    def graph_object(self, potential_object):
-        command_generator = CommandGenerator.get_for_obj_type(potential_object.object_type)
-        graph_command = command_generator.create_command(potential_object)
-        logging.info(f'generated graph command: {graph_command} for potential object: {potential_object.to_json}')
-        return self._graph_object(graph_command)
+    def graph_object(self, object_entry):
+        vertex_commands = set()
+        edge_commands = set()
+        vertex_commands.add(self._generate_vertex_command(object_entry['source']))
+        for vertex in object_entry['others']:
+            vertex_commands.add(self._generate_vertex_command(vertex))
+        for edge in object_entry['edges']:
+            edge_commands.add(self._generate_edge_command(edge))
+        logging.info(f'generated graph commands: {vertex_commands, edge_commands} for potential object: {object_entry}')
+        return self._graph_objects(vertex_commands, edge_commands)
 
-    def _graph_object(self, graph_command):
-        results = self._trident_driver.execute(graph_command)
-        logging.info(f'submitted graph command: {graph_command} with results: {json.dumps(results, cls=AlgEncoder)}')
-        return results
+    @classmethod
+    def _generate_vertex_command(cls, potential_vertex):
+        command_generator = CommandGenerator.get_for_obj_type(potential_vertex.object_type)
+        graph_command = command_generator.create_command(potential_vertex)
+        return graph_command
+
+    @classmethod
+    def _generate_edge_command(cls, potential_edge):
+        command_generator = CommandGenerator.get_for_obj_type(potential_edge.object_type)
+        graph_command = command_generator.create_command(potential_edge)
+        return graph_command
+
+    def _graph_objects(self, vertex_commands, edge_commands):
+        with self._trident_driver as driver:
+            for command in vertex_commands:
+                driver.execute(command, False)
+            for command in edge_commands:
+                driver.execute(command, False)
+        logging.info(f'submitted graph commands: {vertex_commands, edge_commands}')
+        return
 
 
 class OgmReader:
     def __init__(self, trident_driver=None, index_driver=None):
         if not trident_driver:
             trident_driver = TridentDriver()
-        if not index_driver:
-            index_driver = IndexDriver()
         self._trident_driver = trident_driver
         self._index_driver = index_driver
 
     def execute(self, query):
         results = self._trident_driver.execute(query, True)
         return results
-
-    def find_potential_vertexes(self, vertex_properties):
-        pass
 
     def get_vertex(self, source, function_args, **kwargs):
         internal_id = function_args.get('internal_id', source.get('internal_id'))

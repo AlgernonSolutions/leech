@@ -7,7 +7,7 @@ import urllib.parse
 
 import requests
 
-from toll_booth.alg_obj.aws.aws_obj.squirrel import Opossum
+from toll_booth.alg_obj.aws.squirrels.squirrel import Opossum
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentVertex, TridentEdge, TridentProperty, TridentPath
 
 

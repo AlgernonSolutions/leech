@@ -59,7 +59,7 @@ class SevenOfNine:
     def _set_assimilation_results(self, assimilation_results):
         try:
             self._dynamo_driver.set_assimilation_results(
-                assimilation_results,
+                self._rule_entry.edge_type, assimilation_results,
                 identifier_stem=self._source_vertex.identifier_stem,
                 id_value=self._source_vertex.id_value)
         except ClientError as e:

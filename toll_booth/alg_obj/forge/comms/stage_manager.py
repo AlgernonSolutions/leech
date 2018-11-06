@@ -63,7 +63,7 @@ class StageManager:
 
     @classmethod
     def bulk_mark_ids_as_working(cls, id_values, identifier_stem, object_type, stage_name):
-        from toll_booth.alg_obj.aws.aws_obj.matryoshka import Matryoshka, MatryoshkaCluster
+        from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
         batches = []
         entries = []
         counter = 0

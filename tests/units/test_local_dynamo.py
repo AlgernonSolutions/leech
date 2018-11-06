@@ -3,10 +3,13 @@ from decimal import Decimal
 import pytest
 from mock import patch
 
-from tests.steps.actor_setup import patches
-from tests.steps.outside_setup.boto import intercept
+
+
+
+from tests.units.test_data import patches
 from tests.units.test_data.assimilation_orders.first_identifiable_assimilation_order import \
     rule_entry as first_rule_entry
+from tests.units.test_data.data_setup.boto import intercept
 from tests.units.test_data.dynamo_data import *
 from tests.units.test_data.potential_vertexes import *
 from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
@@ -187,3 +190,37 @@ class TestDynamoDriver:
             assert isinstance(test_timestamp, Decimal)
             assert update_values[':s'] == 'transformation'
             assert test_disposition == 'graphing'
+
+    @pytest.mark.mark_assimilation
+    def test_set_assimilation_results(self):
+        with patch(patches.boto_patch, side_effect=intercept) as mock_boto:
+            dynamo_driver = LeechDriver(table_name=blank_table_name)
+            assimilation_results = [
+                {'edge': changed_edge, 'vertex': external_id_potential_vertex}
+            ]
+            dynamo_driver.set_assimilation_results(
+                '_changed_', assimilation_results,
+                identifier_stem=change_potential_vertex.identifier_stem,
+                id_value=change_potential_vertex.id_value
+            )
+            assert mock_boto.called is True
+            boto_args = mock_boto.call_args[0][0]
+            boto_kwargs = mock_boto.call_args[0][1]
+            assert boto_args == 'UpdateItem'
+            assert boto_kwargs['Key'] == {
+                'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#',
+                'sid_value': str(1230)}
+            update_expression = boto_kwargs['UpdateExpression']
+            for entry in ['#lss', '#lts', '#p', '#iv', '#a']:
+                assert entry in update_expression
+            for entry in [':s', ':t', ':iv', ':a']:
+                assert entry in update_expression
+            update_values = boto_kwargs['ExpressionAttributeValues']
+            assert update_values[':s'] == 'assimilation'
+            for entry in update_values[':iv']:
+                test_edge = entry['edge']
+                test_vertex = entry['vertex']
+                for key_value in ['identifier_stem', 'sid_value', 'internal_id', 'object_properties', 'from_object', 'to_object']:
+                    assert key_value in test_edge
+                for key_value in ['identifier_stem', 'sid_value', 'id_value', 'internal_id', 'object_properties']:
+                    assert key_value in test_vertex

@@ -38,7 +38,7 @@ class OrderSwarm:
         self._outbound_orders.append(order)
 
     def send(self):
-        from toll_booth.alg_obj.aws.aws_obj.matryoshka import Matryoshka, MatryoshkaCluster
+        from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
         batches = []
         entries = []
         counter = 0

@@ -1,6 +1,6 @@
 import logging
 
-from toll_booth.alg_obj.aws.sapper.dynamo_driver import DynamoDriver
+from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 from toll_booth.alg_tasks.task_obj import remote_task
 
@@ -9,7 +9,7 @@ from toll_booth.alg_tasks.task_obj import remote_task
 def load(*args, **kwargs):
     logging.info('starting a load task with args/kwargs: %s/%s' % (args, kwargs))
     task_args = kwargs['task_args']
-    dynamo_driver = DynamoDriver(**task_args)
+    dynamo_driver = LeechDriver(**task_args)
     key_fields = task_args['keys']
     keys = {
         'identifier_stem': key_fields['identifier_stem']['S'],
