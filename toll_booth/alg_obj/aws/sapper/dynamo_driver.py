@@ -44,7 +44,7 @@ class LeechRecord:
 
     def for_seed(self, id_value):
         dynamo_parameters = DynamoParameters(self._identifier_stem, id_value)
-        base = self._for_update('monitoring')
+        base = self._for_update('monitoring', is_initial=True)
         base['Key'] = dynamo_parameters.as_key
         base['UpdateExpression'] = base['UpdateExpression'] + ', #id=:id, #d=:d, #ot=:ot, #c=:c'
         base['ExpressionAttributeNames'].update({
@@ -88,7 +88,7 @@ class LeechRecord:
         return self._dynamo_parameters.as_key
 
     def for_created_vertex(self, potential_vertex):
-        base = self._for_update('assimilation')
+        base = self._for_update('assimilation', is_initial=True)
         base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #id=:id, #d=:d, #ot=:ot, #c=:c'
         base['ExpressionAttributeNames'].update({
             '#id': 'id_value',
@@ -111,7 +111,7 @@ class LeechRecord:
         return base
 
     def for_stub(self, potential_vertex):
-        base = self._for_update('assimilation')
+        base = self._for_update('assimilation', is_initial=True)
         stub_parameters = self._calculate_stub_parameters(potential_vertex)
         expression_names = {
             '#d': 'disposition',
@@ -180,11 +180,11 @@ class LeechRecord:
         })
         return base
 
-    def _for_update(self, stage_name):
+    def _for_update(self, stage_name, is_initial=False):
         now = self._get_decimal_timestamp()
         progress_name = f'progress.{stage_name}'
         progress_value = now
-        if stage_name == 'monitoring':
+        if is_initial:
             progress_name = 'progress'
             progress_value = {stage_name: now}
         update_args = {
