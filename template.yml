@@ -41,7 +41,7 @@ Resources:
       Runtime: python3.6
       FunctionName: leech-extract
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
-      Timeout: 120
+      Timeout: 60
       MemorySize: 448
       Events:
         extraction:
@@ -62,7 +62,7 @@ Resources:
       Runtime: python3.6
       FunctionName: leech-transform
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
-      Timeout: 300
+      Timeout: 120
       MemorySize: 448
       Events:
         transformation:
@@ -82,7 +82,7 @@ Resources:
       Runtime: python3.6
       FunctionName: leech-assimilate
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
-      Timeout: 300
+      Timeout: 120
       MemorySize: 448
       Events:
         assimilation:
