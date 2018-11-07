@@ -363,7 +363,7 @@ class LeechDriver:
 
     @leeched
     def get_object(self, leech_record):
-        results = self._table.get_item(**leech_record.fo_key)
+        results = self._table.get_item(**leech_record.for_key)
         try:
             vertex_information = results['Item']
         except KeyError:
