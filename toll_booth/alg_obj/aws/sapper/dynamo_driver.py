@@ -184,7 +184,7 @@ class LeechRecord:
         now = self._get_decimal_timestamp()
         progress_name = f'progress.{stage_name}'
         progress_value = now
-        if stage_name == 'extraction':
+        if stage_name == 'monitoring':
             progress_name = 'progress'
             progress_value = {stage_name: now}
         update_args = {
