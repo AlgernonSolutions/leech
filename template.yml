@@ -48,7 +48,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:extraction
-            BatchSize: 1
+            BatchSize: 10
       Tracing: Active
       Environment:
         Variables:
@@ -69,7 +69,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:transform
-            BatchSize: 1
+            BatchSize: 10
       Tracing: Active
       Environment:
         Variables:
@@ -89,7 +89,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:assimilate
-            BatchSize: 1
+            BatchSize: 10
       Tracing: Active
       Environment:
         Variables:
@@ -116,7 +116,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:load
-            BatchSize: 1
+            BatchSize: 10
       Tracing: Active
       Environment:
         Variables:
