@@ -182,27 +182,30 @@ class LeechRecord:
 
     def _for_update(self, stage_name, is_initial=False):
         now = self._get_decimal_timestamp()
-        progress_name = f'progress.{stage_name}'
-        progress_value = now
+        update_expression = 'SET #lss=:s, #lts=:t, #p.#s=:p'
+        attribute_names = {
+            '#p': 'progress',
+            '#s': stage_name,
+            '#lss': 'last_stage_seen',
+            '#lts': 'last_time_seen'
+        }
+        attribute_values = {
+            ':t': now,
+            ':s': stage_name,
+            ':p': now
+        }
         if is_initial:
-            progress_name = 'progress'
-            progress_value = {stage_name: now}
+            update_expression = update_expression.replace('#p.#s', "#p")
+            attribute_names['#p'] = 'progress'
+            attribute_values[':p'] = {stage_name: now}
+            del attribute_names['#s']
         update_args = {
             'Key': self._dynamo_parameters.as_key,
-            'UpdateExpression': 'SET #lss=:s, #lts=:t, #p=:p',
-            'ExpressionAttributeNames': {
-                '#p': progress_name,
-                '#lss': 'last_stage_seen',
-                '#lts': 'last_time_seen'
-            },
-            'ExpressionAttributeValues': {
-                ':t': now,
-                ':s': stage_name,
-                ':p': progress_value
-            },
+            'UpdateExpression': update_expression,
+            'ExpressionAttributeNames': attribute_names,
+            'ExpressionAttributeValues': attribute_values,
             'ConditionExpression': Attr(f'progress.{stage_name}').not_exists()
         }
-
         return update_args
 
     @classmethod
