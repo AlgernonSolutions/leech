@@ -6,7 +6,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator
 
 
 def leeched(production_function):
@@ -219,7 +219,7 @@ class LeechRecord:
     def _calculate_stub_identifier_stem(cls, potential_vertex):
         if potential_vertex.is_identifiable:
             return potential_vertex.identifier_stem
-        return IdentifierStem('vertex', 'stub')
+        return IdentifierStem.for_stub()
 
     @classmethod
     def _calculate_stub_sid(cls, potential_vertex):
@@ -368,7 +368,9 @@ class LeechDriver:
             vertex_information = results['Item']
         except KeyError:
             return None
-        source_vertex = PotentialVertex.from_json(vertex_information)
+        object_type = vertex_information['object_type']
+        regulator = VertexRegulator.get_for_object_type(object_type)
+        source_vertex = regulator.create_potential_vertex(vertex_information['object_properties'])
         other_vertexes = []
         edges = []
         potentials = vertex_information.get('potentials', {})

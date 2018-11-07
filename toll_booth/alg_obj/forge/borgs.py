@@ -15,7 +15,7 @@ class SevenOfNine:
 
     def assimilate(self):
         assimilation_results = []
-        edge_regulator = EdgeRegulator.get_for_object_type(self._rule_entry.edge_type, self._rule_entry)
+        edge_regulator = EdgeRegulator.get_for_object_type(self._rule_entry.edge_type)
         identified_vertexes, exist = self._derive_vertexes()
         for vertex in identified_vertexes:
             edge = self._derive_edge(edge_regulator, vertex)

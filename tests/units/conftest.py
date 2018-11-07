@@ -1,8 +1,11 @@
 import os
+from unittest.mock import patch
 
 import pytest
 from botocore.exceptions import ClientError
+from mock import MagicMock
 
+from tests.units.test_data import patches
 from tests.units.test_data.actor_data import *
 from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order, \
     first_stub_assimilate_order, second_stub_assimilate_order
@@ -10,9 +13,9 @@ from tests.units.test_data.dynamo_stream_events import *
 from tests.units.test_data.potential_vertexes import *
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def blank_table():
-    table_name = os.getenv('blank_table_name')
+    table_name = os.getenv('blank_table_name', 'TestObjects')
     import boto3
     client = boto3.client('dynamodb')
 
@@ -253,3 +256,28 @@ def load_order(request):
 ])
 def potential_vertex(request):
     return request.param
+
+
+@pytest.fixture
+def mock_context():
+    context = MagicMock(name='context')
+    context.function_name = 'test_function'
+    context.invoked_function_arn = 'test_function_arn'
+    context.aws_request_id = '12344_request_id'
+    return context
+
+
+@pytest.fixture
+def silence_x_ray():
+    patch(patches.x_ray_patch_begin).start()
+    patch(patches.x_ray_patch_end).start()
+    yield
+    patch(patches.x_ray_patch_begin).start()
+    patch(patches.x_ray_patch_end).start()
+
+
+@pytest.fixture
+def mock_neptune():
+    fish_sticks = patch(patches.neptune_patch).start()
+    yield fish_sticks
+    patch(patches.neptune_patch).start()

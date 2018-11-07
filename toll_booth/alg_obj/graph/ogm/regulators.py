@@ -15,17 +15,14 @@ class ObjectRegulator:
         self._entry_properties_schema = schema_entry.entry_properties
 
     @classmethod
-    def get_for_object_type(cls, object_type, rule_entry=None):
+    def get_for_object_type(cls, object_type):
         from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
         target_schema_entry = SchemaEntry.get(object_type)
         try:
             getattr(target_schema_entry, 'edge_label')
             return EdgeRegulator(target_schema_entry)
         except AttributeError:
-            if not rule_entry:
-                # TODO specify this error
-                raise RuntimeError('can not instantiate a vertex regulator without a valid rule entry')
-            return VertexRegulator(target_schema_entry, rule_entry)
+            return VertexRegulator(target_schema_entry)
 
     @property
     def schema_entry(self):
@@ -128,13 +125,12 @@ class ObjectRegulator:
 
 
 class VertexRegulator(ObjectRegulator):
-    def __init__(self, schema_entry, rule_entry=None):
+    def __init__(self, schema_entry):
         super().__init__(schema_entry)
-        self._rule_entry = rule_entry
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(json_dict['schema_entry'], json_dict['rule_entry'])
+        return cls(json_dict['schema_entry'])
 
     def create_potential_vertex(self, object_data, **kwargs):
         object_properties = self._standardize_object_properties(object_data)
@@ -143,12 +139,9 @@ class VertexRegulator(ObjectRegulator):
         id_value = kwargs.get('id_value', self._create_id_value(object_properties))
         object_properties = self._obfuscate_sensitive_data(internal_id, object_properties)
         object_type = self._schema_entry.object_type
-        if_missing = None
-        if self._rule_entry:
-            if_missing = self._rule_entry.if_absent
         id_value_field = self._schema_entry.id_value_field
         return PotentialVertex(
-           object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field)
+           object_type, internal_id, object_properties, identifier_stem, id_value, id_value_field)
 
 
 class EdgeRegulator(ObjectRegulator):
@@ -375,17 +368,15 @@ class GraphObject(AlgObject):
 
 
 class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, if_missing, identifier_stem, id_value, id_value_field):
+    def __init__(self, object_type, internal_id, object_properties, identifier_stem, id_value, id_value_field):
         super().__init__(object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field)
-        self._if_missing = if_missing
 
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
             json_dict['object_type'], json_dict['internal_id'],
-            json_dict['object_properties'], json_dict['if_missing'],
-            json_dict['identifier_stem'], int(json_dict['id_value']),
-            json_dict['id_value_field']
+            json_dict['object_properties'], json_dict['identifier_stem'],
+            int(json_dict['id_value']), json_dict['id_value_field']
         )
 
     @property
@@ -418,12 +409,8 @@ class PotentialVertex(GraphObject):
         return isinstance(self._internal_id, str)
 
     @property
-    def if_missing(self):
-        return self._if_missing
-
-    @property
     def graphed_object_type(self):
-        if not self.is_identifiable and self._if_missing == 'stub':
+        if not self.is_identifiable and self._identifier_stem.is_stub:
             return f'{self.object_type}::stub'
         return self.object_type
 
@@ -555,6 +542,10 @@ class IdentifierStem(AlgObject):
         return cls(graph_type, object_type, paired_identifiers)
 
     @classmethod
+    def for_stub(cls):
+        return cls('vertex', 'stub')
+
+    @classmethod
     def parse_json(cls, json_dict):
         return cls(
             json_dict['graph_type'], json_dict['object_type'],
@@ -585,6 +576,10 @@ class IdentifierStem(AlgObject):
             'object_type': self._object_type
         })
         return extractor_data
+
+    @property
+    def is_stub(self):
+        return self._object_type == 'stub'
 
     def _string_paired_identifiers(self):
         return json.dumps(self._paired_identifiers)

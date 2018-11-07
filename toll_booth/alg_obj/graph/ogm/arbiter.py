@@ -39,7 +39,7 @@ class ArbiterExecutor:
         self._source_vertex = rule_arbiter.source_vertex
         self._rule_entry = rule_entry
         self._target_type = rule_entry.target_type
-        self._regulator = ObjectRegulator.get_for_object_type(rule_entry.target_type, rule_entry)
+        self._regulator = ObjectRegulator.get_for_object_type(rule_entry.target_type)
 
     @property
     def is_stub(self):

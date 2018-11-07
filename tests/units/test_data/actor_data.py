@@ -37,7 +37,6 @@ change_extracted_data = {
     ]
 }
 
-
 second_change_id_value = 1458
 second_change_extracted_data = {
     "source": {
@@ -63,12 +62,11 @@ second_change_extracted_data = {
     ]
 }
 
-
 change_properties = {'detail_id': Decimal('1230'), 'id_source': 'MBI', 'changelog_id': Decimal('177'),
                      'data_dict_id': Decimal('49'), 'detail_one': 'e7b0192b71294db66f1ac4e0a9b36bff',
                      'detail_one_value': 'e7b0192b71294db66f1ac4e0a9b36bff',
                      'detail_two': 'e7b0192b71294db66f1ac4e0a9b36bff'}
-source_vertex = PotentialVertex('Change', change_internal_id, change_properties, None, change_identifier_stem,
+source_vertex = PotentialVertex('Change', change_internal_id, change_properties, change_identifier_stem,
                                 change_id_value, 'detail_id')
 
 first_potential_internal_id = 'ff9ccecb77051747a9ff6cc4169de27d'
@@ -76,7 +74,7 @@ first_potential_vertex_properties = {'id_value': Decimal('3889'), 'id_source': '
                                      'id_name': 'emp_id'}
 first_potential_identifier_stem = '#vertex#ExternalId#{"id_source": "MBI", "id_type": "Employees", "id_name": "emp_id"}#'
 first_potential_vertex = PotentialVertex('ExternalId', first_potential_internal_id, first_potential_vertex_properties,
-                                         'create', first_potential_identifier_stem, 3889, 'id_value')
+                                         first_potential_identifier_stem, 3889, 'id_value')
 
 first_rule_constants = [{'constant_name': 'id_source', 'constant_value': 'source.id_source'}]
 first_rule_specifiers = FunctionSpecifier('changed_target', 'derive_change_targeted',
@@ -89,7 +87,7 @@ second_potential_vertex_properties = {'changelog_id': Decimal('177'), 'change_de
                                       'change_date_utc': MissingObjectProperty(), 'id_source': 'MBI'}
 second_potential_identifier_stem = ['id_source', 'id_type', 'id_name']
 second_potential_vertex = PotentialVertex('ChangeLogEntry', second_potential_internal_id,
-                                          second_potential_vertex_properties, 'stub', second_potential_identifier_stem,
+                                          second_potential_vertex_properties, second_potential_identifier_stem,
                                           3889, 'id_value')
 
 second_rule_constants = []
