@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from decimal import Decimal
 
 import boto3
@@ -248,6 +249,10 @@ class LeechRecord:
                 object_property = None
             if hasattr(object_property, 'is_missing'):
                 object_property = None
+            if isinstance(object_property, Decimal):
+                object_property = str(object_property)
+            if isinstance(object_property, datetime):
+                object_property = str(object_property.timestamp())
             cleaned[property_name] = object_property
         return cleaned
 
