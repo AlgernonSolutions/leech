@@ -410,8 +410,13 @@ class PotentialVertex(GraphObject):
 
     @property
     def graphed_object_type(self):
+        stub_type = f'{self.object_type}::stub'
+        try:
+            IdentifierStem.from_raw(self._identifier_stem)
+        except AttributeError:
+            return stub_type
         if not self.is_identifiable and self._identifier_stem.is_stub:
-            return f'{self.object_type}::stub'
+            return stub_type
         return self.object_type
 
 

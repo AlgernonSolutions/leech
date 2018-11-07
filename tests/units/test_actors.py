@@ -48,7 +48,6 @@ class TestActors:
             assert isinstance(written_vertex, PotentialVertex)
             assert mock_write_args[1] == 'transformation'
 
-    @pytest.mark.borg
     def test_borg_assimilate_identifiable_potential(self, identifiable_assimilate_order):
         with patch(patches.dynamo_driver_write_patch) as vertex_write, \
                 patch(patches.dynamo_driver_write_edge_patch) as edge_write, \
@@ -67,7 +66,6 @@ class TestActors:
             assert isinstance(edge_write_commands[0], PotentialEdge)
             assert edge_write_commands[1] == 'assimilation'
 
-    @pytest.mark.borg
     def test_borg_assimilate_stubbed_potential(self, stubbed_assimilate_order):
         with patch(patches.dynamo_driver_write_patch) as vertex_write, \
                 patch(patches.dynamo_driver_write_edge_patch) as edge_write, \

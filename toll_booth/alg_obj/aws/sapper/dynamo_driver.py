@@ -24,12 +24,15 @@ def leeched(production_function):
 
 class LeechRecord:
     def __init__(self, identifier_stem, id_value, **kwargs):
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+        object_type = kwargs.get('object_type', None)
+        if identifier_stem:
+            identifier_stem = IdentifierStem.from_raw(identifier_stem)
+            object_type = identifier_stem.object_type
         self._identifier_stem = identifier_stem
         self._id_value = id_value
         self._dynamo_parameters = DynamoParameters(identifier_stem, id_value)
         self._object_properties = kwargs.get('object_properties', {})
-        self._object_type = identifier_stem.object_type
+        self._object_type = object_type
 
     @property
     def identifier_stem(self):

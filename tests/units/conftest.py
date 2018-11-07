@@ -9,7 +9,9 @@ from tests.units.test_data import patches
 from tests.units.test_data.actor_data import *
 from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order, \
     first_stub_assimilate_order, second_stub_assimilate_order
+from tests.units.test_data.assimilation_orders.assimilation_events import change_to_stub_changelog_assimilation_order
 from tests.units.test_data.dynamo_stream_events import *
+from tests.units.test_data.patches import get_leech_driver_patch, get_function_patch
 from tests.units.test_data.potential_vertexes import *
 
 
@@ -196,10 +198,11 @@ def identifiable_assimilate_order(request):
 
 
 @pytest.fixture(params=[
-    first_stub_assimilate_order,
-    second_stub_assimilate_order
+    change_to_stub_changelog_assimilation_order,
+    # first_stub_assimilate_order,
+    # second_stub_assimilate_order
 ])
-def stubbed_assimilate_order(request):
+def unidentifiable_assimilate_order(request):
     return request.param
 
 
@@ -281,3 +284,35 @@ def mock_neptune():
     fish_sticks = patch(patches.neptune_patch).start()
     yield fish_sticks
     patch(patches.neptune_patch).start()
+
+
+@pytest.fixture
+def borg_test_environment():
+    driver_patches = []
+
+    def _build_environment(findable_vertex_type=False):
+        driver_functions = ['find_potential_vertexes', 'set_assimilation_results', 'set_assimilated_vertex']
+        mocks = {}
+        edge_regulator_patch = get_function_patch('edge_regulator', 'generate_potential_edge')
+        edge_regulator_mock = edge_regulator_patch.start()
+        mocks['generate_potential_edge'] = edge_regulator_mock
+        driver_patches.append(edge_regulator_patch)
+        for function_name in driver_functions:
+            function_patch = get_leech_driver_patch(function_name)
+            mock_object = function_patch.start()
+            driver_patches.append(function_patch)
+            mocks[function_name] = mock_object
+        if findable_vertex_type:
+            found_vertexes = [
+                MagicMock('first_found_vertex'),
+                MagicMock('second_found_vertex')
+            ]
+            mocks['find_potential_vertexes'].return_value = found_vertexes
+        else:
+            mocks['find_potential_vertexes'].return_value = []
+        return mocks
+
+    yield _build_environment
+
+    for driver_patch in driver_patches:
+        driver_patch.stop()
