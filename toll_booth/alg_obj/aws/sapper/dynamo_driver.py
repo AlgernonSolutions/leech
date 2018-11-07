@@ -151,6 +151,9 @@ class LeechRecord:
         return base
 
     def for_transformation(self, vertex, potentials):
+        disposition = 'working'
+        if not potentials:
+            disposition = 'graphing'
         base = self._for_update('transformation')
         base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #d=:d, #ps=:ps'
         base['ExpressionAttributeNames'].update({
@@ -162,7 +165,7 @@ class LeechRecord:
         base['ExpressionAttributeValues'].update({
             ':i': vertex.internal_id,
             ':v': self._clean_object_properties(vertex.object_properties),
-            ':d': 'graphing',
+            ':d': disposition,
             ':ps': self._format_potentials(potentials)
         })
         return base
@@ -290,7 +293,7 @@ class LeechRecord:
                 object_property = None
             object_properties[property_name] = object_property
         return {
-            'identifier_stem': potential_edge.identifier_stem,
+            'identifier_stem': str(potential_edge.identifier_stem),
             'sid_value': str(potential_edge.id_value),
             'internal_id': potential_edge.internal_id,
             'object_properties': object_properties,
