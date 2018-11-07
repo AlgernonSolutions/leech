@@ -85,7 +85,7 @@ class LeechRecord:
 
     @property
     def for_key(self):
-        return self._dynamo_parameters.as_key
+        return {'Key': self._dynamo_parameters.as_key}
 
     def for_created_vertex(self, potential_vertex):
         base = self._for_update('assimilation', is_initial=True)
