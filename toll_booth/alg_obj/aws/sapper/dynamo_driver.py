@@ -7,6 +7,7 @@ from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator
+from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 def leeched(production_function):
@@ -145,7 +146,7 @@ class LeechRecord:
     def for_extraction(self, extracted_data):
         base = self._for_update('extraction')
         base['UpdateExpression'] = base['UpdateExpression'] + ', #ex=:ex'
-        base['ExpressionAttributeValues'][':ex'] = extracted_data
+        base['ExpressionAttributeValues'][':ex'] = json.dumps(extracted_data, cls=AlgEncoder)
         base['ExpressionAttributeNames']['#ex'] = 'extracted_data'
         return base
 
