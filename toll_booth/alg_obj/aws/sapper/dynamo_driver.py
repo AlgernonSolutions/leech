@@ -275,7 +275,7 @@ class LeechRecord:
                 object_property = None
             object_properties[property_name] = object_property
         return {
-            'identifier_stem': potential_vertex.identifier_stem,
+            'identifier_stem': str(potential_vertex.identifier_stem),
             'sid_value': str(potential_vertex.id_value),
             'id_value': potential_vertex.id_value,
             'internal_id': potential_vertex.internal_id,
