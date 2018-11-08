@@ -1,8 +1,8 @@
 import random
 from datetime import datetime
 
-from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
-from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
+from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator, EdgeRegulator
+from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, SchemaEdgeEntry
 
 
 def generate_potential_vertex(object_type, missing_properties=False):
@@ -18,6 +18,28 @@ def generate_potential_vertex(object_type, missing_properties=False):
             blank_key = random.choice(list(vertex_properties.keys()))
             del vertex_properties[blank_key]
     return vertex_regulator.create_potential_vertex(vertex_properties)
+
+
+def generate_potential_edge(source_vertex, other_vertex, edge_type):
+    schema_entry = SchemaEdgeEntry.get(edge_type)
+    edge_regulator = EdgeRegulator(schema_entry)
+    inbound = schema_entry.to_type in ['*', source_vertex.object_type]
+    extracted_data = _generate_extracted_data(schema_entry.edge_properties)
+    potential_edge = edge_regulator.generate_potential_edge(source_vertex, other_vertex, extracted_data, inbound)
+    return potential_edge
+
+
+def _generate_extracted_data(edge_properties):
+    extracted_data = {}
+    for property_name, edge_property in edge_properties.items():
+        property_source = edge_property.property_source
+        if property_source['source_type'] == 'extraction':
+            extraction_name = property_source['extraction_name']
+            if extraction_name not in extracted_data:
+                extracted_data[extraction_name] = []
+            property_value = _generate_object_property(edge_property)
+            extracted_data[extraction_name].append({property_name: property_value})
+    return extracted_data
 
 
 def _generate_object_property(object_property):

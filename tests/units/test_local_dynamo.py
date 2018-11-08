@@ -1,14 +1,9 @@
+import os
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
-from mock import patch
 
-from tests.units.test_data import patches
-from tests.units.test_data.assimilation_orders.first_identifiable_assimilation_order import \
-    rule_entry as first_rule_entry
-from tests.units.test_data.data_setup.boto import intercept
-from tests.units.test_data.dynamo_data import *
-from tests.units.test_data.potential_vertexes import *
 from tests.units.test_data.schema_generator import get_schema_entry
 from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
 
@@ -44,7 +39,9 @@ class TestDynamoDriver:
             update_values = dynamo_kwargs['ExpressionAttributeValues']
             self._assert_update_expression_creation(function_name, update_expression)
             self._assert_attribute_names_creation(function_name, update_names)
-            self._assert_attribute_values_creation(function_name, update_values, id_value_range=test_id_range, object_type=test_identifier_stem.object_type)
+            self._assert_attribute_values_creation(function_name, update_values, id_value_range=test_id_range,
+                                                   object_type=test_identifier_stem.object_type,
+                                                   stage_name='assimilation')
 
     @pytest.mark.mark_blank
     def test_mark_object_as_blank(self, test_id, dynamo_test_environment):
@@ -53,7 +50,8 @@ class TestDynamoDriver:
         test_identifier_stem = test_id[0]
         test_id_value = test_id[1]
         dynamo_driver.mark_object_as_blank(identifier_stem=test_identifier_stem, id_value=test_id_value)
-        self._assert_dynamo_call(function_name, test_id_value, test_identifier_stem, dynamo_test_environment, stage_name='extraction')
+        self._assert_dynamo_call(function_name, test_id_value, test_identifier_stem, dynamo_test_environment,
+                                 stage_name='extraction')
 
     @pytest.mark.mark_graphed
     def test_mark_object_as_graphed(self, test_id, dynamo_test_environment):
@@ -62,7 +60,8 @@ class TestDynamoDriver:
         test_id_value = test_id[1]
         dynamo_driver = LeechDriver(table_name=blank_table_name)
         dynamo_driver.mark_object_as_graphed(identifier_stem=test_identifier_stem, id_value=test_id_value)
-        self._assert_dynamo_call(function_name, test_id_value, test_identifier_stem, dynamo_test_environment, stage_name='graphing')
+        self._assert_dynamo_call(function_name, test_id_value, test_identifier_stem, dynamo_test_environment,
+                                 stage_name='graphing')
 
     @pytest.mark.mark_transform
     def test_set_transform_results(self, test_transform_results, dynamo_test_environment):
@@ -89,47 +88,39 @@ class TestDynamoDriver:
         self._assert_dynamo_call(*test_args, **test_kwargs)
         attribute_values = dynamo_test_environment.call_args_list[0][0][1]['ExpressionAttributeValues']
         self._assert_object_properties_creation(test_source_vertex.object_type, attribute_values[':v'])
-        self._assert_potentials_creation(attribute_values[':ps'], test_source_vertex)
+        self._assert_potentials_creation(attribute_values[':ps'])
 
     @pytest.mark.mark_assimilation
-    def test_set_assimilation_results(self, dynamo_test_environment):
+    def test_set_assimilation_results(self, test_assimilation_results, dynamo_test_environment):
+        counter = 0
+        for assimilation_result in test_assimilation_results:
+            self.set_assimilation_result(assimilation_result, dynamo_test_environment, counter)
+            counter += 1
+
+    def set_assimilation_result(self, test_assimilation_results, dynamo_test_environment, counter):
+        function_name = 'set_assimilation_results'
         dynamo_driver = LeechDriver(table_name=blank_table_name)
-        assimilation_results = [
-            {'edge': changed_edge, 'vertex': external_id_potential_vertex}
-        ]
+        test_assimilation_result = test_assimilation_results[2]
+        test_edge_type = test_assimilation_results[1]
+        test_source_vertex = test_assimilation_results[0]
+        test_identifier_stem = test_source_vertex.identifier_stem
+        test_id_value = test_source_vertex.id_value
         dynamo_driver.set_assimilation_results(
-            '_changed_', assimilation_results,
-            identifier_stem=change_potential_vertex.identifier_stem,
-            id_value=change_potential_vertex.id_value
+            test_edge_type, test_assimilation_result,
+            identifier_stem=test_identifier_stem,
+            id_value=test_id_value
         )
-        assert dynamo_test_environment.called is True
-        boto_args = dynamo_test_environment.call_args[0][0]
-        boto_kwargs = dynamo_test_environment.call_args[0][1]
-        assert boto_args == 'UpdateItem'
-        assert boto_kwargs['Key'] == {
-            'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#',
-            'sid_value': str(1230)}
-        update_expression = boto_kwargs['UpdateExpression']
-        for entry in ['#lss', '#lts', '#p', '#iv', '#a']:
-            assert entry in update_expression
-        for entry in [':s', ':t', ':iv', ':a']:
-            assert entry in update_expression
-        update_values = boto_kwargs['ExpressionAttributeValues']
-        assert update_values[':s'] == 'assimilation'
-        for entry in update_values[':iv']:
-            test_edge = entry['edge']
-            test_vertex = entry['vertex']
-            for key_value in ['identifier_stem', 'sid_value', 'internal_id', 'object_properties', 'from_object',
-                              'to_object']:
-                assert key_value in test_edge
-            for key_value in ['identifier_stem', 'sid_value', 'id_value', 'internal_id', 'object_properties']:
-                assert key_value in test_vertex
+        self._assert_dynamo_call(function_name, test_id_value, test_identifier_stem, dynamo_test_environment,
+                                 stage_name='assimilation', edge_type=test_edge_type, counter=counter)
+        identified_vertexes = dynamo_test_environment.call_args[0][1]['ExpressionAttributeValues'][':iv']
+        self._assert_identified_vertexes_creation(identified_vertexes, test_assimilation_results)
 
     @classmethod
     def _assert_dynamo_call(cls, function_name, test_id_value, test_identifier_stem, mock_boto, **kwargs):
-        mock_boto.assert_called_once()
-        boto_args = mock_boto.call_args[0][0]
-        boto_kwargs = mock_boto.call_args[0][1]
+        if 'counter' not in kwargs:
+            mock_boto.assert_called_once()
+        boto_args = mock_boto.call_args_list[kwargs.get('counter', 0)][0][0]
+        boto_kwargs = mock_boto.call_args_list[kwargs.get('counter', 0)][0][1]
         assert boto_args == 'UpdateItem'
         assert boto_kwargs['Key'] == {
             'identifier_stem': str(test_identifier_stem),
@@ -146,7 +137,8 @@ class TestDynamoDriver:
             'mark_ids_as_working': ['#c=:c', '#p=:p', '#d=:d', '#ot=:ot', '#id=:id'],
             'mark_object_as_blank': ['#c=:c', '#p.#s=:p', '#d=:d'],
             'mark_object_as_graphed': ['#d=:d'],
-            'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d']
+            'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d'],
+            'set_assimilation_results': ['#re.#iv=:iv', '#a=:a']
         }
         function_expressions = expected_expressions[function_name]
         function_expressions.extend(common_expressions)
@@ -169,7 +161,12 @@ class TestDynamoDriver:
                 '#d': 'disposition', '#s': kwargs.get('stage_name')
             },
             'set_transform_results': {
-                '#i': 'internal_id', '#o': 'object_properties', '#d': 'disposition', '#ps': 'potentials', '#s': kwargs.get('stage_name')
+                '#i': 'internal_id', '#o': 'object_properties', '#d': 'disposition', '#ps': 'potentials',
+                '#s': kwargs.get('stage_name')
+            },
+            'set_assimilation_results': {
+                '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated',
+                '#re': kwargs.get('edge_type')
             }
         }
         function_expressions = common_names.copy()
@@ -199,14 +196,16 @@ class TestDynamoDriver:
             'mark_ids_as_working': {':c': False, ':d': 'working', ':s': 'monitoring', ':ot': kwargs.get('object_type')},
             'mark_object_as_blank': {':c': True, ':d': 'blank', ':s': 'extraction'},
             'mark_object_as_graphed': {':d': 'processing', ':s': 'graphing'},
-            'set_transform_results': {':i': kwargs.get('internal_id'), ':d': kwargs.get('disposition'), ':s': kwargs.get('stage_name')}
+            'set_transform_results': {':i': kwargs.get('internal_id'), ':d': kwargs.get('disposition'),
+                                      ':s': kwargs.get('stage_name')},
+            'set_assimilation_results': {':a': True, ':s': kwargs.get('stage_name')}
         }
         function_values = expected_values[function_name]
         for value_name, value in function_values.items():
             assert value_name in attribute_values
             assert attribute_values[value_name] == value
         for value_name, value in attribute_values.items():
-            if value_name in [':t', ':p', ':id', ':v', ':ps']:
+            if value_name in [':t', ':p', ':id', ':v', ':ps', ':iv']:
                 continue
             assert value_name in function_values
             assert function_values[value_name] == value
@@ -235,13 +234,44 @@ class TestDynamoDriver:
         raise NotImplementedError('could not test object property for data_type: %s' % property_data_type)
 
     @classmethod
-    def _assert_potentials_creation(cls, potentials, test_source_vertex):
-        schema_entry = get_schema_entry(test_source_vertex.object_type)
-        schema_linking_rules = schema_entry.rules.linking_rules
-        rules = []
-        for linking_rule in schema_linking_rules:
-            rules.extend(linking_rule.rules)
+    def _assert_potentials_creation(cls, potentials):
         for ruled_edge_label, potential in potentials.items():
             rule_entry = potential['rule_entry']
             potential_vertex = potential['potential_vertex']
-            print()
+            assert rule_entry['target_type'] == potential_vertex['object_type']
+
+    @classmethod
+    def _assert_identified_vertexes_creation(cls, identified_vertexes, test_assimilation_results):
+        collected_identified_edges = {x['edge']['internal_id']: x['edge'] for x in identified_vertexes}
+        collected_identified_vertexes = {x['vertex']['internal_id']: x['vertex'] for x in identified_vertexes}
+        test_edges = {x['edge'].internal_id: x['edge'] for x in test_assimilation_results[2]}
+        test_vertexes = {x['vertex'].internal_id: x['vertex'] for x in test_assimilation_results[2]}
+        cls._assert_identified_edge_creation(collected_identified_edges, test_edges)
+        cls._assert_identified_vertex_creation(collected_identified_vertexes, test_vertexes)
+
+    @classmethod
+    def _assert_identified_edge_creation(cls, identified_edges, test_edges):
+        for internal_id, identified_edge in identified_edges.items():
+            assert internal_id in test_edges
+            test_edge = test_edges[internal_id]
+            assert test_edge.edge_label == identified_edge['edge_label']
+            assert str(test_edge.identifier_stem) == identified_edge['identifier_stem']
+            assert test_edge.internal_id == identified_edge['sid_value']
+            assert test_edge.to_object == identified_edge['to_object']
+            assert test_edge.from_object == identified_edge['from_object']
+            cls._assert_object_properties_creation(identified_edge['edge_label'], identified_edge['object_properties'])
+        for internal_id in test_edges:
+            assert internal_id in identified_edges
+
+    @classmethod
+    def _assert_identified_vertex_creation(cls, identified_vertexes, test_vertexes):
+        for internal_id, identified_vertex in identified_vertexes.items():
+            assert internal_id in test_vertexes
+            test_vertex = test_vertexes[internal_id]
+            assert test_vertex.object_type == identified_vertex['object_type']
+            assert str(test_vertex.identifier_stem) == identified_vertex['identifier_stem']
+            assert str(test_vertex.id_value) == identified_vertex['sid_value']
+            assert test_vertex.id_value == identified_vertex['id_value']
+            cls._assert_object_properties_creation(identified_vertex['object_type'], identified_vertex['object_properties'])
+        for internal_id in test_vertexes:
+            assert internal_id in identified_vertexes

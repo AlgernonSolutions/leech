@@ -10,5 +10,6 @@ def generate_transform_results(source_vertex, has_potentials=False):
         for linking_rules in schema_rules.linking_rules:
             for rule in linking_rules.rules:
                 complete_potential_vertex = generate_potential_vertex(rule.target_type)
-                potentials.append((complete_potential_vertex, rule))
+                incomplete_potential_vertex = generate_potential_vertex(rule.target_type, True)
+                potentials.extend([(complete_potential_vertex, rule), (incomplete_potential_vertex, rule)])
     return source_vertex, potentials

@@ -4,15 +4,19 @@ import os
 from jsonref import JsonRef
 from jsonschema import validate
 
-from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
+from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, SchemaEdgeEntry
 
 
 def get_schema_entry(object_type):
     test_schema = _get_test_schema()
     vertex_entries = test_schema['vertex']
+    edge_entries = test_schema['edge']
     for vertex_entry in vertex_entries:
         if vertex_entry['vertex_name'] == object_type:
             return SchemaVertexEntry.parse_json(vertex_entry)
+    for edge_entry in edge_entries:
+        if edge_entry['edge_label'] == object_type:
+            return SchemaEdgeEntry.parse(edge_entry)
     else:
         raise RuntimeError(f'could not find a valid schema entry for {object_type}')
 

@@ -7,12 +7,11 @@ from mock import MagicMock
 
 from tests.units.test_data import patches
 from tests.units.test_data.actor_data import *
-from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order, \
-    first_stub_assimilate_order, second_stub_assimilate_order
+from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order
 from tests.units.test_data.assimilation_orders.assimilation_events import change_to_stub_changelog_assimilation_order
+from tests.units.test_data.assimilation_results import generate_assimilation_results_set
 from tests.units.test_data.dynamo_stream_events import *
 from tests.units.test_data.patches import get_leech_driver_patch, get_function_patch
-from tests.units.test_data.potential_vertexes import *
 from tests.units.test_data.transform_results import generate_transform_results
 from tests.units.test_data.vertex_generator import generate_potential_vertex
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -344,3 +343,16 @@ def test_id(identifier_stem):
 def test_transform_results(potential_vertex, request):
     has_potentials = request.param
     return generate_transform_results(potential_vertex, has_potentials)
+
+
+@pytest.fixture(params=[
+    'ExternalId', 'Change', 'ChangeLogEntry'
+])
+def test_assimilation_generator(request):
+    test_vertex = generate_potential_vertex(request.param)
+    return generate_assimilation_results_set(test_vertex)
+
+
+@pytest.fixture
+def test_assimilation_results(test_assimilation_generator):
+    return test_assimilation_generator

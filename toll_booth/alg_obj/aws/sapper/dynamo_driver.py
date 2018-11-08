@@ -176,10 +176,11 @@ class LeechRecord:
 
     def for_assimilation(self, ruled_edge_type, assimilation_results):
         base = self._for_update('assimilation')
-        base['UpdateExpression'] = base['UpdateExpression'] + ', #iv=:iv, #a=:a'
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #re.#iv=:iv, #a=:a'
         base['ExpressionAttributeNames'].update({
-            '#iv': f'{ruled_edge_type}.identified_vertexes',
-            '#a': 'assimilated'
+            '#iv': 'identified_vertexes',
+            '#a': 'assimilated',
+            '#re': ruled_edge_type
         })
         # noinspection PyTypeChecker
         base['ExpressionAttributeValues'].update({
@@ -261,9 +262,10 @@ class LeechRecord:
         formatted = {}
         for potential in potentials:
             rule_entry = potential[1]
+            potential_vertex = potential[0]
             formatted[rule_entry.edge_type] = {
                 'rule_entry': cls._format_rule_entry(rule_entry),
-                'potential_vertex': cls._format_potential_vertex(potential[0]),
+                'potential_vertex': cls._format_potential_vertex(potential_vertex),
                 'assimilated': False
             }
         return formatted
@@ -290,7 +292,8 @@ class LeechRecord:
             'sid_value': str(potential_vertex.id_value),
             'id_value': potential_vertex.id_value,
             'internal_id': potential_vertex.internal_id,
-            'object_properties': object_properties
+            'object_properties': object_properties,
+            'object_type': potential_vertex.object_type
         }
 
     @classmethod
@@ -306,7 +309,8 @@ class LeechRecord:
             'internal_id': potential_edge.internal_id,
             'object_properties': object_properties,
             'from_object': potential_edge.from_object,
-            'to_object': potential_edge.to_object
+            'to_object': potential_edge.to_object,
+            'edge_label': potential_edge.edge_label
         }
 
     @classmethod

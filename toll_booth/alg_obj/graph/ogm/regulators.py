@@ -35,9 +35,9 @@ class ObjectRegulator:
             property_value = graph_object_properties[property_name]
             if property_value and entry_property.sensitive:
                 if hasattr(property_value, 'is_missing'):
-                    raise RuntimeError(
-                        f'object property named {property_name} is listed as being sensitive, but the value for it '
-                        f'could not be found in the collected object properties: {graph_object_properties}')
+                    property_value = 'AlgernonSensitiveDataFieldMissingValue'
+                    returned_data[property_name] = property_value
+                    continue
                 if not isinstance(internal_id, str):
                     raise RuntimeError(
                         f'object property named {property_name} is listed as being sensitive, but the parent object '
@@ -120,7 +120,8 @@ class ObjectRegulator:
         if property_data_type == 'DateTime':
             from toll_booth.alg_obj.utils import convert_python_datetime_to_gremlin
             return convert_python_datetime_to_gremlin(test_property)
-        raise NotImplementedError(f'data type {property_data_type} is unknown to the system')
+        raise NotImplementedError(
+            f'data type {property_data_type} for property named: {property_name} is unknown to the system')
 
 
 class VertexRegulator(ObjectRegulator):
