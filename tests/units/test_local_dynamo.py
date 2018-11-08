@@ -165,7 +165,7 @@ class TestDynamoDriver:
                 '#s': kwargs.get('stage_name')
             },
             'set_assimilation_results': {
-                '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated',
+                '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated', '#p': 'potentials',
                 '#re': kwargs.get('edge_type')
             }
         }
