@@ -118,9 +118,8 @@ class ObjectRegulator:
         if property_data_type == 'String':
             return str(test_property)
         if property_data_type == 'DateTime':
-            from toll_booth.alg_obj.utils import convert_credible_datetime_to_gremlin
-            is_utc = 'utc' in property_name
-            return convert_credible_datetime_to_gremlin(test_property, is_utc)
+            from toll_booth.alg_obj.utils import convert_python_datetime_to_gremlin
+            return convert_python_datetime_to_gremlin(test_property)
         raise NotImplementedError(f'data type {property_data_type} is unknown to the system')
 
 
@@ -478,7 +477,7 @@ class SensitiveData:
             sensitive_table_name = os.environ['SENSITIVE_TABLE']
         resource = boto3.resource('dynamodb')
         table = resource.Table(sensitive_table_name)
-        results = table.quer(
+        results = table.query(
             IndexName='string',
             Select='ALL_ATTRIBUTES',
             KeyConditionExpression=Key('insensitive').eq(insensitive_entry)

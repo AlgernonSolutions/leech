@@ -13,6 +13,9 @@ from tests.units.test_data.assimilation_orders.assimilation_events import change
 from tests.units.test_data.dynamo_stream_events import *
 from tests.units.test_data.patches import get_leech_driver_patch, get_function_patch
 from tests.units.test_data.potential_vertexes import *
+from tests.units.test_data.transform_results import generate_transform_results
+from tests.units.test_data.vertex_generator import generate_potential_vertex
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 @pytest.fixture(scope='session')
@@ -253,12 +256,11 @@ def load_order(request):
 
 
 @pytest.fixture(params=[
-    external_id_potential_vertex,
-    change_potential_vertex,
-    changelog_potential_vertex
+    'ExternalId', 'Change', 'ChangeLogEntry'
 ])
-def potential_vertex(request):
-    return request.param
+def potential_vertex(request, has_missing=False):
+    test_vertex = generate_potential_vertex(request.param, has_missing)
+    return test_vertex
 
 
 @pytest.fixture
@@ -316,3 +318,29 @@ def borg_test_environment():
 
     for driver_patch in driver_patches:
         driver_patch.stop()
+
+
+@pytest.fixture
+def dynamo_test_environment():
+    boto_patch = patches.get_boto_patch()
+    mock_boto = boto_patch.start()
+    yield mock_boto
+    boto_patch.stop()
+
+
+@pytest.fixture
+def test_working_ids(identifier_stem):
+    return IdentifierStem.from_raw(identifier_stem), range(1001, 1010)
+
+
+@pytest.fixture
+def test_id(identifier_stem):
+    return IdentifierStem.from_raw(identifier_stem), 1001
+
+
+@pytest.fixture(params=[
+    True, False
+])
+def test_transform_results(potential_vertex, request):
+    has_potentials = request.param
+    return generate_transform_results(potential_vertex, has_potentials)

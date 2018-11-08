@@ -1,0 +1,29 @@
+import json
+import os
+
+from jsonref import JsonRef
+from jsonschema import validate
+
+from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
+
+
+def get_schema_entry(object_type):
+    test_schema = _get_test_schema()
+    vertex_entries = test_schema['vertex']
+    for vertex_entry in vertex_entries:
+        if vertex_entry['vertex_name'] == object_type:
+            return SchemaVertexEntry.parse_json(vertex_entry)
+    else:
+        raise RuntimeError(f'could not find a valid schema entry for {object_type}')
+
+
+def _get_test_schema():
+    test_file_name = os.path.dirname(__file__)
+    test_schema_file_path = os.path.join(test_file_name, 'schemas', 'schema.json')
+    master_schema_file_path = os.path.join(test_file_name, 'schemas', 'master_schema.json')
+    with open(test_schema_file_path) as test, open(master_schema_file_path) as master:
+        test_schema = json.load(test)
+        test_schema = JsonRef.replace_refs(test_schema)
+        master_schema = json.load(master)
+        validate(test_schema, master_schema)
+        return test_schema

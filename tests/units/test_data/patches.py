@@ -21,6 +21,10 @@ base_paths = {
 }
 
 
+def get_boto_patch():
+    return patch(boto_patch)
+
+
 def get_function_patch(base_name, function_name):
     return patch(f'{base_paths[base_name]}.{function_name}')
 

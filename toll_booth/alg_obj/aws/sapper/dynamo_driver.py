@@ -233,7 +233,7 @@ class LeechRecord:
     def _calculate_stub_sid(cls, potential_vertex):
         if potential_vertex.is_identifiable:
             return str(potential_vertex.id_value)
-        object_properties = cls._clean_object_properties(potential_vertex.object_properties)
+        object_properties = cls._clean_object_properties(potential_vertex.object_properties, for_json=True)
         return json.dumps(object_properties)
 
     @classmethod
@@ -242,17 +242,17 @@ class LeechRecord:
         return Decimal(datetime.datetime.now().timestamp())
 
     @classmethod
-    def _clean_object_properties(cls, object_properties):
+    def _clean_object_properties(cls, object_properties, for_json=False):
         cleaned = {}
         for property_name, object_property in object_properties.items():
             if object_property == '':
                 object_property = None
             if hasattr(object_property, 'is_missing'):
                 object_property = None
-            if isinstance(object_property, Decimal):
-                object_property = str(object_property)
             if isinstance(object_property, datetime):
-                object_property = str(object_property.timestamp())
+                object_property = object_property.timestamp()
+            if for_json:
+                object_property = str(object_property)
             cleaned[property_name] = object_property
         return cleaned
 

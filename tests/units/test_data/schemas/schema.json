@@ -107,6 +107,14 @@
           "property_data_type": "String"
         },
         {
+          "property_name": "id_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_name",
+          "property_data_type": "String"
+        },
+        {
           "property_name": "changelog_id",
           "property_data_type": "Number"
         },
@@ -263,6 +271,14 @@
         },
         {
           "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_name",
           "property_data_type": "String"
         }
       ],
