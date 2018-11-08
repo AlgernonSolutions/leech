@@ -176,12 +176,13 @@ class LeechRecord:
 
     def for_assimilation(self, ruled_edge_type, assimilation_results):
         base = self._for_update('assimilation')
-        base['UpdateExpression'] = base['UpdateExpression'] + ', #p.#re.#iv=:iv, #a=:a'
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #ps.#re.#iv=:iv, #ps.#re.#a=:a'
+        base['UpdateExpression'] = base['UpdateExpression'].replace('#p.#s', '#p.#s.#re')
         base['ExpressionAttributeNames'].update({
             '#iv': 'identified_vertexes',
             '#a': 'assimilated',
             '#re': ruled_edge_type,
-            '#p': 'potentials'
+            '#ps': 'potentials'
         })
         # noinspection PyTypeChecker
         base['ExpressionAttributeValues'].update({

@@ -138,7 +138,7 @@ class TestDynamoDriver:
             'mark_object_as_blank': ['#c=:c', '#p.#s=:p', '#d=:d'],
             'mark_object_as_graphed': ['#d=:d'],
             'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d'],
-            'set_assimilation_results': ['#re.#iv=:iv', '#a=:a']
+            'set_assimilation_results': ['#ps.#re.#iv=:iv', '#ps.#re.#a=:a', '#p.#s.#re=:p']
         }
         function_expressions = expected_expressions[function_name]
         function_expressions.extend(common_expressions)
@@ -165,7 +165,7 @@ class TestDynamoDriver:
                 '#s': kwargs.get('stage_name')
             },
             'set_assimilation_results': {
-                '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated', '#p': 'potentials',
+                '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated', '#ps': 'potentials',
                 '#re': kwargs.get('edge_type')
             }
         }
