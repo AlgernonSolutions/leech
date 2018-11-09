@@ -231,13 +231,15 @@ class LeechRecord:
 
     @classmethod
     def _calculate_stub_identifier_stem(cls, potential_vertex):
-        if potential_vertex.is_identifiable:
-            return potential_vertex.identifier_stem
+        if potential_vertex.is_identifier_stem_set:
+            if potential_vertex.is_identifiable:
+                return potential_vertex.identifier_stem
+            return potential_vertex.as_stub_for_object
         return IdentifierStem.for_stub()
 
     @classmethod
     def _calculate_stub_sid(cls, potential_vertex):
-        if potential_vertex.is_identifiable:
+        if potential_vertex.is_id_value_set:
             return str(potential_vertex.id_value)
         object_properties = cls._clean_object_properties(potential_vertex.object_properties, for_json=True)
         return json.dumps(object_properties)

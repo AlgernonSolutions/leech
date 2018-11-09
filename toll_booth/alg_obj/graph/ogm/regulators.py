@@ -374,9 +374,9 @@ class PotentialVertex(GraphObject):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['object_type'], json_dict['internal_id'],
-            json_dict['object_properties'], json_dict['identifier_stem'],
-            int(json_dict['id_value']), json_dict['id_value_field']
+            json_dict['object_type'], json_dict.get('internal_id'),
+            json_dict.get('object_properties', {}), json_dict['identifier_stem'],
+            json_dict.get('id_value'), json_dict.get('id_value_field')
         )
 
     @property
@@ -392,6 +392,14 @@ class PotentialVertex(GraphObject):
         if not self.is_id_value_set:
             return False
         return True
+
+    @property
+    def is_identifier_stem_set(self):
+        try:
+            IdentifierStem.from_raw(self._identifier_stem)
+            return True
+        except AttributeError:
+            return False
 
     @property
     def is_properties_complete(self):
@@ -585,6 +593,10 @@ class IdentifierStem(AlgObject):
     @property
     def is_stub(self):
         return self._object_type == 'stub'
+
+    @property
+    def as_stub_for_object(self):
+        return f'''#{self._graph_type}#{self._object_type}::stub#{self._string_paired_identifiers()}#'''
 
     def _string_paired_identifiers(self):
         return json.dumps(self._paired_identifiers)
