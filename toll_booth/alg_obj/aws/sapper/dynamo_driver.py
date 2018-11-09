@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from decimal import Decimal
@@ -345,6 +346,10 @@ class EmptyIndexException(Exception):
     pass
 
 
+class MissingExtractionInformation(Exception):
+    pass
+
+
 class DynamoParameters:
     def __init__(self, partition_key_value, sort_key_value, **kwargs):
         partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'identifier_stem'))
@@ -459,8 +464,12 @@ class LeechDriver:
         results = self._table.get_item(
             Key=params.as_key
         )
-        extractor_function_names = results['Item']['extractor_function_names']
-        return extractor_function_names
+        try:
+            extractor_function_names = results['Item']['extractor_function_names']
+            return extractor_function_names
+        except KeyError:
+            raise MissingExtractionInformation(
+                'could not find extractor information for identifier stem %s' % identifier_stem)
 
     def query_index_value_max(self, identifier_stem, index_name=None):
         if not index_name:
@@ -483,6 +492,8 @@ class LeechDriver:
         while token:
             more_vertexes, token = self._scan_vertexes(object_type, vertex_properties, token)
             potential_vertexes.extend(more_vertexes)
+        logging.info('completed a scan of the data space to find potential vertexes with properties: %s '
+                     'returned the raw values of: %s' % (vertex_properties, potential_vertexes))
         return [PotentialVertex.from_json(x) for x in potential_vertexes]
 
     def _scan_vertexes(self, object_type, vertex_properties, token=None):
