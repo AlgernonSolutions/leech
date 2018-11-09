@@ -41,6 +41,7 @@ class Ogm:
         with self._trident_driver as driver:
             for command in vertex_commands:
                 driver.execute(command, False)
+        with self._trident_driver as driver:
             for command in edge_commands:
                 driver.execute(command, False)
         logging.info(f'submitted graph commands: {vertex_commands, edge_commands}')
