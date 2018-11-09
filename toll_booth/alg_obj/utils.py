@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def convert_credible_datetime_to_gremlin(credible_datetime, is_utc=False):
     from pytz import timezone
     utc_format = '%Y-%m-%dT%H:%M:%S%z'
@@ -12,6 +15,8 @@ def convert_credible_datetime_to_gremlin(credible_datetime, is_utc=False):
 def convert_python_datetime_to_gremlin(python_datetime):
     from pytz import timezone
     gremlin_format = '%Y-%m-%dT%H:%M:%S%z'
+    if isinstance(python_datetime, str):
+        python_datetime = datetime.strptime(python_datetime, gremlin_format)
     if not python_datetime.tzinfo:
         naive_datetime = python_datetime.replace(tzinfo=None)
         utc_datetime = timezone('UTC').localize(naive_datetime)

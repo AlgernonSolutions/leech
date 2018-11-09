@@ -126,6 +126,9 @@ class ObjectRegulator:
             return str(test_property)
         if property_data_type == 'DateTime':
             from toll_booth.alg_obj.utils import convert_python_datetime_to_gremlin
+            if isinstance(test_property, str):
+                try:
+
             return convert_python_datetime_to_gremlin(test_property)
         raise NotImplementedError(
             f'data type {property_data_type} for property named: {property_name} is unknown to the system')
