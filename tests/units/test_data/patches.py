@@ -14,10 +14,12 @@ x_ray_patch_begin = 'aws_xray_sdk.core.recorder.AWSXRayRecorder.begin_subsegment
 x_ray_patch_end = 'aws_xray_sdk.core.recorder.AWSXRayRecorder.end_subsegment'
 neptune_patch = 'toll_booth.alg_obj.aws.trident.connections.TridentNotary.send'
 leech_driver_base = 'toll_booth.alg_obj.aws.sapper.dynamo_driver.LeechDriver'
+schema_entry_patch = 'toll_booth.alg_obj.graph.schemata.schema_entry.SchemaEntry'
 
 base_paths = {
     'leech_driver': 'toll_booth.alg_obj.aws.sapper.dynamo_driver.LeechDriver',
     'edge_regulator': 'toll_booth.alg_obj.graph.ogm.regulators.EdgeRegulator',
+    'schema_entry': schema_entry_patch
 }
 
 

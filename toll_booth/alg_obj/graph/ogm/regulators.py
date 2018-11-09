@@ -72,6 +72,8 @@ class ObjectRegulator:
                 if field_name in static_key_fields:
                     key_values.append(str(static_key_fields[field_name]))
                     continue
+                if hasattr(field_name, 'is_missing'):
+                    key_values.append('MISSING_OBJECT_PROPERTY')
                 key_value = graph_object[field_name]
                 key_values.append(str(key_value))
             id_string = ''.join(key_values)

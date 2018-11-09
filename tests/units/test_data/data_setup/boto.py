@@ -5,6 +5,7 @@ from decimal import Decimal
 from dateutil.tz import tzlocal
 
 from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
+from tests.units.test_data.schema_generator import get_schema_entry
 
 
 class MockBoto:
@@ -186,13 +187,17 @@ def generate_sensitive_response(*args):
 
 def intercept(*args):
     operation_name = args[0]
+    if operation_name in ['ExternalId', 'Change', 'ChangeLogEntry']:
+        return get_schema_entry(operation_name)
+    operation_kwargs = args[1]
     if operation_name == 'GetSecretValue':
         return generate_secret_response(*args)
     if operation_name == 'Query':
         query_args = args[1]
         table_name = query_args['TableName']
         if table_name == 'Schema':
-            return generate_schema_entry(*args)
+            object_type = getattr(operation_kwargs['KeyConditionExpression'], '_values')[1]
+            return get_schema_entry(object_type)
         if table_name == 'Sensitives':
             return generate_sensitive_response(*args)
     if operation_name == 'UpdateItem':
@@ -201,6 +206,8 @@ def intercept(*args):
         if table_name == 'Sensitives':
             return None
         if table_name == 'TestGraphObjects':
+            return None
+        if table_name == 'GraphObjects':
             return None
     if operation_name == 'DeleteTopic':
         return None

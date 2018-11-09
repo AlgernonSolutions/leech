@@ -65,7 +65,7 @@ class ForgeQueue:
     def get_for_assimilation_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
         queue_url = kwargs.get('queue_url', os.getenv('ASSIMILATE_URL', default_queue_url))
-        return cls('assimilate_queue', queue_url)
+        return cls('assimilate_queue', queue_url, swarm=False)
 
     @classmethod
     def get_for_load_queue(cls, **kwargs):

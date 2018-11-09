@@ -34,7 +34,6 @@ class TestActors:
             assert mock_stage_call_args[1] == extraction_order.id_value
             assert mock_stage_call_args[2] == 'extraction'
 
-    @pytest.mark.robot
     def test_disguised_robot(self, transform_order):
         with patch(patches.send_patch) as mock_send, patch(patches.dynamo_driver_write_patch) as mock_write, patch(patches.boto_patch, side_effect=intercept):
             disguised_robot = DisguisedRobot(transform_order)

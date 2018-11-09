@@ -10,8 +10,10 @@ from tests.units.test_data.actor_data import *
 from tests.units.test_data.assimilation_orders import first_identifiable_assimilation_order
 from tests.units.test_data.assimilation_orders.assimilation_events import change_to_stub_changelog_assimilation_order
 from tests.units.test_data.assimilation_results import generate_assimilation_results_set
+from tests.units.test_data.data_setup.boto import intercept
 from tests.units.test_data.dynamo_stream_events import *
 from tests.units.test_data.patches import get_leech_driver_patch, get_function_patch
+from tests.units.test_data.schema_generator import get_schema_entry
 from tests.units.test_data.transform_results import generate_transform_results
 from tests.units.test_data.vertex_generator import generate_potential_vertex
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -184,11 +186,10 @@ def extraction_order(request):
     ('Change', change_identifier_stem, second_change_id_value, second_change_extracted_data),
 ])
 def transform_order(request):
-    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
     from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
 
     params = request.param
-    schema_entry = SchemaEntry.get(params[0])
+    schema_entry = get_schema_entry(params[0])
     return TransformObjectOrder(params[1], params[2], params[3], schema_entry)
 
 
@@ -333,6 +334,19 @@ def borg_test_environment():
 
 
 @pytest.fixture
+def robot_test_environment():
+    boto_patch = patches.get_boto_patch()
+    schema_patch = patches.get_function_patch('schema_entry', 'get')
+    mock_schema = schema_patch.start()
+    mock_schema.side_effect = intercept
+    mock_boto = boto_patch.start()
+    mock_boto.side_effect = intercept
+    yield mock_boto
+    boto_patch.stop()
+    schema_patch.stop()
+
+
+@pytest.fixture
 def dynamo_test_environment():
     boto_patch = patches.get_boto_patch()
     mock_boto = boto_patch.start()
@@ -372,8 +386,9 @@ def test_assimilation_results(test_assimilation_generator):
 
 
 @pytest.fixture(params=[
+    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1227', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
     {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1234', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
-    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1224', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}}
+    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1224', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
 ])
 def load_task(request):
     return request.param
