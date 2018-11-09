@@ -85,5 +85,5 @@ class SevenOfNine:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
             logging.warning(
-                'attempted to write a new vertex: %s %s, '
+                'attempted to write a new vertex: %s, '
                 'but it appears this step has already happened, no changes to be made' % vertex.to_json)
