@@ -6,6 +6,7 @@ import pytest
 
 from tests.units.test_data.schema_generator import get_schema_entry
 from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 blank_table_name = os.getenv('BLANK_TABLE_NAME')
 
@@ -42,6 +43,23 @@ class TestDynamoDriver:
             self._assert_attribute_values_creation(function_name, update_values, id_value_range=test_id_range,
                                                    object_type=test_identifier_stem.object_type,
                                                    stage_name='assimilation')
+
+    @pytest.mark.set_stub
+    def test_set_stub_assimilated_vertex(self, stub_potential_vertex, dynamo_test_environment):
+        function_name = 'set_assimilated_vertex'
+        dynamo_driver = LeechDriver(table_name=blank_table_name)
+        results = dynamo_driver.set_assimilated_vertex(stub_potential_vertex, True)
+        internal_id = None
+        id_value = None
+        identifier_stem = IdentifierStem.for_stub(stub_potential_vertex)
+        if stub_potential_vertex.is_internal_id_set:
+            internal_id = stub_potential_vertex.internal_id
+        if stub_potential_vertex.is_id_value_set:
+            id_value = stub_potential_vertex.id_value
+        self._assert_dynamo_call(
+            function_name, id_value, identifier_stem, dynamo_test_environment, stage_name='assimilation',
+            internal_id=internal_id, id_value=id_value, object_type=stub_potential_vertex.object_type
+        )
 
     @pytest.mark.mark_blank
     def test_mark_object_as_blank(self, test_id, dynamo_test_environment):
@@ -126,20 +144,25 @@ class TestDynamoDriver:
             'identifier_stem': str(test_identifier_stem),
             'sid_value': str(test_id_value)
         }
-        cls._assert_update_expression_creation(function_name, boto_kwargs['UpdateExpression'])
+        cls._assert_update_expression_creation(function_name, boto_kwargs['UpdateExpression'], **kwargs)
         cls._assert_attribute_names_creation(function_name, boto_kwargs['ExpressionAttributeNames'], **kwargs)
         cls._assert_attribute_values_creation(function_name, boto_kwargs['ExpressionAttributeValues'], **kwargs)
 
     @classmethod
-    def _assert_update_expression_creation(cls, function_name, update_expression):
+    def _assert_update_expression_creation(cls, function_name, update_expression, **kwargs):
         common_expressions = ['#lts=:t', '#lss=:s']
         expected_expressions = {
             'mark_ids_as_working': ['#c=:c', '#p=:p', '#d=:d', '#ot=:ot', '#id=:id'],
             'mark_object_as_blank': ['#c=:c', '#p.#s=:p', '#d=:d'],
             'mark_object_as_graphed': ['#d=:d'],
             'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d', '#p.#as=:e'],
-            'set_assimilation_results': ['#ps.#re.#iv=:iv', '#ps.#re.#a=:a', '#p.#s.#re=:p']
+            'set_assimilation_results': ['#ps.#re.#iv=:iv', '#ps.#re.#a=:a', '#p.#s.#re=:p'],
+            'set_assimilated_vertex': ['#o=:v', '#d=:d', '#ot=:ot', '#c=:c']
         }
+        if kwargs.get('internal_id', None):
+            expected_expressions['set_assimilated_vertex'].append('#i=:i')
+        if kwargs.get('id_value', None):
+            expected_expressions['set_assimilated_vertex'].append('#id=:id')
         function_expressions = expected_expressions[function_name]
         function_expressions.extend(common_expressions)
         for expression in function_expressions:
@@ -167,8 +190,15 @@ class TestDynamoDriver:
             'set_assimilation_results': {
                 '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated', '#ps': 'potentials',
                 '#re': kwargs.get('edge_type')
+            },
+            'set_assimilated_vertex': {
+                '#d': 'disposition', '#ot': 'object_type', '#o': 'object_properties', '#c': 'completed'
             }
         }
+        if kwargs.get('internal_id', None):
+            expected_names['set_assimilated_vertex']['#i'] = 'internal_id'
+        if kwargs.get('id_value', None):
+            expected_names['set_assimilated_vertex']['#id'] = 'id_value'
         function_expressions = common_names.copy()
         function_expressions.update(expected_names[function_name])
         for name_id, name_value in function_expressions.items():
@@ -189,6 +219,11 @@ class TestDynamoDriver:
             assert isinstance(progress['monitoring'], Decimal)
             assert ':id' in attribute_values
             assert attribute_values[':id'] in kwargs['id_value_range']
+        elif function_name == 'set_assimilated_vertex':
+            assert isinstance(progress, dict)
+            assert len(progress) == 1
+            assert 'assimilation' in progress
+            assert isinstance(progress['assimilation'], Decimal)
         else:
             assert isinstance(progress, Decimal)
         assert isinstance(now_timestamp, Decimal)
@@ -198,8 +233,13 @@ class TestDynamoDriver:
             'mark_object_as_graphed': {':d': 'processing', ':s': 'graphing'},
             'set_transform_results': {':i': kwargs.get('internal_id'), ':d': kwargs.get('disposition'),
                                       ':s': kwargs.get('stage_name'), ':e': {}},
-            'set_assimilation_results': {':a': True, ':s': kwargs.get('stage_name')}
+            'set_assimilation_results': {':a': True, ':s': kwargs.get('stage_name')},
+            'set_assimilated_vertex': {':d': 'graphing', ':ot': kwargs.get('object_type'), ':c': False, ':s': 'assimilation'}
         }
+        if kwargs.get('internal_id', None):
+            expected_values['set_assimilated_vertex'][':i'] = kwargs.get('internal_id')
+        if kwargs.get('id_value', None):
+            expected_values['set_assimilated_vertex'][':id'] = kwargs.get('id_value')
         function_values = expected_values[function_name]
         for value_name, value in function_values.items():
             assert value_name in attribute_values

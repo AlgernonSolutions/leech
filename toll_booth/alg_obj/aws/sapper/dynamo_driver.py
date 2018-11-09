@@ -236,7 +236,7 @@ class LeechRecord:
             if potential_vertex.is_identifiable:
                 return potential_vertex.identifier_stem
             return potential_vertex.as_stub_for_object
-        return IdentifierStem.for_stub()
+        return IdentifierStem.for_stub(potential_vertex)
 
     @classmethod
     def _calculate_stub_sid(cls, potential_vertex):

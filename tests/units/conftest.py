@@ -262,6 +262,14 @@ def potential_vertex(request, has_missing=False):
     return test_vertex
 
 
+@pytest.fixture(params=[
+    'ExternalId', 'Change', 'ChangeLogEntry'
+])
+def stub_potential_vertex(request):
+    stub_vertex = generate_potential_vertex(request.param, True)
+    return stub_vertex
+
+
 @pytest.fixture
 def mock_context():
     context = MagicMock(name='context')

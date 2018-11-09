@@ -557,8 +557,23 @@ class IdentifierStem(AlgObject):
         return cls(graph_type, object_type, paired_identifiers)
 
     @classmethod
-    def for_stub(cls):
-        return cls('vertex', 'stub')
+    def for_stub(cls, stub_vertex):
+        identifier_stem = stub_vertex.identifier_stem
+        try:
+            identifier_stem = IdentifierStem.from_raw(identifier_stem)
+            return identifier_stem
+        except AttributeError:
+            pass
+        object_type = getattr(stub_vertex, 'object_type', 'UNKNOWN')
+        paired_identifiers = {}
+        for property_field in identifier_stem:
+            property_value = stub_vertex.object_properties.get(property_field, None)
+            if hasattr(property_value, 'is_missing'):
+                property_value = None
+            paired_identifiers[property_field] = property_value
+        if not stub_vertex.is_properties_complete:
+            object_type = object_type + '::stub'
+        return cls('vertex', object_type, paired_identifiers)
 
     @classmethod
     def parse_json(cls, json_dict):
