@@ -12,8 +12,8 @@ def load(*args, **kwargs):
     dynamo_driver = LeechDriver(**task_args)
     key_fields = task_args['keys']
     keys = {
-        'identifier_stem': key_fields['identifier_stem']['S'],
-        'id_value': key_fields['sid_value']['S']
+        'identifier_stem': key_fields['identifier_stem'],
+        'id_value': key_fields['sid_value']
     }
     potential_object = dynamo_driver.get_object(**keys)
     ogm = Ogm(**task_args)
