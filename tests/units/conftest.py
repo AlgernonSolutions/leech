@@ -229,10 +229,15 @@ def credible_ws_payload(request):
 
 
 @pytest.fixture(params=[
-    insert_event, remove_event, graphing_event
+    insert_event, remove_event, graphing_event, assimilated_event
 ])
 def dynamo_stream_event(request):
     return request.param
+
+
+@pytest.fixture
+def assimilated_vertex_stream_event():
+    return assimilated_event
 
 
 @pytest.fixture(params=[
