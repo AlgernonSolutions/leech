@@ -137,6 +137,10 @@ class VertexRegulator(ObjectRegulator):
         return cls(json_dict['schema_entry'])
 
     def create_potential_vertex(self, object_data, **kwargs):
+        if 'object_properties' in object_data:
+            raise RuntimeError('trying to build a vertex from the wrong level, you must create potential vertexes '
+                               'from their object_properties, passing in internal_id, identifier_stem, id_value as '
+                               'kwargs if needed')
         object_properties = self._standardize_object_properties(object_data)
         internal_id = kwargs.get('internal_id', self._create_internal_id(object_properties))
         identifier_stem = kwargs.get('identifier_stem', self._create_identifier_stem(object_properties, object_data))

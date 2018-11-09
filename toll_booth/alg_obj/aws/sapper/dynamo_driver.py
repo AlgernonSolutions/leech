@@ -409,7 +409,7 @@ class LeechDriver:
                 identified_vertex = identified['vertex']
                 if not identified_vertex_regulator:
                     identified_vertex_regulator = VertexRegulator.get_for_object_type(identified_vertex['object_type'])
-                other_potential_vertex = identified_vertex_regulator.create_potential_vertex(identified_vertex)
+                other_potential_vertex = identified_vertex_regulator.create_potential_vertex(identified_vertex['object_properties'])
                 other_vertexes.append(other_potential_vertex)
                 potential_edge = PotentialEdge.from_json(identified['edge'])
                 edges.append(potential_edge)
