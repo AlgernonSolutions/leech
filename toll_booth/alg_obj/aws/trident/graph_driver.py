@@ -29,8 +29,10 @@ class TridentDriver:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not exc_type and not exc_val:
             self._batch_mode = False
-            commands = ';'.join(self._batch_commands)
-            self.execute(commands)
+            if self._batch_commands:
+                commands = ';'.join(self._batch_commands)
+                self.execute(commands)
+            self._batch_commands = []
             return True
         raise (exc_type(exc_val))
 
