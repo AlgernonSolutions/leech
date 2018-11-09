@@ -86,6 +86,11 @@ def explode(*args, **kwargs):
             new_disposition = new_image.get('disposition')
             old_disposition = old_image.get('disposition')
             if new_disposition == {'S': 'graphing'} and old_disposition == {'S': 'working'}:
+                logging.info(f'based on the disposition of the NewImage compared to the OldImage, object should be pushed to the graph')
+                orders.send_mail('graphing', keys)
+        if event_type == 'INSERT':
+            new_disposition = new_image.get('disposition')
+            if new_disposition == {'S': 'graphing'}:
                 logging.info(f'based on the disposition of the NewImage, object should be pushed to the graph')
                 orders.send_mail('graphing', keys)
     orders.close()

@@ -160,18 +160,20 @@ class LeechRecord:
         if not potentials:
             disposition = 'graphing'
         base = self._for_update('transformation')
-        base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #d=:d, #ps=:ps'
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #i=:i, #o=:v, #d=:d, #ps=:ps, #p.#as=:e'
         base['ExpressionAttributeNames'].update({
             '#i': 'internal_id',
             '#o': 'object_properties',
             '#d': 'disposition',
-            '#ps': 'potentials'
+            '#ps': 'potentials',
+            '#as': 'assimilation'
         })
         base['ExpressionAttributeValues'].update({
             ':i': vertex.internal_id,
             ':v': self._clean_object_properties(vertex.object_properties),
             ':d': disposition,
-            ':ps': self._format_potentials(potentials)
+            ':ps': self._format_potentials(potentials),
+            ':e': {}
         })
         return base
 

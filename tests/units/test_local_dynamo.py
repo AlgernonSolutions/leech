@@ -137,7 +137,7 @@ class TestDynamoDriver:
             'mark_ids_as_working': ['#c=:c', '#p=:p', '#d=:d', '#ot=:ot', '#id=:id'],
             'mark_object_as_blank': ['#c=:c', '#p.#s=:p', '#d=:d'],
             'mark_object_as_graphed': ['#d=:d'],
-            'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d'],
+            'set_transform_results': ['#ps=:ps', '#o=:v', '#p.#s=:p', '#d=:d', '#p.#as=:e'],
             'set_assimilation_results': ['#ps.#re.#iv=:iv', '#ps.#re.#a=:a', '#p.#s.#re=:p']
         }
         function_expressions = expected_expressions[function_name]
@@ -162,7 +162,7 @@ class TestDynamoDriver:
             },
             'set_transform_results': {
                 '#i': 'internal_id', '#o': 'object_properties', '#d': 'disposition', '#ps': 'potentials',
-                '#s': kwargs.get('stage_name')
+                '#s': kwargs.get('stage_name'), '#as': 'assimilation'
             },
             'set_assimilation_results': {
                 '#iv': 'identified_vertexes', '#s': kwargs.get('stage_name'), '#a': 'assimilated', '#ps': 'potentials',
@@ -197,7 +197,7 @@ class TestDynamoDriver:
             'mark_object_as_blank': {':c': True, ':d': 'blank', ':s': 'extraction'},
             'mark_object_as_graphed': {':d': 'processing', ':s': 'graphing'},
             'set_transform_results': {':i': kwargs.get('internal_id'), ':d': kwargs.get('disposition'),
-                                      ':s': kwargs.get('stage_name')},
+                                      ':s': kwargs.get('stage_name'), ':e': {}},
             'set_assimilation_results': {':a': True, ':s': kwargs.get('stage_name')}
         }
         function_values = expected_values[function_name]
