@@ -92,6 +92,7 @@ class ObjectRegulator:
             paired_identifiers = {}
 
             identifier_stem_key = self._schema_entry.identifier_stem
+            object_type = self._schema_entry.object_type
             for field_name in identifier_stem_key:
                 try:
                     key_value = potential_object[field_name]
@@ -99,8 +100,10 @@ class ObjectRegulator:
                     key_value = object_data[field_name]
                 if isinstance(key_value, MissingObjectProperty):
                     return self._schema_entry.identifier_stem
+                if key_value is None and '::stub' not in object_type:
+                    object_type = object_type + '::stub'
                 paired_identifiers[field_name] = key_value
-            return IdentifierStem('vertex', self._schema_entry.object_type, paired_identifiers)
+            return IdentifierStem('vertex', object_type, paired_identifiers)
         except KeyError:
             return self._schema_entry.identifier_stem
 
@@ -426,14 +429,7 @@ class PotentialVertex(GraphObject):
 
     @property
     def graphed_object_type(self):
-        stub_type = f'{self.object_type}::stub'
-        try:
-            IdentifierStem.from_raw(self._identifier_stem)
-        except AttributeError:
-            return stub_type
-        if not self.is_identifiable and self._identifier_stem.is_stub:
-            return stub_type
-        return self.object_type
+        return self._identifier_stem.object_type
 
 
 class PotentialEdge(GraphObject):
@@ -615,7 +611,7 @@ class IdentifierStem(AlgObject):
 
     @property
     def is_stub(self):
-        return self._object_type == 'stub'
+        return '::stub' in self._object_type
 
     @property
     def as_stub_for_object(self):

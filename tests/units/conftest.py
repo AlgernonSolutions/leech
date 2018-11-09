@@ -386,6 +386,7 @@ def test_assimilation_results(test_assimilation_generator):
 
 
 @pytest.fixture(params=[
+    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '220', 'identifier_stem': '#vertex#ChangeLogEntry::stub#{"id_source": "MBI", "id_type": null, "id_name": null}#'}}},
     {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1227', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
     {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1234', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
     {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1224', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
