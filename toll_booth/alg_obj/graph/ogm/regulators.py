@@ -261,7 +261,7 @@ class EdgeRegulator(ObjectRegulator):
                     edge_value = None
                 else:
                     raise RuntimeError(
-                        'could not derive value for edge property: %s, %s' % edge_property_name, edge_property)
+                        'could not derive value for edge property: %s, %s' % (edge_property_name, edge_property))
             edge_properties[edge_property_name] = edge_value
         return edge_properties
 

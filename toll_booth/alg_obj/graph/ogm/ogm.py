@@ -49,11 +49,10 @@ class Ogm:
 
 
 class OgmReader:
-    def __init__(self, trident_driver=None, index_driver=None):
+    def __init__(self, trident_driver=None):
         if not trident_driver:
             trident_driver = TridentDriver()
         self._trident_driver = trident_driver
-        self._index_driver = index_driver
 
     def execute(self, query):
         results = self._trident_driver.execute(query, True)
