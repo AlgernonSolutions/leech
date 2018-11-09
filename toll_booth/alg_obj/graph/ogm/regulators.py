@@ -442,7 +442,7 @@ class PotentialEdge(GraphObject):
     @classmethod
     def parse_json(cls, json_dict):
         return cls(
-            json_dict['object_type'], json_dict['internal_id'],
+            json_dict['edge_label'], json_dict['internal_id'],
             json_dict['object_properties'], json_dict['from_object'], json_dict['to_object']
         )
 

@@ -369,3 +369,11 @@ def test_assimilation_generator(request):
 @pytest.fixture
 def test_assimilation_results(test_assimilation_generator):
     return test_assimilation_generator
+
+
+@pytest.fixture(params=[
+    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1234', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}},
+    {'task_name': 'load', 'task_args': {'keys': {'sid_value': '1224', 'identifier_stem': '#vertex#Change#{"id_source": "MBI", "id_type": "ChangeLogDetail", "id_name": "changelogdetail_id"}#'}}}
+])
+def load_task(request):
+    return request.param

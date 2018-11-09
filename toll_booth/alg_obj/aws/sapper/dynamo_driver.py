@@ -8,7 +8,8 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator
+from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator, EdgeRegulator, \
+    PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder
 
 
@@ -402,11 +403,17 @@ class LeechDriver:
         other_vertexes = []
         edges = []
         potentials = vertex_information.get('potentials', {})
-        for potential in potentials.values():
+        for edge_label, potential in potentials.items():
             identified_vertexes = potential.get('identified_vertexes', [])
+            identified_vertex_regulator = None
             for identified in identified_vertexes:
-                other_vertexes.append(identified['vertex'])
-                edges.append(identified['edge'])
+                identified_vertex = identified['vertex']
+                if not identified_vertex_regulator:
+                    identified_vertex_regulator = VertexRegulator.get_for_object_type(identified_vertex['object_type'])
+                other_potential_vertex = identified_vertex_regulator.create_potential_vertex(identified_vertex)
+                other_vertexes.append(other_potential_vertex)
+                potential_edge = PotentialEdge.from_json(identified['edge'])
+                edges.append(potential_edge)
         return {
             'source': source_vertex,
             'others': other_vertexes,
