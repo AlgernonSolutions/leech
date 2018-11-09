@@ -192,6 +192,7 @@ class LeechRecord:
             ':iv': self._format_assimilation_results(assimilation_results),
             ':a': True
         })
+        base['ConditionExpression'] = Attr(f'progress.assimilation.{ruled_edge_type}').not_exists()
         return base
 
     def _for_update(self, stage_name, is_initial=False):

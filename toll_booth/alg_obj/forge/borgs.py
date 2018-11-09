@@ -1,3 +1,5 @@
+import logging
+
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver
@@ -65,6 +67,9 @@ class SevenOfNine:
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
+            logging.warning(
+                'attempted to set assimilation results for edge_type: %s, '
+                'but it appears this step has already happened, no changes to be made' % self._rule_entry.edge_type)
 
     def _write_vertexes(self, vertexes, is_stub=False):
         for vertex in vertexes:
@@ -79,3 +84,6 @@ class SevenOfNine:
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
+            logging.warning(
+                'attempted to write a new vertex: %s %s, '
+                'but it appears this step has already happened, no changes to be made' % vertex.to_json)
