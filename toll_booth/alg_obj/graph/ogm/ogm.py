@@ -38,12 +38,10 @@ class Ogm:
         return graph_command
 
     def _graph_objects(self, vertex_commands, edge_commands):
-        with self._trident_driver as driver:
-            for command in vertex_commands:
-                driver.execute(command, False)
-        with self._trident_driver as driver:
-            for command in edge_commands:
-                driver.execute(command, False)
+        for command in vertex_commands:
+            self._trident_driver.execute(command, False)
+        for command in edge_commands:
+            self._trident_driver.execute(command, False)
         logging.info(f'submitted graph commands: {vertex_commands, edge_commands}')
         return
 
