@@ -443,7 +443,12 @@ class LeechDriver:
 
     @leeched
     def mark_object_as_graphed(self, leech_record):
-        return self._table.update_item(**leech_record.for_graphed)
+        logging.info(
+            'started a mark_object_as_graphed execution, '
+            'leech record to be executed is: %s' % leech_record.for_graphed)
+        results = self._table.update_item(**leech_record.for_graphed)
+        logging.info('completed the leech call')
+        return results
 
     @leeched
     def set_extraction_results(self, extracted_data, leech_record):
