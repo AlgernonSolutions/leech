@@ -29,7 +29,8 @@
         {
           "extraction_source": "CredibleFrontEndExtractor",
           "extraction_properties": {
-            "url": "some_url"
+            "url": "some_url",
+            "object_type": "Clients"
           }
         }
       ],

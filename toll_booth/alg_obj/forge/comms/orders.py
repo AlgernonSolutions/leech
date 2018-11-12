@@ -33,6 +33,28 @@ class MetalOrder(AlgObject, ABC):
         return self._action_name
 
 
+class MonitorObjectOrder(MetalOrder):
+    def __init__(self, identifier_stem, id_value):
+        super().__init__('monitor_object', identifier_stem)
+        self._id_value = id_value
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['identifier_stem'], json_dict['id_value'])
+
+    @property
+    def to_json(self):
+        return {
+            'identifier_stem': self._identifier_stem,
+            'id_value': self._id_value,
+            'action_name': self._action_name
+        }
+
+    @property
+    def id_value(self):
+        return self._id_value
+
+
 class ExtractObjectOrder(MetalOrder):
     def __init__(self, identifier_stem, id_value, extraction_function_name, extraction_properties, schema_entry):
         super().__init__('extract', identifier_stem)
@@ -71,6 +93,36 @@ class ExtractObjectOrder(MetalOrder):
     @property
     def id_value(self):
         return self._id_value
+
+
+class LinkObjectOrder(MetalOrder):
+    def __init__(self, identifier_stem, id_value, unlink=False):
+        super().__init__('unlink', identifier_stem)
+        self._id_value = id_value
+        self._unlink = unlink
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['identifier_stem'], json_dict['id_value'], json_dict.get('unlink', False)
+        )
+
+    @property
+    def to_json(self):
+        return {
+            'identifier_stem': self._identifier_stem,
+            'id_value': self._id_value,
+            'unlink': self._unlink,
+            'action_name': self._action_name
+        }
+
+    @property
+    def id_value(self):
+        return self._id_value
+
+    @property
+    def unlink(self):
+        return self._unlink
 
 
 class TransformObjectOrder(MetalOrder):

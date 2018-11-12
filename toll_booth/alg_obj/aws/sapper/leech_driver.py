@@ -355,6 +355,10 @@ class MissingExtractionInformation(Exception):
     pass
 
 
+class MissingFieldValues(Exception):
+    pass
+
+
 class DynamoParameters:
     def __init__(self, partition_key_value, sort_key_value, **kwargs):
         partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'sid_value'))
@@ -383,6 +387,7 @@ class DynamoParameters:
 class LeechDriver:
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
+    _field_value_index = os.getenv('FIELD_VALUE_INDEX', 'field_values')
 
     def __init__(self, **kwargs):
         table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'VdGraphObjects'))
@@ -503,6 +508,35 @@ class LeechDriver:
         except IndexError:
             raise EmptyIndexException
 
+    def query_field_value_max(self, identifier_stem, index_name=None):
+        if not index_name:
+            index_name = self._field_value_index
+        query_args = {
+            'Limit': 1,
+            'ScanIndexForward': False,
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
+            'TableName': self._table_name,
+            'IndexName': index_name
+        }
+        results = self._table.query(**query_args)
+        try:
+            return int(results['Items'][0]['id_value'])
+        except IndexError:
+            raise EmptyIndexException
+
+    def get_local_id_values(self, identifier_stem, index_name=None):
+        paginator = boto3.client('dynamodb').get_paginator('query')
+        if not index_name:
+            index_name = self._id_value_index
+        query_args = {
+            'TableName': self._table_name,
+            'IndexName': index_name,
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
+            'AttributesToGet': ['id_value']
+        }
+        results = paginator.paginate(**query_args)
+        return results
+
     def find_potential_vertexes(self, object_type, vertex_properties):
         potential_vertexes, token = self._scan_vertexes(object_type, vertex_properties)
         while token:
@@ -511,6 +545,25 @@ class LeechDriver:
         logging.info('completed a scan of the data space to find potential vertexes with properties: %s '
                      'returned the raw values of: %s' % (vertex_properties, potential_vertexes))
         return [PotentialVertex.from_json(x) for x in potential_vertexes]
+
+    def get_field_value_setup(self, identifier_stem):
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+        params = DynamoParameters(identifier_stem.for_dynamo, identifier_stem)
+        results = self._table.get_item(
+            Key=params.as_key
+        )
+        try:
+            field_values = results['Item']['field_values']
+        except KeyError:
+            raise MissingFieldValues(
+                'could not find field values for identifier stem %s' % identifier_stem)
+        try:
+            extractor_function_names = results['Item']['extractor_function_names']
+        except KeyError:
+            raise MissingExtractionInformation(
+                'could not find extractor names for identifier stem %s' % identifier_stem
+            )
+        return {'field_values': field_values, 'extractor_names': extractor_function_names}
 
     def _scan_vertexes(self, object_type, vertex_properties, token=None):
         filter_properties = [f'(begins_with(identifier_stem, :is) OR begins_with(identifier_stem, :stub))']

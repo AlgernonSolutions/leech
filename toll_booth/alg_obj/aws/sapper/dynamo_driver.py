@@ -357,8 +357,8 @@ class MissingExtractionInformation(Exception):
 
 class DynamoParameters:
     def __init__(self, partition_key_value, sort_key_value, **kwargs):
-        partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'identifier_stem'))
-        sort_key_name = kwargs.get('sort_key_name', os.getenv('SORT_KEY', 'sid_value'))
+        partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'sid_value'))
+        sort_key_name = kwargs.get('sort_key_name', os.getenv('SORT_KEY', 'identifier_stem'))
         self._partition_key_name = partition_key_name
         self._partition_key_value = partition_key_value
         self._sort_key_name = sort_key_name

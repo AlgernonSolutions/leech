@@ -26,7 +26,7 @@ Resources:
       Runtime: python3.6
       FunctionName: leech-monitor
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
-      Timeout: 300
+      Timeout: 60
       MemorySize: 448
       Tracing: Active
       Environment:
@@ -34,6 +34,27 @@ Resources:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
           EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
+  monitor-object:
+    Type: AWS::Serverless::Function
+      Properties:
+        Handler: toll_booth/alg_tasks/toll_booth.queued
+        Runtime: python3.6
+        FunctionName: leech-monitor
+        Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+        Timeout: 300
+        MemorySize: 448
+        Events:
+          monitor:
+            Type: SQS
+            Properties:
+              Queue: arn:aws:sqs:us-east-1:803040539655:monitor
+              BatchSize: 10
+        Tracing: Active
+        Environment:
+          Variables:
+            WORK_FUNCTION: leech-work
+            SCHEMA_TABLE: Schema
+            EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
   extract:
     Type: AWS::Serverless::Function
     Properties:
@@ -186,6 +207,16 @@ Resources:
       Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
       Runtime: python3.6
       FunctionName: leech-extract-crediblews
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  credibleFeExtractor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
+      Runtime: python3.6
+      FunctionName: leech-extract-crediblefe
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448

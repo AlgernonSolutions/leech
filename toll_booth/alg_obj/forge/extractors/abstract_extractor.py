@@ -8,3 +8,12 @@ class AbstractExtractor(ABC):
 
     def extract(self):
         pass
+
+
+class AbstractVertexDrivenExtractor(ABC):
+
+    def get_monitor_extraction(self):
+        pass
+
+    def extract(self):
+        pass
