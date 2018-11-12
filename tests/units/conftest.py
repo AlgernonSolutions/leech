@@ -393,3 +393,14 @@ def test_assimilation_results(test_assimilation_generator):
 ])
 def load_task(request):
     return request.param
+
+
+@pytest.fixture(params=[
+    ('Client', 'Clients', 'client_id'),
+    ('Employee', 'Employees', 'emp_id'),
+    ('Encounter', 'ClientVisit', 'clientvisit_id')
+])
+def vd_identifier_stem(request):
+    params = request.param
+    identifier_stem = IdentifierStem('vertex', params[0], {'id_source': 'algernon', 'id_type': params[1], 'id_name': params[2]})
+    return identifier_stem
