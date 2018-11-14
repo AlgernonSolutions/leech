@@ -54,7 +54,7 @@ Resources:
           Variables:
             WORK_FUNCTION: leech-work
             SCHEMA_TABLE: Schema
-            EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
+            EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/bulk_extraction
   extract:
     Type: AWS::Serverless::Function
     Properties:
@@ -69,6 +69,27 @@ Resources:
           Type: SQS
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:extraction
+            BatchSize: 10
+      Tracing: Active
+      Environment:
+        Variables:
+          WORK_FUNCTION: leech-work
+          SCHEMA_TABLE: Schema
+          TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
+  bulk-extract:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.queued
+      Runtime: python3.6
+      FunctionName: leech-extract
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 60
+      MemorySize: 448
+      Events:
+        bulk-extraction:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:us-east-1:803040539655:bulk_extraction
             BatchSize: 10
       Tracing: Active
       Environment:

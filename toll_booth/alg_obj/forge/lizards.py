@@ -2,7 +2,7 @@ import logging
 
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.aws.sapper.dynamo_driver import LeechDriver, EmptyIndexException
+from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException
 from toll_booth.alg_obj.forge.comms.orders import ExtractObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
@@ -17,8 +17,8 @@ class MonitorLizard:
         self._identifier_stem = identifier_stem
         self._object_type = identifier_stem.object_type
         self._schema_entry = SchemaVertexEntry.get(self._object_type)
-        self._dynamo_driver = LeechDriver()
-        self._extractor_names = self._dynamo_driver.get_extractor_function_names(identifier_stem)
+        self._leech_driver = LeechDriver()
+        self._extractor_setup = self._leech_driver.get_extractor_setup(identifier_stem)
         self._extraction_profile = self._generate_extraction_profile()
         self._extraction_queue = kwargs.get('extraction_queue', ForgeQueue.get_for_extraction_queue(**kwargs))
         self._sample_size = kwargs.get('sample_size', 1000)
@@ -36,7 +36,7 @@ class MonitorLizard:
         if max_remote_id > max_local_id:
             id_range = range(max_local_id+1, max_remote_id+1)
             id_range = id_range[:self._sample_size]
-            already_working, not_working = self._dynamo_driver.mark_ids_as_working(
+            already_working, not_working = self._leech_driver.mark_ids_as_working(
                 id_range, identifier_stem=self._identifier_stem)
             for id_value in not_working:
                 extraction_orders.append(self._generate_extraction_order(id_value))
@@ -60,7 +60,7 @@ class MonitorLizard:
 
     @xray_recorder.capture('lizard_generate_extraction_order')
     def _generate_extraction_order(self, missing_id_value):
-        extractor_name = self._extractor_names['extraction']
+        extractor_name = self._extractor_setup['extraction']
         extraction_profile = self._extraction_profile
         return ExtractObjectOrder(
             self._identifier_stem, missing_id_value, extractor_name, extraction_profile, self._schema_entry)
@@ -68,15 +68,16 @@ class MonitorLizard:
     @xray_recorder.capture('lizard_generate_extraction_properties')
     def _generate_extraction_profile(self):
         extraction_properties = self._identifier_stem.for_extractor
-        schema_extraction_properties = self._schema_entry.extract[self._extractor_names['type']]
+        schema_extraction_properties = self._schema_entry.extract[self._extractor_setup['type']]
         extraction_properties.update(schema_extraction_properties.extraction_properties)
         return extraction_properties
 
     @xray_recorder.capture('lizard_get_remote_max')
     def _get_current_remote_max_min_id(self):
-        id_values = StageManager.run_index_query(self._extractor_names['index_query'], self._extraction_profile)
+        id_values = StageManager.run_index_query(self._extractor_setup['index_query'], self._extraction_profile)
         return id_values
 
     @xray_recorder.capture('lizard_get_local_max')
     def _get_current_local_max_id(self):
-        return self._dynamo_driver.query_index_value_max(self._identifier_stem)
+        return self._leech_driver.query_index_value_max(self._identifier_stem)
+

@@ -25,7 +25,7 @@ class Opossum:
 
     @classmethod
     def get_untrustworthy_credentials(cls, id_source):
-        secret_name = '%s_Credible_Credentials' % id_source
+        secret_name = 'credible_fe_%s' % id_source
         secret = cls.get_secrets(secret_name)
         return secret
 

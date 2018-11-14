@@ -65,19 +65,19 @@ class ForgeQueue:
     def get_for_transform_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/transform'
         queue_url = kwargs.get('queue_url', os.getenv('TRANSFORM_URL', default_queue_url))
-        return cls('transform_queue', queue_url, swarm=False)
+        return cls('transform_queue', queue_url, swarm=kwargs.get('swarm', False))
 
     @classmethod
     def get_for_assimilation_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
         queue_url = kwargs.get('queue_url', os.getenv('ASSIMILATE_URL', default_queue_url))
-        return cls('assimilate_queue', queue_url, swarm=False)
+        return cls('assimilate_queue', queue_url, swarm=kwargs.get('swarm', False))
 
     @classmethod
     def get_for_link_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/link'
         queue_url = kwargs.get('queue_url', os.getenv('LINK_URL', default_queue_url))
-        return cls('link_queue', queue_url, swarm=False)
+        return cls('link_queue', queue_url, swarm=kwargs.get('swarm', False))
 
     @classmethod
     def get_for_load_queue(cls, **kwargs):

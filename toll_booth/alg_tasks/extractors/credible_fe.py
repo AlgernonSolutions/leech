@@ -20,7 +20,7 @@ def handler(event, context):
         logging.info('completed an extraction for the CredibleFE Extractor, results: %s' % results)
         return json.dumps(results, cls=AlgEncoder)
     if step_name == 'field_value_query':
-        results = CredibleFrontEndExtractor.get_field_value_max_mins(**step_args)
+        results = CredibleFrontEndExtractor.get_field_values(**step_args)
         logging.info('completed a field value query for the CredibleFE Extractor, results: %s' % results)
         return json.dumps(results, cls=AlgEncoder)
     raise NotImplementedError('step named: %s is not registered with the system' % step_name)

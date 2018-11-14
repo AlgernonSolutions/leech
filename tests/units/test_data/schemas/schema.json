@@ -440,6 +440,435 @@
           }
         }
       ]
+    },
+    {
+      "vertex_name": "ChangeDetail",
+      "vertex_properties": [
+        {
+          "property_name": "detail_id",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_name",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "changelog_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "data_dict_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "detail_one",
+          "property_data_type": "String",
+          "sensitive": true
+        },
+        {
+          "property_name": "detail_one_value",
+          "property_data_type": "String",
+          "sensitive": true
+        },
+        {
+          "property_name": "detail_two",
+          "property_data_type": "String",
+          "sensitive": true
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "changelog_id",
+        "detail_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "id_type",
+        "id_name"
+      ],
+      "indexes": [
+        {
+          "index_name": "change_by_internal_id",
+          "index_type": "unique",
+          "index_properties": {
+            "key": [
+              "internal_id"
+            ]
+          }
+        },
+        {
+          "index_name": "change_detail_id_range_by_source",
+          "index_type": "sorted_set",
+          "index_properties": {
+            "score": "detail_id",
+            "key": [
+              "id_source"
+            ]
+          }
+        },
+        {
+          "index_name": "change_internal_id_range_by_source",
+          "index_type": "sorted_set",
+          "index_properties": {
+            "score": "0",
+            "key": [
+              "id_source"
+            ]
+          }
+        }
+      ],
+      "rules": {
+        "linking_rules": [
+           {
+            "vertex_specifiers": [],
+            "outbound": [
+              {
+                "edge_type": "_changed_",
+                "target_type": "ExternalId",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "changed_target",
+                    "specifier_type": "function",
+                    "function_name": "derive_change_targeted",
+                    "extracted_properties": [
+                      "id_source",
+                      "id_type",
+                      "id_name",
+                      "id_value"
+                    ]
+                  }
+                ],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              }
+            ],
+            "inbound": [
+              {
+                "edge_type": "_change_",
+                "target_type": "ChangeLogEntry",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "changelog_source",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "changelog_id"
+                    ]
+                  }
+                ],
+                "target_constants": [],
+                "if_absent": "stub"
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleWebServiceExtractor",
+          "extraction_properties": {
+            "queries": [
+              {
+                "query_name": "source",
+                "query": {"$ref": "#/commons/change_vertex_query"}
+              },
+              {
+                "query_name": "changed_target",
+                "query": {"$ref": "#/commons/change_changed_query"}
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "vertex_name": "ChangeLog",
+      "vertex_properties": [
+        {
+          "property_name": "change_date_utc",
+          "property_data_type": "DateTime",
+          "is_id_value": true
+        },
+        {
+          "property_name": "change_description",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "change_date",
+          "property_data_type": "DateTime"
+        },
+        {
+          "property_name": "action",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_name",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "id_value",
+          "property_data_type": "Number"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "change_date_utc"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "id_type",
+        "id_name",
+        "id_value"
+      ],
+      "indexes": [
+        {
+          "index_name": "changelog_entry_by_internal_id",
+          "index_type": "unique",
+          "index_properties": {
+            "key": [
+              "internal_id"
+            ]
+          }
+        },
+        {
+          "index_name": "changelog_entry_changelog_id_range_by_source",
+          "index_type": "sorted_set",
+          "index_properties": {
+            "score": "changelog_id",
+            "key": [
+              "id_source"
+            ]
+          }
+        },
+        {
+          "index_name": "changelog_entry_internal_id_range_by_source",
+          "index_type": "sorted_set",
+          "index_properties": {
+            "score": "0",
+            "key": [
+              "id_source"
+            ]
+          }
+        }
+      ],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [
+              {
+                "edge_type": "_change_",
+                "target_type": "Change",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "change_target",
+                    "specifier_type": "extraction",
+                    "extracted_properties": [
+                      "detail_id"
+                    ]
+                  }
+                ],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "changelog_id",
+                    "constant_value": "source.changelog_id"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_changed_",
+                "target_type": "ExternalId",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "changed_target",
+                    "specifier_type": "function",
+                    "function_name": "derive_change_targeted",
+                    "extracted_properties": [
+                      "id_source",
+                      "id_type",
+                      "id_name",
+                      "id_value"
+                    ]
+                  }
+                ],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              }
+            ],
+            "inbound": [
+              {
+                "edge_type": "_by_emp_id_",
+                "target_type": "ExternalId",
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "id_type",
+                    "constant_value": "Employees"
+                  },
+                  {
+                    "constant_name": "id_name",
+                    "constant_value": "emp_id"
+                  }
+                ],
+                "target_specifiers": [
+                  {
+                    "specifier_name": "by_emp_id_target",
+                    "specifier_type": "extraction",
+                    "extracted_properties": [
+                      "id_source",
+                      "id_type",
+                      "id_value"
+                    ]
+                  }
+                ],
+                "if_absent": "create"
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "mapping": {
+              "DCDBH": {
+                "Clients": {
+                  "Date": {
+                    "name": "change_date",
+                    "mutation": null
+                  },
+                  "UTCDate": {
+                    "name": "change_date_utc",
+                    "mutation": null
+                  },
+                  "Description": {
+                    "name": "change_description",
+                    "mutation": null
+                  },
+                  "Action": {
+                    "name": "action",
+                    "mutation": null
+                  },
+                  "Service ID": {
+                    "name": "clientvisit_id",
+                    "mutation": null
+                  },
+                  "Record": {
+                    "name": "record",
+                    "mutation": "split_record_id"
+                  },
+                  "Consumer Name": {
+                    "name": "client_id",
+                    "mutation": "split_client_name"
+                  }
+                }
+              },
+              "MBI": {
+                "Clients": {
+                  "Date": {
+                    "name": "change_date",
+                    "mutation": null
+                  },
+                  "UTCDate": {
+                    "name": "change_date_utc",
+                    "mutation": null
+                  },
+                  "Description": {
+                    "name": "change_description",
+                    "mutation": null
+                  },
+                  "Action": {
+                    "name": "action",
+                    "mutation": null
+                  },
+                  "Service ID": {
+                    "name": "clientvisit_id",
+                    "mutation": null
+                  },
+                  "Record": {
+                    "name": "record",
+                    "mutation": "split_record_id"
+                  },
+                  "Consumer Name": {
+                    "name": "client_id",
+                    "mutation": "split_client_name"
+                  }
+                }
+              },
+              "default": {
+                "Clients": {
+                  "Date": {
+                    "name": "change_date",
+                    "mutation": null
+                  },
+                  "UTCDate": {
+                    "name": "change_date_utc",
+                    "mutation": null
+                  },
+                  "Description": {
+                    "name": "change_description",
+                    "mutation": null
+                  },
+                  "Action": {
+                    "name": "action",
+                    "mutation": null
+                  },
+                  "Service ID": {
+                    "name": "clientvisit_id",
+                    "mutation": null
+                  },
+                  "Record": {
+                    "name": "record",
+                    "mutation": "split_record_id"
+                  },
+                  "Client Name": {
+                    "name": "client_id",
+                    "mutation": "split_client_name"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "edge": [

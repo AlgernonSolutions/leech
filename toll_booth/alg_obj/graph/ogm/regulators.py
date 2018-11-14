@@ -617,8 +617,31 @@ class IdentifierStem(AlgObject):
     def as_stub_for_object(self):
         return f'''#{self._graph_type}#{self._object_type}::stub#{self._string_paired_identifiers()}#'''
 
+    def specify(self, id_value):
+        paired_identifiers = self._paired_identifiers.copy()
+        paired_identifiers['id_value'] = id_value
+        return IdentifierStem(self._graph_type, self._object_type, paired_identifiers)
+
     def _string_paired_identifiers(self):
         return json.dumps(self._paired_identifiers)
+
+    def get(self, item):
+        if item == 'graph_type':
+            return self._graph_type
+        if item == 'object_type':
+            return self._object_type
+        if item in self._paired_identifiers.keys():
+            return self._paired_identifiers[item]
+        raise AttributeError
+
+    def __getitem__(self, item):
+        if item == 'graph_type':
+            return self._graph_type
+        if item == 'object_type':
+            return self._object_type
+        if item in self._paired_identifiers:
+            return self._paired_identifiers[item]
+        raise AttributeError
 
     def __str__(self):
         return f'''#{self._graph_type}#{self._object_type}#{self._string_paired_identifiers()}#'''
