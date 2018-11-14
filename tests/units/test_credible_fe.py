@@ -2,116 +2,27 @@ import pytest
 
 
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver, CredibleFrontEndExtractor
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 
 
 @pytest.mark.credible_fe
+@pytest.mark.usefixtures('mock_schema')
 class TestCredibleFe:
     @pytest.mark.full_change_logs
     def test_get_full_change_logs(self, monitored_object_identifier_stem):
         identifier_stem = monitored_object_identifier_stem[0]
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         id_value = monitored_object_identifier_stem[1]
+        object_type = identifier_stem.object_type
+        schema_entry = SchemaVertexEntry.get(object_type)
         kwargs = {
             'identifier_stems': [{'identifier_stem': identifier_stem, 'id_value': id_value}],
-            'id_source': identifier_stem.get('id_source'),
-            'mapping': {
-              "DCDBH": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": None
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": None
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": None
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": None
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": None
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Consumer Name": {
-                    "name": "client_id",
-                    "mutation": "split_client_name"
-                  }
-                }
-              },
-              "MBI": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": None
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": None
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": None
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": None
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": None
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Consumer Name": {
-                    "name": "client_id",
-                    "mutation": "split_client_name"
-                  }
-                }
-              },
-              "default": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": None
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": None
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": None
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": None
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": None
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Client Name": {
-                    "name": "client_id",
-                    "mutation": "split_client_name"
-                  }
-                }
-              }
-            }
+            'id_source': identifier_stem.get('id_source')
         }
+        extraction_profile = schema_entry.extract['CredibleFrontEndExtractor']
+        kwargs.update(extraction_profile.extraction_properties)
+        kwargs.update(identifier_stem.for_extractor)
         results = CredibleFrontEndExtractor.extract(**kwargs)
         print(results)
 

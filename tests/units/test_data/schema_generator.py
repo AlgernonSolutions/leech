@@ -7,8 +7,8 @@ from jsonschema import validate
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, SchemaEdgeEntry
 
 
-def get_schema_entry(object_type):
-    test_schema = _get_test_schema()
+def get_schema_entry(object_type, **kwargs):
+    test_schema = _get_test_schema(**kwargs)
     vertex_entries = test_schema['vertex']
     edge_entries = test_schema['edge']
     for vertex_entry in vertex_entries:
@@ -21,9 +21,9 @@ def get_schema_entry(object_type):
         raise RuntimeError(f'could not find a valid schema entry for {object_type}')
 
 
-def _get_test_schema():
+def _get_test_schema(schema_name='schema.json'):
     test_file_name = os.path.dirname(__file__)
-    test_schema_file_path = os.path.join(test_file_name, 'schemas', 'schema.json')
+    test_schema_file_path = os.path.join(test_file_name, 'schemas', schema_name)
     master_schema_file_path = os.path.join(test_file_name, 'schemas', 'master_schema.json')
     with open(test_schema_file_path) as test, open(master_schema_file_path) as master:
         test_schema = json.load(test)

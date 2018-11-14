@@ -126,20 +126,26 @@ class CredibleFrontEndDriver:
             'submitform': 'true',
             'btn_export': ' Export ',
             'wh_fld1': 'last_name',
-            'wh_cmp1': '=',
-            'wh_val1': last_name,
+            'wh_cmp1': 'LIKE',
+            'wh_val1': f'*{last_name}*',
             'wh_andor': 'AND',
             'wh_fld2': 'first_name',
             'wh_cmp2': 'LIKE',
-            'wh_val2': first_initial,
+            'wh_val2': f'{first_initial}*',
             'emp_id': 1,
+            'emp_status': 1
         }
         url = self._base_stem + self._field_value_urls['EmployeeAdvanced']
         response = self._session.post(url, data=data)
-        csv_response = self._parse_csv_response(response.text)
-        for row in csv_response:
-            for id_value in row.values():
-                return Decimal(id_value)
+        possible_employees = self._parse_csv_response(response.text)
+        if len(possible_employees) == 1:
+            for entry in possible_employees:
+                for cell_name, row in entry.items():
+                    if 'ID' in cell_name:
+                        return Decimal(row)
+        if not possible_employees:
+            raise RuntimeError(
+                'could not find employee with last_name: %s, first_initial: %s' % (last_name, first_initial))
 
     def get_monitor_extraction(self, object_type):
         return
@@ -195,6 +201,12 @@ class CredibleFrontEndDriver:
         response = self._session.post(url, data=data)
         csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
         return csv_response
+
+    def get_emp_ids(self, identifier_stem, id_value):
+        pass
+
+    def _get_emp_ids(self):
+        pass
 
     def get_change_details(self, identifier_stem, id_value):
         details = {}
@@ -300,12 +312,15 @@ class CredibleFrontEndDriver:
                 row_entry = {}
                 if first:
                     for entry in row:
-                        if entry:
-                            header.append(entry)
+                        header.append(entry)
                     first = False
                     continue
                 for entry in row:
-                    header_name = header[header_index]
+                    try:
+                        header_name = header[header_index]
+                    except IndexError:
+                        raise RuntimeError(
+                            'the returned data from a csv query contained insufficient information to create the table')
                     entry = cls._set_data_type(header_name, entry)
                     row_entry[header_name] = entry
                     header_index += 1

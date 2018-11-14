@@ -6,6 +6,8 @@ from toll_booth.alg_obj.forge.extractors.credible_fe.credible_fe import Credible
 
 
 class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
+    _emp_ids = {}
+
     @classmethod
     def extract(cls, **kwargs):
         extracted_data = {}
@@ -23,7 +25,9 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                     source_extraction = driver.get_change_logs(identifier_stem, id_value)
                     change_detail_extraction = driver.get_change_details(identifier_stem, id_value)
                     formatted_extraction = cls._format_extracted_data(
-                        identifier_stem, source_extraction, object_mapping, change_detail_extraction, 'change_details')
+                        identifier_stem, source_extraction, object_mapping=object_mapping,
+                        side_data=change_detail_extraction, side_data_name='change_details', driver=driver
+                    )
                     extracted_data.update(formatted_extraction)
                     continue
                 raise NotImplementedError(
@@ -53,8 +57,9 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
             return field_values
 
     @classmethod
-    def _format_extracted_data(cls, identifier_stem, extracted_data, mapping, side_data=None, side_data_name='side_data'):
+    def _format_extracted_data(cls, identifier_stem, extracted_data, **kwargs):
         formatted_data = {}
+        mapping = kwargs['object_mapping']
         for key_value, extracted_row in extracted_data.items():
             formatted_row = {}
             for field_name, field_value in extracted_row.items():
@@ -63,47 +68,59 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                     field_name = row_mapping['name']
                     mutation = row_mapping['mutation']
                     if mutation and field_value:
-                        field_value = getattr(cls, '_'+mutation)(field_value)
+                        field_value = getattr(cls, '_'+mutation)(field_value, **kwargs)
                     formatted_row[field_name] = field_value
             utc_time = formatted_row['change_date_utc']
             finished_row = {'source': formatted_row}
-            if side_data:
-                finished_row[side_data_name] = side_data.get(utc_time, {})
+            if kwargs.get('side_data', None):
+                finished_row[kwargs.get('side_data_name', 'side_data')] = kwargs['side_data'].get(utc_time, {})
             data_key = (str(identifier_stem), utc_time.timestamp())
             formatted_data[data_key] = finished_row
         return formatted_data
 
     @classmethod
-    def _split_client_name(cls, field_value):
-        id_pattern = '\((?P<client_id>[\d]+)\)'
-        matches = re.compile(id_pattern).search(field_value)
-        if not matches:
-            print()
-        return matches.group('client_id')
+    def _get_client_id(cls, field_value, **kwargs):
+        client_id, client_name = cls._split_entry(field_value)
+        return client_id
 
     @classmethod
-    def _split_record_id(cls, field_value):
-        id_inside_pattern = '\((?P<record_id>[\d]+)\)'
-        id_outside_pattern = '\((?P<record_id>[\S]+)\)'
-        inside_matches = re.compile(id_inside_pattern).search(field_value)
-        outside_matches = re.compile(id_outside_pattern).search(field_value)
-        if inside_matches:
-            record_id = inside_matches.group('record_id')
-            record_bit = f'({record_id})'
-            id_type = field_value.replace(record_bit, '')
-            if record_id:
-                record_id = Decimal(record_id)
-            return {'id_value': record_id, 'id_type': id_type}
-        if outside_matches:
-            id_type = outside_matches.group('record_id')
-            id_type_bit = f'({id_type})'
-            record_id = field_value.replace(id_type_bit, '')
-            if record_id:
-                record_id = Decimal(record_id)
-            return {'id_value': record_id, 'id_type': id_type}
+    def _split_record_id(cls, field_value, **kwargs):
+        record_id, record_type = cls._split_entry(field_value)
+        return {'record_id': record_id, 'record_type': record_type}
 
-        try:
-            return {'id_value': Decimal(field_value)}
-        except InvalidOperation:
-            print()
-        raise NotImplementedError('was instructed to parse out a record id from %s but it looks a bit wonky, sorry boss' % field_value)
+    @classmethod
+    def _get_emp_id(cls, field_value, **kwargs):
+        if field_value in cls._emp_ids:
+            return cls._emp_ids[field_value]
+        name_pattern = re.compile('(?P<last_name>\w+)(?P<comma>\s*,\s+)(?P<first_name>\w)')
+        matches = name_pattern.search(field_value)
+        if not matches:
+            return field_value
+        last_name = matches.group('last_name')
+        first_name = matches.group('first_name')
+        emp_id = kwargs['driver'].search_employees(last_name, first_name)
+        cls._emp_ids[field_value] = emp_id
+        return emp_id
+
+    @classmethod
+    def _split_entry(cls, field_value):
+        non_numeric_inside = re.compile('(?P<outside>[\w\s]+?)\s*\((?P<inside>(?=[a-zA-Z\s])[\w\s\d]+)\)')
+        numeric_inside = re.compile('(?P<outside>[\w\s]+?)\s*\((?P<inside>[\d]+)\)')
+        no_parenthesis_number = re.compile('^((?![()])\d)*$')
+        has_numeric_inside = numeric_inside.search(field_value)
+        has_non_numeric_inside = non_numeric_inside.search(field_value)
+        is_just_number = no_parenthesis_number.search(field_value) is not None
+        if has_numeric_inside:
+            id_type = has_numeric_inside.group('outside')
+            id_value = has_numeric_inside.group('inside')
+            return Decimal(id_value), id_type
+        if has_non_numeric_inside:
+            id_value = has_non_numeric_inside.group('outside')
+            id_type = has_non_numeric_inside.group('inside')
+            try:
+                return Decimal(id_value), id_type
+            except InvalidOperation:
+                return id_type, id_value
+        if is_just_number:
+            return Decimal(field_value), None
+        return field_value, None

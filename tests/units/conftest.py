@@ -428,3 +428,12 @@ def monitored_object_identifier_stem(request):
 ])
 def employee_name(request):
     return request.param
+
+
+@pytest.fixture
+def mock_schema():
+    schema_patch = patches.get_function_patch('schema_entry', 'get')
+    mock_schema = schema_patch.start()
+    mock_schema.side_effect = intercept
+    yield
+    schema_patch.stop()
