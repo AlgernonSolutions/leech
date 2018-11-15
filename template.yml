@@ -34,7 +34,7 @@ Resources:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
           EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
-  monitor-object:
+  monitorObject:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
