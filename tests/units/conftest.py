@@ -1,4 +1,5 @@
 import os
+from collections import OrderedDict
 from unittest.mock import patch
 
 import pytest
@@ -393,3 +394,46 @@ def test_assimilation_results(test_assimilation_generator):
 ])
 def load_task(request):
     return request.param
+
+
+@pytest.fixture(params=[
+    ('Client', 'Clients', 'client_id'),
+    ('Employee', 'Employees', 'emp_id'),
+    ('Encounter', 'ClientVisit', 'clientvisit_id')
+])
+def vd_identifier_stem(request):
+    params = request.param
+    identifier_stem = IdentifierStem('vertex', params[0], {'id_source': 'Algernon', 'id_type': params[1], 'id_name': params[2]})
+    return identifier_stem
+
+
+@pytest.fixture(params=[
+    ('ChangeLog', 'MBI', 'Clients', 'client_id', 5198, 4, datetime.datetime(2018, 8, 12)),
+    ('ChangeLog', 'MBI', 'Clients', 'client_id', 1001, 4, datetime.datetime(2018, 8, 12)),
+])
+def monitored_object_identifier_stem(request):
+    params = request.param
+    paired_identifiers = OrderedDict()
+    paired_identifiers['id_source'] = params[1]
+    paired_identifiers['id_type'] = params[2]
+    paired_identifiers['id_name'] = params[3]
+    paired_identifiers['id_value'] = params[4]
+    paired_identifiers['data_dict_id'] = params[5]
+    identifier_stem = IdentifierStem('vertex', params[0], paired_identifiers)
+    return identifier_stem, params[6]
+
+
+@pytest.fixture(params=[
+    ('Cubeta', 'J', 'MBI')
+])
+def employee_name(request):
+    return request.param
+
+
+@pytest.fixture
+def mock_schema():
+    schema_patch = patches.get_function_patch('schema_entry', 'get')
+    mock_schema = schema_patch.start()
+    mock_schema.side_effect = intercept
+    yield
+    schema_patch.stop()

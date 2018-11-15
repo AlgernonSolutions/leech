@@ -1,0 +1,420 @@
+{
+  "vertex": [
+    {
+      "vertex_name": "Client",
+      "internal_id_key": [
+        "id_source",
+        "id_type",
+        "id_name",
+        "id_value"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "id_type",
+        "id_name"
+      ],
+      "vertex_properties": [
+        {
+          "property_name": "client_id",
+          "property_data_type": "Number",
+          "is_id_value":true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "indexes": [],
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "url": "some_url",
+            "object_type": "Clients"
+          }
+        }
+      ],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "inbound": [
+              {
+                "edge_type": "_name_",
+                "target_type": "Name",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "client_name",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source", "client_id"
+                    ]
+                  }
+                ],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_address_",
+                "target_type": "Address",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_address",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_ssn_",
+                "target_type": "SSN",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_ssn",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_medicaid_number_",
+                "target_type": "MedicaidNumber",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_medicaid_number",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_dob_",
+                "target_type": "DOB",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_dob",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              }
+            ],
+            "outbound": [
+              {
+                "edge_type": "_encounter_",
+                "target_type": "Encounter",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_encounter",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_case_manager_",
+                "target_type": "Employee",
+                "target_specifiers": [{
+                  "specifier_type": "extraction",
+                  "specifier_name": "client_employee",
+                  "extracted_properties": [
+                    "case_manager_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_assigned_employee_",
+                "target_type": "Employee",
+                "target_specifiers": [{
+                  "specifier_type": "extraction",
+                  "specifier_name": "client_employee",
+                  "extracted_properties": [
+                    "emp_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_insurance_",
+                "target_type": "Insurance",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_insurance",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              },
+              {
+                "edge_type": "_authorization_",
+                "target_type": "Authorization",
+                "target_specifiers": [{
+                  "specifier_type": "shared_property",
+                  "specifier_name": "client_authorization",
+                  "shared_properties": [
+                    "id_source", "client_id"
+                  ]
+                }],
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  }
+                ],
+                "if_absent": "create"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "vertex_name": "Employee",
+      "internal_id_key": [
+        "id_source",
+        "id_type",
+        "id_name",
+        "id_value"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "id_type",
+        "id_name"
+      ],
+      "vertex_properties": [
+        {
+          "property_name": "emp_id",
+          "property_data_type": "Number",
+          "is_id_value":true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "indexes": [],
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "url": "some_url"
+          }
+        }
+      ],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "inbound": [],
+            "outbound": []
+          }
+        ]
+      }
+    },
+    {
+      "vertex_name": "ClientVisit",
+      "internal_id_key": [
+        "id_source",
+        "id_type",
+        "id_name",
+        "id_value"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "id_type",
+        "id_name"
+      ],
+      "vertex_properties": [
+        {
+          "property_name": "clientvisit_id",
+          "property_data_type": "Number",
+          "is_id_value":true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "indexes": [],
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "url": "some_url"
+          }
+        }
+      ],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "inbound": [],
+            "outbound": []
+          }
+        ]
+      }
+    }
+  ],
+  "edge": [
+    {
+      "edge_label": "_name_",
+      "from": "Client",
+      "to": "Name",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_address_",
+      "from": "Client",
+      "to": "Address",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_ssn_",
+      "from": "Client",
+      "to": "SSN",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_medicaid_number_",
+      "from": "Client",
+      "to": "MedicaidNumber",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_dob_",
+      "from": "Client",
+      "to": "DOB",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_encounter_",
+      "from": "Client",
+      "to": "Encounter",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_case_manager_",
+      "from": "Client",
+      "to": "Employee",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_authorization_",
+      "from": "Client",
+      "to": "Authorization",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_insurance_",
+      "from": "Client",
+      "to": "Insurance",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_assigned_employee",
+      "from": "Client",
+      "to": "Employee",
+      "edge_properties": [],
+      "internal_id_key": [
+         "from.internal_id", "schema.edge_label", "to.internal_id"
+      ],
+      "indexes": []
+    }
+  ]
+}

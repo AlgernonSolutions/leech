@@ -24,6 +24,12 @@ class Opossum:
         return secret['key_value']
 
     @classmethod
+    def get_untrustworthy_credentials(cls, id_source):
+        secret_name = 'credible_fe_%s' % id_source
+        secret = cls.get_secrets(secret_name)
+        return secret
+
+    @classmethod
     def get_trident_user_key(cls):
         secret_name = 'Trident_User_Key'
         secret = cls.get_secrets(secret_name)

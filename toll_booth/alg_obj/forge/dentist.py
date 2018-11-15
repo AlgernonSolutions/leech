@@ -14,6 +14,15 @@ class Dentist:
         self._dynamo_driver = LeechDriver()
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(**kwargs))
 
+    @classmethod
+    def extract_bulk(cls, metal_orders):
+        results = []
+        for metal_order in metal_orders:
+            dentist = cls(metal_order)
+            result = dentist.extract()
+            results.append(result)
+        return results
+
     def extract(self):
         extracted_data = StageManager.run_extraction(
             self._extraction_function_name, self._extraction_properties)

@@ -50,6 +50,12 @@ class ForgeQueue:
         self._order_swarm = order_swarm
 
     @classmethod
+    def get_for_monitor_queue(cls, **kwargs):
+        default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/monitor'
+        queue_url = kwargs.get('queue_url', os.getenv('MONITOR_URL', default_queue_url))
+        return cls('monitor_queue', queue_url)
+
+    @classmethod
     def get_for_extraction_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/extraction'
         queue_url = kwargs.get('queue_url', os.getenv('EXTRACTION_URL', default_queue_url))
@@ -59,13 +65,19 @@ class ForgeQueue:
     def get_for_transform_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/transform'
         queue_url = kwargs.get('queue_url', os.getenv('TRANSFORM_URL', default_queue_url))
-        return cls('transform_queue', queue_url, swarm=False)
+        return cls('transform_queue', queue_url, swarm=kwargs.get('swarm', False))
 
     @classmethod
     def get_for_assimilation_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
         queue_url = kwargs.get('queue_url', os.getenv('ASSIMILATE_URL', default_queue_url))
-        return cls('assimilate_queue', queue_url, swarm=False)
+        return cls('assimilate_queue', queue_url, swarm=kwargs.get('swarm', False))
+
+    @classmethod
+    def get_for_link_queue(cls, **kwargs):
+        default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/link'
+        queue_url = kwargs.get('queue_url', os.getenv('LINK_URL', default_queue_url))
+        return cls('link_queue', queue_url, swarm=kwargs.get('swarm', False))
 
     @classmethod
     def get_for_load_queue(cls, **kwargs):

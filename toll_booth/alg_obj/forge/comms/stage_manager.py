@@ -62,6 +62,22 @@ class StageManager:
         return results
 
     @classmethod
+    def run_monitoring_extraction(cls, function_name, step_args):
+        payload = {
+            'step_name': 'monitor_extraction',
+            'step_args': step_args
+        }
+        return cls._run(function_name, step_args, payload)
+
+    @classmethod
+    def run_field_value_query(cls, function_name, step_args):
+        payload = {
+            'step_name': 'field_value_query',
+            'step_args': step_args
+        }
+        return cls._run(function_name, step_args, payload)
+
+    @classmethod
     def bulk_mark_ids_as_working(cls, id_values, identifier_stem, object_type, stage_name):
         from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
         batches = []

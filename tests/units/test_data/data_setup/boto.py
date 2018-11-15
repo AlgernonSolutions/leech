@@ -185,10 +185,10 @@ def generate_sensitive_response(*args):
     print()
 
 
-def intercept(*args):
+def intercept(*args, **kwargs):
     operation_name = args[0]
-    if operation_name in ['ExternalId', 'Change', 'ChangeLogEntry']:
-        return get_schema_entry(operation_name)
+    if operation_name in ['ExternalId', 'Change', 'ChangeLogEntry', 'ChangeDetail', 'ChangeLog']:
+        return get_schema_entry(operation_name, **kwargs)
     operation_kwargs = args[1]
     if operation_name == 'GetSecretValue':
         return generate_secret_response(*args)
@@ -197,7 +197,7 @@ def intercept(*args):
         table_name = query_args['TableName']
         if table_name == 'Schema':
             object_type = getattr(operation_kwargs['KeyConditionExpression'], '_values')[1]
-            return get_schema_entry(object_type)
+            return get_schema_entry(object_type, **kwargs)
         if table_name == 'Sensitives':
             return generate_sensitive_response(*args)
     if operation_name == 'UpdateItem':

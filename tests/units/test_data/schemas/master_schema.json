@@ -63,9 +63,11 @@
         },
         "target_specifiers": {
           "description": "an array of rules specifying which objects will be linked to the object by this rule",
+          "type": "array",
           "items": {
             "$ref": "#/definitions/target_specifiers"
-          }
+          },
+          "minItems": 1
         },
         "target_constants": {
           "description": "any static matching parameters for the linking rule",
@@ -170,7 +172,8 @@
       "enum": [
         "String",
         "Number",
-        "DateTime"
+        "DateTime",
+        "Boolean"
       ]
     },
     "sorted_set_index": {
