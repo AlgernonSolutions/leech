@@ -39,7 +39,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       Runtime: python3.6
-      FunctionName: leech-monitor
+      FunctionName: leech-monitor-object
       Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
