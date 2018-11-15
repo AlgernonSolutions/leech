@@ -203,10 +203,48 @@ class CredibleFrontEndDriver:
         return csv_response
 
     def get_emp_ids(self, identifier_stem, id_value):
-        pass
+        emp_ids = {}
+        emps, page_number = self._get_emp_ids(identifier_stem, id_value)
+        emp_ids.update(emps)
+        while page_number is not None:
+            emps, page_number = self._get_emp_ids(identifier_stem, id_value, page_number)
+            emp_ids.update(emps)
+        return emp_ids
 
-    def _get_emp_ids(self):
-        pass
+    def _get_emp_ids(self, identifier_stem, id_value, page_number=1):
+        emp_ids = {}
+        row_pattern = re.compile('(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
+        id_type = identifier_stem.get('id_type')
+        param_name = self._field_value_params[id_type]
+        param_value = identifier_stem.get('id_value')
+        url = self._base_stem + self._field_value_urls[id_type]
+        data = {
+            param_name: param_value,
+            'start_date': self._format_datetime_id_value(id_value),
+            'changelogcategory_id': '',
+            'changelogtype_id': '',
+            'page': page_number
+        }
+        page_number += 1
+        response = self._session.post(url, data=data)
+        row_match = row_pattern.search(response.text).group('rows')
+        row_soup = bs4.BeautifulSoup(row_match)
+        table_rows = row_soup.find_all('tr')
+        if len(table_rows) <= 3:
+            return [], None
+        for row in table_rows:
+            if 'style' in row.attrs:
+                utc_change_date = row.contents[15].string
+                entry = datetime.datetime.strptime(utc_change_date, '%m/%d/%Y %I:%M:%S %p')
+                entry = entry.timestamp()
+                change_time = datetime.datetime.fromtimestamp(entry, tz=datetime.timezone.utc)
+                emp_entry = row.contents[3]
+                numeric_inside = re.compile('(?P<outside>[\w\s]+?)\s*\((?P<inside>[\d]+)\)')
+                match = numeric_inside.search(emp_entry.string).group('inside')
+                emp_id = Decimal(match)
+                emp_ids[change_time] = emp_id
+        return emp_ids, page_number
 
     def get_change_details(self, identifier_stem, id_value):
         details = {}

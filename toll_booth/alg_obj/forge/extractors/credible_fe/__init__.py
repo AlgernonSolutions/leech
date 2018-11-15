@@ -6,8 +6,6 @@ from toll_booth.alg_obj.forge.extractors.credible_fe.credible_fe import Credible
 
 
 class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
-    _emp_ids = {}
-
     @classmethod
     def extract(cls, **kwargs):
         extracted_data = {}
@@ -24,7 +22,10 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                     object_mapping = id_source_mapping[identifier_stem.get('id_type')]
                     source_extraction = driver.get_change_logs(identifier_stem, id_value)
                     change_detail_extraction = driver.get_change_details(identifier_stem, id_value)
-                    formatted_extraction = cls._format_extracted_data(
+                    emp_ids = driver.get_emp_ids(identifier_stem, id_value)
+                    for change_date, entry in source_extraction.items():
+                        entry['User'] = emp_ids[change_date]
+                    formatted_extraction = cls._format_change_log_data(
                         identifier_stem, source_extraction, object_mapping=object_mapping,
                         side_data=change_detail_extraction, side_data_name='change_details', driver=driver
                     )
@@ -57,7 +58,7 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
             return field_values
 
     @classmethod
-    def _format_extracted_data(cls, identifier_stem, extracted_data, **kwargs):
+    def _format_change_log_data(cls, identifier_stem, extracted_data, **kwargs):
         formatted_data = {}
         mapping = kwargs['object_mapping']
         for key_value, extracted_row in extracted_data.items():
@@ -73,7 +74,7 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
             utc_time = formatted_row['change_date_utc']
             finished_row = {'source': formatted_row}
             if kwargs.get('side_data', None):
-                finished_row[kwargs.get('side_data_name', 'side_data')] = kwargs['side_data'].get(utc_time, {})
+                finished_row[kwargs.get('side_data_name', 'side_data')] = kwargs['side_data'].get(utc_time, [{}])
             data_key = (str(identifier_stem), utc_time.timestamp())
             formatted_data[data_key] = finished_row
         return formatted_data
@@ -87,20 +88,6 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
     def _split_record_id(cls, field_value, **kwargs):
         record_id, record_type = cls._split_entry(field_value)
         return {'record_id': record_id, 'record_type': record_type}
-
-    @classmethod
-    def _get_emp_id(cls, field_value, **kwargs):
-        if field_value in cls._emp_ids:
-            return cls._emp_ids[field_value]
-        name_pattern = re.compile('(?P<last_name>\w+)(?P<comma>\s*,\s+)(?P<first_name>\w)')
-        matches = name_pattern.search(field_value)
-        if not matches:
-            return field_value
-        last_name = matches.group('last_name')
-        first_name = matches.group('first_name')
-        emp_id = kwargs['driver'].search_employees(last_name, first_name)
-        cls._emp_ids[field_value] = emp_id
-        return emp_id
 
     @classmethod
     def _split_entry(cls, field_value):

@@ -801,7 +801,7 @@
                   },
                   "User": {
                     "name": "emp_id",
-                    "mutation": "get_emp_id"
+                    "mutation": null
                   }
                 }
               },
@@ -837,7 +837,7 @@
                   },
                   "User": {
                     "name": "emp_id",
-                    "mutation": "get_emp_id"
+                    "mutation": null
                   }
                 }
               },
@@ -873,7 +873,7 @@
                   },
                    "User": {
                     "name": "emp_id",
-                    "mutation": "get_emp_id"
+                    "mutation": null
                   }
                 }
               }
