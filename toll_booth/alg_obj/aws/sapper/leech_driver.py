@@ -32,7 +32,7 @@ class LeechRecord:
             object_type = identifier_stem.object_type
         self._identifier_stem = identifier_stem
         self._id_value = id_value
-        self._dynamo_parameters = DynamoParameters(identifier_stem, id_value)
+        self._dynamo_parameters = DynamoParameters(id_value, identifier_stem)
         self._object_properties = kwargs.get('object_properties', {})
         self._object_type = object_type
 

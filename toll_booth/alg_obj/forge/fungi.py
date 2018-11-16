@@ -146,7 +146,8 @@ class Spore:
             object_data['id_value'] = id_value
             potential_vertex = vertex_regulator.create_potential_vertex(object_data)
             try:
-                self._leech_driver.set_assimilated_vertex(potential_vertex, False, identifier_stem=None, id_value=None)
+                self._leech_driver.set_assimilated_vertex(
+                    potential_vertex, False, identifier_stem=identifier_stem, id_value=id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                     raise e
