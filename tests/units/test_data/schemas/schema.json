@@ -968,10 +968,14 @@
     "external_id_vertex_query": "SELECT  {id_name} as id_value, '{object_type}' as id_type, '{id_name}' as id_name, '{id_source}' as id_source FROM {object_type} WHERE {id_name} = {id_value}",
     "mapping": {
       "DCDBH": {
-        "ExternalIds": {
+        "ExternalId": {
           "Employees": {
             "internal_name": "Employee ID",
             "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
           }
         },
         "Clients": {
@@ -1010,10 +1014,14 @@
         }
       },
       "MBI": {
-        "ExternalIds": {
+        "ExternalId": {
           "Employees": {
             "internal_name": "Employee ID",
             "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
           }
         },
         "Clients": {
@@ -1052,10 +1060,14 @@
         }
       },
       "default": {
-        "ExternalIds": {
+        "ExternalId": {
           "Employees": {
             "internal_name": "Employee ID",
             "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
           }
         },
         "Clients": {

@@ -25,7 +25,7 @@ class CredibleFrontEndDriver:
     }
     _monitor_extract_stems = {
         'Employees': '/employee/list_emps_adv.asp',
-        'Clients': '/clients/list_clients_adv.asp',
+        'Clients': '/client/list_clients_adv.asp',
         'ClientVisit': '/visit/list_visits_adv.asp'
     }
     _field_value_params = {
@@ -165,7 +165,7 @@ class CredibleFrontEndDriver:
         url = self._base_stem + self._monitor_extract_stems[id_type]
         response = self._session.post(url, data=data)
         possible_objects = self._parse_csv_response(response.text)
-        return [x[object_field_names['internal_name']] for x in possible_objects]
+        return [Decimal(x[' Id']) for x in possible_objects]
 
     def get_data_dict_field_values(self, id_type, id_value, data_dict_id):
         values = []
