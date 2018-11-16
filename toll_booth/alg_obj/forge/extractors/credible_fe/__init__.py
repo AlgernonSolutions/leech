@@ -62,7 +62,7 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
     @classmethod
     def get_monitor_extraction(cls, **kwargs):
         with CredibleFrontEndDriver(kwargs['id_source']) as driver:
-            return driver.get_monitor_extraction(kwargs['object_type'])
+            return driver.get_monitor_extraction(kwargs['id_type'])
 
     @classmethod
     def get_field_values(cls, **kwargs):

@@ -430,11 +430,9 @@ def employee_ext_id_identifier_stem():
 
 
 @pytest.fixture(params=[
-    ('ExternalId', 'MBI', 'Clients', 'client_id'),
-    ('ExternalId', 'MBI', 'Employees', 'emp_id'),
-    ('ExternalId', 'MBI', 'ClientVisit', 'clientvisit_id')
+    ('ChangeLog', 'MBI', 'Clients', 'client_id')
 ])
-def monitored_ext_id_identifier_stem(request):
+def propagated_identifier_stem(request):
     params = request.param
     return IdentifierStem('vertex', params[0], {'id_source': params[1], 'id_type': params[2], 'id_name': params[3]})
 
@@ -453,3 +451,10 @@ def mock_schema():
     mock_schema.side_effect = intercept
     yield
     schema_patch.stop()
+
+
+@pytest.fixture(params=[
+    ()
+])
+def mock_vertex_driven_event(request):
+    params = request.param

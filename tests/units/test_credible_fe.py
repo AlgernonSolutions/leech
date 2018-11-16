@@ -4,16 +4,14 @@ import pytest
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver, CredibleFrontEndExtractor
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
+from toll_booth.alg_tasks.extractors import credible_fe
 
 
 @pytest.mark.credible_fe
 @pytest.mark.usefixtures('mock_schema')
 class TestCredibleFe:
-    def test_monitors(self, monitored_ext_id_identifier_stem, dynamo_test_environment):
-        results = CredibleFrontEndExtractor.extract(
-            id_source=monitored_ext_id_identifier_stem.get('id_source'),
-            identifier_stem=monitored_ext_id_identifier_stem
-        )
+    def test_monitor_extraction(self, mock_vertex_driven_event):
+        results = credible_fe.handler()
         print()
 
     @pytest.mark.get_emp_ext_id

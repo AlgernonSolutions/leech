@@ -96,6 +96,9 @@ class Spore:
         extraction_properties = self._identifier_stem.for_extractor
         schema_extraction_properties = self._schema_entry.extract[self._extractor_setup['type']]
         extraction_properties.update(schema_extraction_properties.extraction_properties)
+        if not extraction_properties['driving_vertex_type']:
+            raise RuntimeError('attempted to perform a propagation task on object: %s, this object is '
+                               'not able to be propagated' % str(self._identifier_stem))
         return extraction_properties
 
     def _generate_extraction_order(self, id_value):
