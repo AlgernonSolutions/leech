@@ -430,6 +430,7 @@ def employee_ext_id_identifier_stem():
 
 
 @pytest.fixture(params=[
+    ('ChangeLog', 'MBI', 'Employees', 'emp_id'),
     ('ChangeLog', 'MBI', 'Clients', 'client_id')
 ])
 def propagated_identifier_stem(request):

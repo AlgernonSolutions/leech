@@ -619,7 +619,7 @@ class IdentifierStem(AlgObject):
 
     def specify(self, id_value):
         paired_identifiers = self._paired_identifiers.copy()
-        paired_identifiers['id_value'] = id_value
+        paired_identifiers['id_value'] = int(id_value)
         return IdentifierStem(self._graph_type, self._object_type, paired_identifiers)
 
     def _string_paired_identifiers(self):

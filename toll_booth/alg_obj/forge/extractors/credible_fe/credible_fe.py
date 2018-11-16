@@ -165,7 +165,7 @@ class CredibleFrontEndDriver:
         url = self._base_stem + self._monitor_extract_stems[id_type]
         response = self._session.post(url, data=data)
         possible_objects = self._parse_csv_response(response.text)
-        return [Decimal(x[' Id']) for x in possible_objects]
+        return [Decimal(x[object_field_names['internal_name']]) for x in possible_objects]
 
     def get_data_dict_field_values(self, id_type, id_value, data_dict_id):
         values = []

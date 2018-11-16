@@ -90,7 +90,6 @@ class LeechRecord:
         })
         return base
 
-
     @property
     def for_blank(self):
         base = self._for_update('extraction')
