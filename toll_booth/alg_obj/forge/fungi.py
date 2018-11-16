@@ -148,6 +148,10 @@ class Spore:
             try:
                 self._leech_driver.set_assimilated_vertex(
                     potential_vertex, False, identifier_stem=identifier_stem, id_value=id_value)
+                self._leech_driver.set_link_object(
+                    potential_vertex.internal_id, self._identifier_stem.get('id_source'), False,
+                    identifier_stem=identifier_stem, id_value=id_value
+                )
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                     raise e

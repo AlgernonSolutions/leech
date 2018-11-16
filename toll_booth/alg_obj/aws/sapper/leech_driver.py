@@ -218,6 +218,30 @@ class LeechRecord:
         base['ConditionExpression'] = Attr(f'progress.assimilation.{ruled_edge_type}').not_exists()
         return base
 
+    def for_link_object(self, linked_internal_id, id_source, is_unlink):
+        now = self._get_decimal_timestamp()
+        base = self._for_update('linking', is_initial=True)
+        base['Key'] = DynamoParameters(now, IdentifierStem('vertex', 'link')).as_key
+        base['UpdateExpression'] = base['UpdateExpression'] + ', #d=:d, #ids=:ids, #lt=:lt, #iul=:iul, #idv=:lt, #ot=:ot, #li=:li'
+        base['ExpressionAttributeNames'].update({
+            '#ids': 'linked_id_source',
+            '#lt': 'utc_link_time',
+            '#iul': 'is_unlink',
+            '#d': 'disposition',
+            '#idv': 'id_value',
+            '#ot': 'object_type',
+            '#li': 'linked_internal_id'
+        })
+        base['ExpressionAttributeValues'].update({
+            ':ids': id_source,
+            ':lt': now,
+            ':iul': is_unlink,
+            ':d': 'graphing',
+            ':ot': 'link',
+            ':li': linked_internal_id
+        })
+        return base
+
     def _for_update(self, stage_name, is_initial=False):
         now = self._get_decimal_timestamp()
         update_expression = 'SET #lss=:s, #lts=:t, #p.#s=:p'
@@ -525,6 +549,12 @@ class LeechDriver:
         if is_stub is True:
             return self._table.update_item(**leech_record.for_stub(potential_vertex))
         return self._table.update_item(**leech_record.for_created_vertex(potential_vertex))
+
+    @leeched
+    def set_link_object(self, linked_internal_id, id_source, is_unlink, leech_record):
+        return self._table.update_item(
+            **leech_record.for_link_object(linked_internal_id, id_source, is_unlink)
+        )
 
     def get_extractor_setup(self, identifier_stem, include_field_values=False):
         setup = {}
