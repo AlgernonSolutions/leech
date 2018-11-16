@@ -434,7 +434,12 @@ def employee_ext_id_identifier_stem():
 ])
 def propagated_identifier_stem(request):
     params = request.param
-    return IdentifierStem('vertex', params[0], {'id_source': params[1], 'id_type': params[2], 'id_name': params[3]})
+    source_stem = IdentifierStem('vertex', params[0], {'id_source': params[1]})
+    driving_stem = IdentifierStem('vertex', 'ExternalId', {'id_source': params[1], 'id_type': params[2], 'id_name': params[3]})
+    return {
+        'identifier_stem': source_stem,
+        'driving_identifier_stem': driving_stem
+    }
 
 
 @pytest.fixture(params=[

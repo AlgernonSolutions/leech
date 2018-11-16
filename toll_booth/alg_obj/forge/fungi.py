@@ -9,11 +9,13 @@ from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 
 
 class Spore:
-    def __init__(self, *, identifier_stem, **kwargs):
+    def __init__(self, identifier_stem, driving_identifier_stem, **kwargs):
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._identifier_stem = identifier_stem
+        self._driving_identifier_stem = driving_identifier_stem
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
         self._extractor_setup = self._leech_driver.get_extractor_setup(identifier_stem, include_field_values=False)
+        self._driving_extractor_setup = self._leech_driver.get_extractor_setup(driving_identifier_stem)
         self._schema_entry = SchemaVertexEntry.get(identifier_stem.object_type)
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
         self._link_queue = kwargs.get('link_queue', ForgeQueue.get_for_link_queue(swarm=True, **kwargs))
@@ -82,7 +84,10 @@ class Spore:
         return remote_objects
 
     def _perform_remote_monitor_extraction(self):
-        manager_args = (self._extractor_setup['monitor_extraction'], self._extraction_profile)
+        step_args = self._driving_extractor_setup.copy()
+        step_args.update(self._driving_identifier_stem.for_extractor)
+        step_args.update(self._schema_entry.extract[self._extractor_setup['type']].extraction_properties)
+        manager_args = (self._extractor_setup['monitor_extraction'], step_args)
         remote_id_values = StageManager.run_monitoring_extraction(*manager_args)
         return set(remote_id_values)
 

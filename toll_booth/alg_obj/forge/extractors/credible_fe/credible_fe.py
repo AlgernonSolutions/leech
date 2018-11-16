@@ -152,16 +152,17 @@ class CredibleFrontEndDriver:
             raise RuntimeError(
                 'could not find employee with last_name: %s, first_initial: %s' % (last_name, first_initial))
 
-    def get_monitor_extraction(self, object_type, **kwargs):
+    def get_monitor_extraction(self, **kwargs):
         mapping = kwargs['mapping']
+        id_type = kwargs['id_type']
         source_mapping = mapping.get(self._id_source, mapping['default'])
-        object_field_names = source_mapping['ExternalId'][object_type]
+        object_field_names = source_mapping['ExternalId'][id_type]
         data = {
             'submitform': 'true',
             'btn_export': ' Export ',
             object_field_names['alg_name']: 1
         }
-        url = self._base_stem + self._monitor_extract_stems[object_type]
+        url = self._base_stem + self._monitor_extract_stems[id_type]
         response = self._session.post(url, data=data)
         possible_objects = self._parse_csv_response(response.text)
         return [x[object_field_names['internal_name']] for x in possible_objects]
