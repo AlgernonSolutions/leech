@@ -17,11 +17,16 @@ class CredibleFrontEndLoginException(Exception):
 
 class CredibleFrontEndDriver:
     _base_stem = 'https://www.crediblebh.com'
-    _field_value_urls = {
+    _url_stems = {
         'Clients': '/client/client_hipaalog.asp',
         'DataDict': '/common/hipaalog_datadict.asp',
         'ChangeDetail': '/common/hipaalog_details.asp',
         'EmployeeAdvanced': '/employee/list_emps_adv.asp'
+    }
+    _monitor_extract_stems = {
+        'Employees': '/employee/list_emps_adv.asp',
+        'Clients': '/clients/list_clients_adv.asp',
+        'ClientVisit': '/visit/list_visits_adv.asp'
     }
     _field_value_params = {
         'Clients': 'client_id'
@@ -135,7 +140,7 @@ class CredibleFrontEndDriver:
             'emp_id': 1,
             'emp_status': 1
         }
-        url = self._base_stem + self._field_value_urls['EmployeeAdvanced']
+        url = self._base_stem + self._url_stems['EmployeeAdvanced']
         response = self._session.post(url, data=data)
         possible_employees = self._parse_csv_response(response.text)
         if len(possible_employees) == 1:
@@ -147,8 +152,19 @@ class CredibleFrontEndDriver:
             raise RuntimeError(
                 'could not find employee with last_name: %s, first_initial: %s' % (last_name, first_initial))
 
-    def get_monitor_extraction(self, object_type):
-        return
+    def get_monitor_extraction(self, object_type, **kwargs):
+        mapping = kwargs['mapping']
+        source_mapping = mapping.get(self._id_source, mapping['default'])
+        object_field_names = source_mapping['ExternalId'][object_type]
+        data = {
+            'submitform': 'true',
+            'btn_export': ' Export ',
+            object_field_names['alg_name']: 1
+        }
+        url = self._base_stem + self._monitor_extract_stems[object_type]
+        response = self._session.post(url, data=data)
+        possible_objects = self._parse_csv_response(response.text)
+        return [x[object_field_names['internal_name']] for x in possible_objects]
 
     def get_data_dict_field_values(self, id_type, id_value, data_dict_id):
         values = []
@@ -159,7 +175,7 @@ class CredibleFrontEndDriver:
             'data_dict_id': data_dict_id,
             param_name: id_value
         }
-        url = self._base_stem + self._field_value_urls['DataDict']
+        url = self._base_stem + self._url_stems['DataDict']
         response = self._session.get(url, params=params)
         compiled_match = re.compile(pattern)
         compiled_emp_id = re.compile(emp_id_pattern)
@@ -190,7 +206,7 @@ class CredibleFrontEndDriver:
         id_type = identifier_stem.get('id_type')
         param_name = self._field_value_params[id_type]
         param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._field_value_urls[id_type]
+        url = self._base_stem + self._url_stems[id_type]
         data = {
             param_name: param_value,
             'start_date': self._format_datetime_id_value(id_value),
@@ -218,7 +234,7 @@ class CredibleFrontEndDriver:
         id_type = identifier_stem.get('id_type')
         param_name = self._field_value_params[id_type]
         param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._field_value_urls[id_type]
+        url = self._base_stem + self._url_stems[id_type]
         data = {
             param_name: param_value,
             'start_date': self._format_datetime_id_value(id_value),
@@ -262,7 +278,7 @@ class CredibleFrontEndDriver:
         id_type = identifier_stem.get('id_type')
         param_name = self._field_value_params[id_type]
         param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._field_value_urls[id_type]
+        url = self._base_stem + self._url_stems[id_type]
         data = {
             param_name: param_value,
             'start_date': self._format_datetime_id_value(id_value),
@@ -292,7 +308,7 @@ class CredibleFrontEndDriver:
 
     def __get_change_details(self, changelog_id):
         changes = []
-        url = self._base_stem + self._field_value_urls['ChangeDetail']
+        url = self._base_stem + self._url_stems['ChangeDetail']
         response = self._session.get(url, params={'changelog_id': changelog_id})
         detail_soup = bs4.BeautifulSoup(response.content)
         all_rows = detail_soup.find_all('tr')

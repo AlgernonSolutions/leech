@@ -9,10 +9,29 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
     @classmethod
     def extract(cls, **kwargs):
         extracted_data = {}
-        identifiers = kwargs['identifier_stems']
+        identifiers = kwargs.get('identifier_stems', None)
+        identifier = kwargs.get('identifier_stem', None)
         id_source = kwargs['id_source']
+        if identifiers and identifier:
+            raise RuntimeError('cannot run extraction for both a set of identifier stems, and a single stem')
+        if identifiers:
+            return cls._run_multi_extract(id_source, identifiers, **kwargs)
+        if identifier:
+            return cls._run_single_extract(id_source, identifier, **kwargs)
+
+    @classmethod
+    def _run_single_extract(cls, id_source, identifier_stem, **kwargs):
+        extracted_data = {}
+        object_type = identifier_stem.object_type
         with CredibleFrontEndDriver(id_source) as driver:
-            for identifier in identifiers:
+            if object_type == 'ExternalId':
+                source_extraction = driver.get_ext_id(identifier_stem)
+
+    @classmethod
+    def _run_multi_extract(cls, id_source, identifier_stems, **kwargs):
+        extracted_data = {}
+        with CredibleFrontEndDriver(id_source) as driver:
+            for identifier in identifier_stems:
                 identifier_stem = identifier['identifier_stem']
                 id_value = identifier['id_value']
                 object_type = identifier_stem.object_type
@@ -31,6 +50,11 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                     )
                     extracted_data.update(formatted_extraction)
                     continue
+                if object_type == 'ExternalId':
+                    mapping = kwargs['mapping']
+                    id_source_mapping = mapping.get(id_source, mapping['default'])
+                    object_mapping = id_source_mapping[identifier_stem.get('id_type')]
+                    source_extraction = driver.get_ext_id(id)
                 raise NotImplementedError(
                     'do not know how to extract object %s through the Credible Front End' % object_type)
         return extracted_data

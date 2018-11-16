@@ -9,6 +9,18 @@ from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 @pytest.mark.credible_fe
 @pytest.mark.usefixtures('mock_schema')
 class TestCredibleFe:
+    def test_monitors(self, monitored_ext_id_identifier_stem, dynamo_test_environment):
+        results = CredibleFrontEndExtractor.extract(
+            id_source=monitored_ext_id_identifier_stem.get('id_source'),
+            identifier_stem=monitored_ext_id_identifier_stem
+        )
+        print()
+
+    @pytest.mark.get_emp_ext_id
+    def test_get_emp_ext_id(self, employee_ext_id_identifier_stem):
+        with CredibleFrontEndDriver(employee_ext_id_identifier_stem.get('id_source')) as driver:
+            results = driver.get_employee_ext_ids()
+
     @pytest.mark.full_change_logs
     def test_get_full_change_logs(self, monitored_object_identifier_stem):
         identifier_stem = monitored_object_identifier_stem[0]

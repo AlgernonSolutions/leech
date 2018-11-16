@@ -351,6 +351,7 @@ def robot_test_environment():
 def dynamo_test_environment():
     boto_patch = patches.get_boto_patch()
     mock_boto = boto_patch.start()
+    mock_boto.side_effect = intercept
     yield mock_boto
     boto_patch.stop()
 
@@ -421,6 +422,21 @@ def monitored_object_identifier_stem(request):
     paired_identifiers['data_dict_id'] = params[5]
     identifier_stem = IdentifierStem('vertex', params[0], paired_identifiers)
     return identifier_stem, params[6]
+
+
+@pytest.fixture
+def employee_ext_id_identifier_stem():
+    return IdentifierStem('vertex', 'ExternalId', {'id_source': 'MBI', 'id_type': 'Employees', 'id_name': 'emp_id'})
+
+
+@pytest.fixture(params=[
+    ('ExternalId', 'MBI', 'Clients', 'client_id'),
+    ('ExternalId', 'MBI', 'Employees', 'emp_id'),
+    ('ExternalId', 'MBI', 'ClientVisit', 'clientvisit_id')
+])
+def monitored_ext_id_identifier_stem(request):
+    params = request.param
+    return IdentifierStem('vertex', params[0], {'id_source': params[1], 'id_type': params[2], 'id_name': params[3]})
 
 
 @pytest.fixture(params=[

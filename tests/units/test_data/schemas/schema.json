@@ -84,7 +84,8 @@
         {
           "extraction_source": "CredibleFrontEndExtractor",
           "extraction_properties": {
-            "extraction_url": "crediblebh.com"
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
           }
         },
         {
@@ -768,116 +769,8 @@
         {
           "extraction_source": "CredibleFrontEndExtractor",
           "extraction_properties": {
-            "mapping": {
-              "DCDBH": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": null
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": null
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": null
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": null
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": null
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Consumer Name": {
-                    "name": "client_id",
-                    "mutation": "get_client_id"
-                  },
-                  "User": {
-                    "name": "emp_id",
-                    "mutation": null
-                  }
-                }
-              },
-              "MBI": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": null
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": null
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": null
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": null
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": null
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Consumer Name": {
-                    "name": "client_id",
-                    "mutation": "get_client_id"
-                  },
-                  "User": {
-                    "name": "emp_id",
-                    "mutation": null
-                  }
-                }
-              },
-              "default": {
-                "Clients": {
-                  "Date": {
-                    "name": "change_date",
-                    "mutation": null
-                  },
-                  "UTCDate": {
-                    "name": "change_date_utc",
-                    "mutation": null
-                  },
-                  "Description": {
-                    "name": "change_description",
-                    "mutation": null
-                  },
-                  "Action": {
-                    "name": "action",
-                    "mutation": null
-                  },
-                  "Service ID": {
-                    "name": "clientvisit_id",
-                    "mutation": null
-                  },
-                  "Record": {
-                    "name": "record",
-                    "mutation": "split_record_id"
-                  },
-                  "Client Name": {
-                    "name": "client_id",
-                    "mutation": "get_client_id"
-                  },
-                   "User": {
-                    "name": "emp_id",
-                    "mutation": null
-                  }
-                }
-              }
-            }
+            "driving_vertex_type": "ExternalId",
+            "mapping":  {"$ref": "#/commons/mapping"}
           }
         }
       ]
@@ -1072,6 +965,134 @@
     "changelog_vertex_query": "SELECT '{id_name}' as id_name, '{id_type}' as id_type, '{id_source}' as id_source, cl.changelog_id, ct.description as change_description, cl.change_date, cl.change_date_utc FROM ChangeLog as cl LEFT OUTER JOIN ChangeLogType as ct ON cl.changelogtype_id = ct.changelogtype_id LEFT OUTER JOIN ChangeLogDetail as cd ON cl.changelog_id = cd.changelog_id WHERE cl.changelog_id = {id_value}",
     "by_emp_id_query": "SELECT by_emp_id as id_value FROM ChangeLog WHERE changelog_id = {id_value}",
     "change_vertex_query": "SELECT '{id_name}' as id_name, '{id_type}' as id_type, '{id_source}' as id_source, changelogdetail_id as detail_id, changelog_id, data_dict_id, detail1_value as detail_one_value, detail1 as detail_one, detail2 as detail_two FROM ChangeLogDetail WHERE changelogdetail_id = {id_value}",
-    "external_id_vertex_query": "SELECT  {id_name} as id_value, '{object_type}' as id_type, '{id_name}' as id_name, '{id_source}' as id_source FROM {object_type} WHERE {id_name} = {id_value}"
+    "external_id_vertex_query": "SELECT  {id_name} as id_value, '{object_type}' as id_type, '{id_name}' as id_name, '{id_source}' as id_source FROM {object_type} WHERE {id_name} = {id_value}",
+    "mapping": {
+      "DCDBH": {
+        "ExternalIds": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        }
+      },
+      "MBI": {
+        "ExternalIds": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        }
+      },
+      "default": {
+        "ExternalIds": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Client Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        }
+      }
+    }
   }
 }

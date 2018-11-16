@@ -13,14 +13,14 @@ class Spore:
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._identifier_stem = identifier_stem
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
-        self._extractor_setup = self._leech_driver.get_extractor_setup(identifier_stem, include_field_values=True)
-        self._extraction_profile = self._generate_extraction_profile()
+        self._extractor_setup = self._leech_driver.get_extractor_setup(identifier_stem, include_field_values=False)
         self._schema_entry = SchemaVertexEntry.get(identifier_stem.object_type)
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
         self._link_queue = kwargs.get('link_queue', ForgeQueue.get_for_link_queue(swarm=True, **kwargs))
         self._sample_size = kwargs.get('sample_size', 1000)
+        self._extraction_profile = self._generate_extraction_profile()
 
-    def monitor(self):
+    def propagate(self):
         remote_id_values = self._perform_remote_monitor_extraction()
         local_id_values = self._perform_local_monitor_extraction()
         newly_linked_id_values = remote_id_values - local_id_values
@@ -74,20 +74,22 @@ class Spore:
             'id_source': self._identifier_stem.get('id_source'),
             'identifiers': identifier_stems
         }
-        extraction_profile = self._schema_entry.extract[self._extractor_setup['extraction']]
-        step_args.update(extraction_profile)
+        extraction_profile = self._schema_entry.extract[self._extractor_setup['type']]
+        step_args.update(extraction_profile.extraction_properties)
         step_args.update(self._identifier_stem.for_extractor)
         manager_args = (self._extractor_setup['monitor_extraction'], step_args)
         remote_objects = StageManager.run_extraction(*manager_args)
         return remote_objects
 
     def _perform_remote_monitor_extraction(self):
-        manager_args = (self._extractor_setup['monitor_extraction'], self._extraction_profile, )
+        manager_args = (self._extractor_setup['monitor_extraction'], self._extraction_profile)
         remote_id_values = StageManager.run_monitoring_extraction(*manager_args)
         return set(remote_id_values)
 
     def _perform_local_monitor_extraction(self):
         local_id_values = self._leech_driver.get_local_id_values(self._identifier_stem)
+        if not local_id_values:
+            return set()
         return set(local_id_values)
 
     def _generate_extraction_profile(self):

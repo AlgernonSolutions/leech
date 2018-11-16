@@ -572,10 +572,15 @@ class LeechDriver:
         query_args = {
             'TableName': self._table_name,
             'IndexName': index_name,
-            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
-            'AttributesToGet': ['id_value']
+            'KeyConditionExpression': 'identifier_stem = :id',
+            'ExpressionAttributeValues': {':id': {'S': str(identifier_stem)}}
         }
-        results = paginator.paginate(**query_args)
+        pages = paginator.paginate(**query_args)
+        results = []
+        for page in pages:
+            items = page['Items']
+            for item in items:
+                results.append(item['id_value'])
         return results
 
     def get_local_field_value_keys_max(self, identifier_stem, index_name=None):

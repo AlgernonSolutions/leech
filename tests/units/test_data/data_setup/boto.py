@@ -1,11 +1,13 @@
 import json
 from datetime import datetime
 from decimal import Decimal
+from unittest.mock import MagicMock
 
 from dateutil.tz import tzlocal
 
 from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
 from tests.units.test_data.schema_generator import get_schema_entry
+from toll_booth.alg_tasks.extractors import credible_fe
 
 
 class MockBoto:
@@ -57,6 +59,35 @@ class MockBoto:
             }
         }
         return [schema_response, secret_response]
+
+
+class MockContext:
+    def __init__(self):
+        context = MagicMock(name='context')
+        context.function_name = 'test_function'
+        context.invoked_function_arn = 'test_function_arn'
+        context.aws_request_id = '12344_request_id'
+        self._context = context
+
+    @property
+    def context(self):
+        return self._context
+
+
+class MockLambdaResponse:
+    def __init__(self, response_string, response_code=200):
+        self._response_string = response_string
+        response = MagicMock()
+        response.read.return_value = response_string
+        self._response_code = response_code
+        self._response = response
+
+    @property
+    def as_response(self):
+        return {
+            'StatusCode': self._response_code,
+            'Payload': self._response
+        }
 
 
 def generate_vertex_schema_entry(*args):
@@ -200,6 +231,14 @@ def intercept(*args, **kwargs):
             return get_schema_entry(object_type, **kwargs)
         if table_name == 'Sensitives':
             return generate_sensitive_response(*args)
+        if table_name == 'VdGraphObjects':
+            if 'IndexName' in query_args:
+                return {'Items': [
+                    {'id_value': 1001},
+                    {'id_value': 1002},
+                    {'id_value': 1003},
+                    {'id_value': 1004},
+                ]}
     if operation_name == 'UpdateItem':
         query_args = args[1]
         table_name = query_args['TableName']
@@ -209,10 +248,30 @@ def intercept(*args, **kwargs):
             return None
         if table_name == 'GraphObjects':
             return None
+    if operation_name == 'GetItem':
+        table_name = args[1]['TableName']
+        key = args[1]['Key']
+        sid_value = key['sid_value']
+        if 'SOURCE' in sid_value:
+            return {'Item': {'extractor_function_names': {
+                'extraction': 'leech-extract-crediblefe',
+                'monitor_extraction': 'leech-extract-crediblefe',
+                'type': 'CredibleFrontEndExtractor'
+            }}}
     if operation_name == 'DeleteTopic':
         return None
     if operation_name == 'Subscribe':
         return None
     if operation_name == 'PutItem':
         return None
+    if operation_name == 'Invoke':
+        mock_context = MockContext()
+        function_name = operation_kwargs['FunctionName']
+        payload = json.loads(operation_kwargs['Payload'])
+        if function_name == 'leech-extract-crediblefe':
+            step_name = payload['step_name']
+            if step_name == 'monitor_extraction':
+                mock_lambda = MockLambdaResponse(json.dumps([1001, 1002, 1003, 1004]))
+                return mock_lambda.as_response
+            return credible_fe.handler(payload, mock_context.context)
     raise NotImplementedError(f'cannot find an intercept command for {args}')

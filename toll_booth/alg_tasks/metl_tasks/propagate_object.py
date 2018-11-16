@@ -13,10 +13,10 @@ from toll_booth.alg_tasks.task_obj import remote_task
 
 @remote_task
 @xray_recorder.capture('monitor_object')
-def monitor_object(*args, **kwargs):
+def propagate_object(*args, **kwargs):
     logging.info('starting a monitor object task with args/kwargs: %s/%s' % (args, kwargs))
     task_args = kwargs['task_args']
     shroom = Spore(**task_args)
-    results = shroom.monitor()
+    results = shroom.propagate()
     logging.info('finished a monitor object task with results: %s' % results)
     return results
