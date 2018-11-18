@@ -1011,6 +1011,40 @@
             "name": "emp_id",
             "mutation": null
           }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
         }
       },
       "MBI": {
@@ -1025,6 +1059,40 @@
           }
         },
         "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "Employees": {
           "Date": {
             "name": "change_date",
             "mutation": null
@@ -1096,6 +1164,40 @@
             "mutation": "split_record_id"
           },
           "Client Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
             "name": "client_id",
             "mutation": "get_client_id"
           },

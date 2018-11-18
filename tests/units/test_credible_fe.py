@@ -10,8 +10,17 @@ from toll_booth.alg_tasks.extractors import credible_fe
 @pytest.mark.credible_fe
 @pytest.mark.usefixtures('mock_schema')
 class TestCredibleFe:
-    def test_monitor_extraction(self, mock_vertex_driven_event):
-        results = credible_fe.handler()
+    @pytest.mark.fe_extract
+    def test_monitor_extraction(self, specified_identifier_stem):
+        schema_entry = SchemaVertexEntry.get(specified_identifier_stem.object_type)
+        driving_stem = IdentifierStem.from_raw(specified_identifier_stem.get('identifier_stem'))
+        extraction_profile = schema_entry.extract['CredibleFrontEndExtractor'].extraction_properties
+        extraction_profile.update(driving_stem.for_extractor)
+        extraction_profile.update({
+            'identifier_stems': [{'identifier_stem': specified_identifier_stem, 'id_value': None}],
+            'id_source': specified_identifier_stem.get('id_source')
+        })
+        results = CredibleFrontEndExtractor.extract(**extraction_profile)
         print()
 
     @pytest.mark.get_emp_ext_id

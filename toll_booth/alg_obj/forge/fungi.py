@@ -28,12 +28,12 @@ class Spore:
         remote_id_values = self._perform_remote_monitor_extraction()
         local_id_values = self._perform_local_monitor_extraction()
         newly_linked_id_values = remote_id_values - local_id_values
-        self._put_new_ids(self._driving_identifier_stem, newly_linked_id_values)
         unlinked_id_values = local_id_values - remote_id_values
-        self._send_link_orders(newly_linked_id_values, unlinked_id_values)
+        self._put_new_ids(self._driving_identifier_stem, newly_linked_id_values)
+        self._unlink_old_ids(self._driving_identifier_stem, unlinked_id_values)
         identifier_stems = []
         for id_value in remote_id_values:
-            specified_stem = self._identifier_stem.specify(id_value)
+            specified_stem = self._identifier_stem.specify(self._driving_identifier_stem, id_value)
             try:
                 local_max_value = self._leech_driver.query_index_value_max(specified_stem)
             except EmptyIndexException:
@@ -138,6 +138,21 @@ class Spore:
     def _mark_objects_as_working(self, id_value, identifier_stem, extracted_data):
             return self._leech_driver.put_vertex_driven_seed(
                 extracted_data, identifier_stem=identifier_stem, id_value=id_value)
+
+    def _unlink_old_ids(self, identifier_stem, id_values):
+        vertex_regulator = VertexRegulator.get_for_object_type(identifier_stem.object_type)
+        for id_value in id_values:
+            object_data = identifier_stem.for_extractor
+            object_data['id_value'] = id_value
+            potential_vertex = vertex_regulator.create_potential_vertex(object_data)
+            try:
+                self._leech_driver.set_link_object(
+                    potential_vertex.internal_id, self._identifier_stem.get('id_source'), True,
+                    identifier_stem=identifier_stem, id_value=id_value
+                )
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                    raise e
 
     def _put_new_ids(self, identifier_stem, id_values):
         vertex_regulator = VertexRegulator.get_for_object_type(identifier_stem.object_type)

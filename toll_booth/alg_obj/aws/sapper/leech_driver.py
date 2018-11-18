@@ -221,7 +221,11 @@ class LeechRecord:
     def for_link_object(self, linked_internal_id, id_source, is_unlink):
         now = self._get_decimal_timestamp()
         base = self._for_update('linking', is_initial=True)
-        base['Key'] = DynamoParameters(now, IdentifierStem('vertex', 'link')).as_key
+        paired_identifiers = {
+            'linked_id_source': id_source,
+            'internal_id': linked_internal_id
+        }
+        base['Key'] = DynamoParameters(now, IdentifierStem('vertex', 'link', paired_identifiers)).as_key
         base['UpdateExpression'] = base['UpdateExpression'] + ', #d=:d, #ids=:ids, #lt=:lt, #iul=:iul, #idv=:lt, #ot=:ot, #li=:li'
         base['ExpressionAttributeNames'].update({
             '#ids': 'linked_id_source',

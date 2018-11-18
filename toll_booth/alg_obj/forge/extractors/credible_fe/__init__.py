@@ -3,21 +3,20 @@ from decimal import Decimal, InvalidOperation
 
 from toll_booth.alg_obj.forge.extractors.abstract_extractor import AbstractVertexDrivenExtractor
 from toll_booth.alg_obj.forge.extractors.credible_fe.credible_fe import CredibleFrontEndDriver
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
     @classmethod
     def extract(cls, **kwargs):
-        extracted_data = {}
         identifiers = kwargs.get('identifier_stems', None)
         identifier = kwargs.get('identifier_stem', None)
-        id_source = kwargs['id_source']
         if identifiers and identifier:
             raise RuntimeError('cannot run extraction for both a set of identifier stems, and a single stem')
         if identifiers:
-            return cls._run_multi_extract(id_source, identifiers, **kwargs)
+            return cls._run_multi_extract(**kwargs)
         if identifier:
-            return cls._run_single_extract(id_source, identifier, **kwargs)
+            return cls._run_single_extract(**kwargs)
 
     @classmethod
     def _run_single_extract(cls, id_source, identifier_stem, **kwargs):
@@ -28,20 +27,31 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                 source_extraction = driver.get_ext_id(identifier_stem)
 
     @classmethod
-    def _run_multi_extract(cls, id_source, identifier_stems, **kwargs):
+    def _run_multi_extract(cls, id_source, **kwargs):
         extracted_data = {}
+        identifier_stems = kwargs['identifier_stems']
         with CredibleFrontEndDriver(id_source) as driver:
             for identifier in identifier_stems:
                 identifier_stem = identifier['identifier_stem']
+                driving_stem = IdentifierStem.from_raw(identifier_stem.get('identifier_stem'))
                 id_value = identifier['id_value']
                 object_type = identifier_stem.object_type
                 if object_type == 'ChangeLog':
+                    driving_id_type = driving_stem.get('id_type')
+                    driving_id_name = driving_stem.get('id_name')
+                    driving_id_value = identifier_stem.get('id_value')
                     mapping = kwargs['mapping']
                     id_source_mapping = mapping.get(id_source, mapping['default'])
-                    object_mapping = id_source_mapping[identifier_stem.get('id_type')]
-                    source_extraction = driver.get_change_logs(identifier_stem, id_value)
-                    change_detail_extraction = driver.get_change_details(identifier_stem, id_value)
-                    emp_ids = driver.get_emp_ids(identifier_stem, id_value)
+                    object_mapping = id_source_mapping[driving_id_type]
+                    extraction_args = {
+                        'driving_id_type': driving_id_type,
+                        'driving_id_name': driving_id_name,
+                        'driving_id_value': driving_id_value,
+                        'local_change_log_id_value': id_value
+                    }
+                    source_extraction = driver.get_change_logs(**extraction_args)
+                    change_detail_extraction = driver.get_change_details(**extraction_args)
+                    emp_ids = driver.get_emp_ids(**extraction_args)
                     for change_date, entry in source_extraction.items():
                         entry['User'] = emp_ids[change_date]
                     formatted_extraction = cls._format_change_log_data(

@@ -1,14 +1,14 @@
+import csv
 import datetime
 import io
+import re
 from decimal import Decimal
 
 import bs4
-from requests import cookies
 import requests
-import csv
-import re
+from requests import cookies
+
 from toll_booth.alg_obj.aws.squirrels.squirrel import Opossum
-from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 class CredibleFrontEndLoginException(Exception):
@@ -19,6 +19,7 @@ class CredibleFrontEndDriver:
     _base_stem = 'https://www.crediblebh.com'
     _url_stems = {
         'Clients': '/client/client_hipaalog.asp',
+        'Employees': '/employee/emp_hipaalog.asp',
         'DataDict': '/common/hipaalog_datadict.asp',
         'ChangeDetail': '/common/hipaalog_details.asp',
         'EmployeeAdvanced': '/employee/list_emps_adv.asp'
@@ -202,15 +203,11 @@ class CredibleFrontEndDriver:
                 values.append(entry)
         return values
 
-    def get_change_logs(self, identifier_stem, id_value):
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
-        id_type = identifier_stem.get('id_type')
-        param_name = self._field_value_params[id_type]
-        param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._url_stems[id_type]
+    def get_change_logs(self, **kwargs):
+        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
         data = {
-            param_name: param_value,
-            'start_date': self._format_datetime_id_value(id_value),
+            kwargs['driving_id_name']: kwargs['driving_id_value'],
+            'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
             'changelogcategory_id': '',
             'changelogtype_id': '',
             'btn_export': 'Export'
@@ -219,26 +216,24 @@ class CredibleFrontEndDriver:
         csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
         return csv_response
 
-    def get_emp_ids(self, identifier_stem, id_value):
+    def get_emp_ids(self, **kwargs):
         emp_ids = {}
-        emps, page_number = self._get_emp_ids(identifier_stem, id_value)
+        emps, page_number = self._get_emp_ids(**kwargs)
         emp_ids.update(emps)
         while page_number is not None:
-            emps, page_number = self._get_emp_ids(identifier_stem, id_value, page_number)
+            kwargs['page_number'] = page_number
+            emps, page_number = self._get_emp_ids(**kwargs)
             emp_ids.update(emps)
         return emp_ids
 
-    def _get_emp_ids(self, identifier_stem, id_value, page_number=1):
+    def _get_emp_ids(self, **kwargs):
         emp_ids = {}
         row_pattern = re.compile('(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
-        id_type = identifier_stem.get('id_type')
-        param_name = self._field_value_params[id_type]
-        param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._url_stems[id_type]
+        page_number = kwargs.get('page_number', 1)
+        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
         data = {
-            param_name: param_value,
-            'start_date': self._format_datetime_id_value(id_value),
+            kwargs['driving_id_name']: kwargs['driving_id_name'],
+            'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
             'changelogcategory_id': '',
             'changelogtype_id': '',
             'page': page_number
@@ -263,26 +258,24 @@ class CredibleFrontEndDriver:
                 emp_ids[change_time] = emp_id
         return emp_ids, page_number
 
-    def get_change_details(self, identifier_stem, id_value):
+    def get_change_details(self, **kwargs):
         details = {}
-        change_details, page_number = self._get_change_details(identifier_stem, id_value)
+        change_details, page_number = self._get_change_details(**kwargs)
         details.update(change_details)
         while page_number is not None:
-            new_details, page_number = self._get_change_details(identifier_stem, id_value, page_number)
+            kwargs['page_number'] = page_number
+            new_details, page_number = self._get_change_details(**kwargs)
             details.update(new_details)
         return details
 
-    def _get_change_details(self, identifier_stem, id_value, page_number=1):
+    def _get_change_details(self, **kwargs):
         change_details = {}
         row_pattern = '(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(<\/table>)'
-        identifier_stem = IdentifierStem.from_raw(identifier_stem)
-        id_type = identifier_stem.get('id_type')
-        param_name = self._field_value_params[id_type]
-        param_value = identifier_stem.get('id_value')
-        url = self._base_stem + self._url_stems[id_type]
+        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        page_number = kwargs.get('page_number', 1)
         data = {
-            param_name: param_value,
-            'start_date': self._format_datetime_id_value(id_value),
+            kwargs['driving_id_name']: kwargs['driving_id_value'],
+            'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
             'changelogcategory_id': '',
             'changelogtype_id': '',
             'page': page_number
@@ -351,6 +344,8 @@ class CredibleFrontEndDriver:
     @classmethod
     def _format_datetime_id_value(cls, id_value):
         credible_format = '%m/%d/%Y'
+        if id_value is None:
+            id_value = datetime.datetime.now() - datetime.timedelta(days=3650)
         return id_value.strftime(credible_format)
 
     @classmethod

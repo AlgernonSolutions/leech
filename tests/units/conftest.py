@@ -464,3 +464,19 @@ def mock_schema():
 ])
 def mock_vertex_driven_event(request):
     params = request.param
+
+
+@pytest.fixture(params=[
+    ('MBI', 'ChangeLog', 'Employees', 'emp_id', 4353)
+])
+def specified_identifier_stem(request):
+    params = request.param
+    identifiers = {
+        'id_source': params[0],
+        'id_type': params[2],
+        'id_name': params[3]
+    }
+    identifier_stem = IdentifierStem('vertex', params[1], {'id_source': params[0]})
+    driving_stem = IdentifierStem('vertex', 'ExternalId', identifiers)
+    specified_stem = identifier_stem.specify(driving_stem, params[4])
+    return specified_stem
