@@ -414,6 +414,10 @@ class ObjectAlreadyWorkingException(Exception):
     pass
 
 
+class MissingObjectException(Exception):
+    pass
+
+
 class DynamoParameters:
     def __init__(self, partition_key_value, sort_key_value, **kwargs):
         partition_key_name = kwargs.get('partition_key_name', os.getenv('PARTITION_KEY', 'sid_value'))
@@ -443,6 +447,7 @@ class LeechDriver:
     _internal_id_index = os.getenv('INTERNAL_ID_INDEX', 'internal_ids')
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
     _field_value_index = os.getenv('FIELD_VALUE_INDEX', 'field_values')
+    _links_index = os.getenv('LINKS_INDEX', 'links')
 
     def __init__(self, **kwargs):
         table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'VdGraphObjects'))
@@ -598,7 +603,7 @@ class LeechDriver:
         except IndexError:
             raise EmptyIndexException
 
-    def get_local_id_values(self, identifier_stem, index_name=None):
+    def get_local_id_values(self, identifier_stem, index_name=None, vertex_regulator=None):
         paginator = boto3.client('dynamodb').get_paginator('query')
         if not index_name:
             index_name = self._id_value_index
@@ -609,11 +614,26 @@ class LeechDriver:
             'ExpressionAttributeValues': {':id': {'S': str(identifier_stem)}}
         }
         pages = paginator.paginate(**query_args)
-        results = []
+        results = set()
+        if vertex_regulator:
+            results = {'linked': set(), 'unlinked': set(), 'all': set()}
         for page in pages:
             items = page['Items']
             for item in items:
-                results.append(item['id_value'])
+                id_value = item['id_value']['N']
+                if vertex_regulator:
+                    object_data = identifier_stem.for_extractor
+                    object_data['id_value'] = id_value
+                    id_source = identifier_stem.get('id_source')
+                    potential_vertex = vertex_regulator.create_potential_vertex(object_data)
+                    is_linked = self.check_if_id_value_linked(id_source, potential_vertex.internal_id)
+                    if is_linked:
+                        results['linked'].add(id_value)
+                    else:
+                        results['unlinked'].add(id_value)
+                    results['all'].add(id_value)
+                    continue
+                results.add(id_value)
         return results
 
     def get_local_field_value_keys_max(self, identifier_stem, index_name=None):
@@ -672,6 +692,51 @@ class LeechDriver:
                 'could not find extractor names for identifier stem %s' % identifier_stem
             )
         return {'field_values': field_values, 'extractor_names': extractor_function_names}
+
+    def get_changelog_types(self, **kwargs):
+        changelog_types = {}
+        paginator = boto3.client('dynamodb').get_paginator('scan')
+        comparison_stem = '#vertex#ChangeLogType#'
+        category = kwargs.get('category', None)
+        if category:
+            comparison_stem = '#vertex#ChangeLogType#{"category": "%s' % category
+        pages = paginator.paginate(
+            TableName=self._table_name,
+            FilterExpression='begins_with(identifier_stem, :stem)',
+            ExpressionAttributeValues={
+                ':stem': {'S': comparison_stem}
+            }
+        )
+        for page in pages:
+            for item in page['Items']:
+                identifier_stem = IdentifierStem.from_raw(item['identifier_stem']['S'])
+                category = identifier_stem.get('category')
+                if category not in changelog_types:
+                    changelog_types[category] = []
+                changelog_types[category].append(identifier_stem)
+        if kwargs.get('categories_only', False):
+            return [x for x in changelog_types.keys()]
+        if category:
+            return changelog_types[category]
+        return changelog_types
+
+    def check_if_id_value_linked(self, id_source, internal_id, index_name=None):
+        if not index_name:
+            index_name = self._links_index
+        identified_pairs = {'linked_id_source': id_source, 'internal_id': internal_id}
+        identifier_stem = IdentifierStem('vertex', 'link', identified_pairs)
+        query_args = {
+            'Limit': 1,
+            'ScanIndexForward': False,
+            'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
+            'TableName': self._table_name,
+            'IndexName': index_name
+        }
+        results = self._table.query(**query_args)
+        try:
+            return results['Items'][0]['is_unlink'] is False
+        except IndexError:
+            raise MissingObjectException()
 
     def _scan_vertexes(self, object_type, vertex_properties, token=None):
         filter_properties = [f'(begins_with(identifier_stem, :is) OR begins_with(identifier_stem, :stub))']

@@ -23,14 +23,12 @@ class Spore:
         self._link_queue = kwargs.get('link_queue', ForgeQueue.get_for_link_queue(swarm=True, **kwargs))
         self._sample_size = kwargs.get('sample_size', 1000)
         self._extraction_profile = self._generate_extraction_profile()
+        self._driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
 
     def propagate(self):
         remote_id_values = self._perform_remote_monitor_extraction()
         local_id_values = self._perform_local_monitor_extraction()
-        newly_linked_id_values = remote_id_values - local_id_values
-        unlinked_id_values = local_id_values - remote_id_values
-        self._put_new_ids(self._driving_identifier_stem, newly_linked_id_values)
-        self._unlink_old_ids(self._driving_identifier_stem, unlinked_id_values)
+        self._manage_driven_ids(remote_id_values, local_id_values)
         identifier_stems = []
         for id_value in remote_id_values:
             specified_stem = self._identifier_stem.specify(self._driving_identifier_stem, id_value)
@@ -94,10 +92,10 @@ class Spore:
         return set(remote_id_values)
 
     def _perform_local_monitor_extraction(self):
-        local_id_values = self._leech_driver.get_local_id_values(self._identifier_stem)
-        if not local_id_values:
-            return set()
-        return set(local_id_values)
+        identifier_stem = self._driving_identifier_stem
+        vertex_regulator = self._driving_vertex_regulator
+        local_id_values = self._leech_driver.get_local_id_values(identifier_stem, vertex_regulator=vertex_regulator)
+        return local_id_values
 
     def _generate_extraction_profile(self):
         extraction_properties = self._identifier_stem.for_extractor
@@ -139,34 +137,51 @@ class Spore:
             return self._leech_driver.put_vertex_driven_seed(
                 extracted_data, identifier_stem=identifier_stem, id_value=id_value)
 
-    def _unlink_old_ids(self, identifier_stem, id_values):
-        vertex_regulator = VertexRegulator.get_for_object_type(identifier_stem.object_type)
+    def _manage_driven_ids(self, remote_id_values, local_id_values):
+        local_linked_values = local_id_values['linked']
+        newly_linked_id_values = remote_id_values - local_linked_values
+        unlinked_id_values = local_linked_values - remote_id_values
+        new_id_values = remote_id_values - local_id_values['all']
+        self._put_new_ids(new_id_values)
+        self._unlink_old_ids(unlinked_id_values)
+        self._link_new_ids(newly_linked_id_values)
+
+    def _unlink_old_ids(self, id_values):
         for id_value in id_values:
-            object_data = identifier_stem.for_extractor
+            object_data = self._driving_identifier_stem.for_extractor
             object_data['id_value'] = id_value
-            potential_vertex = vertex_regulator.create_potential_vertex(object_data)
+            potential_vertex = self._driving_vertex_regulator.create_potential_vertex(object_data)
             try:
                 self._leech_driver.set_link_object(
                     potential_vertex.internal_id, self._identifier_stem.get('id_source'), True,
-                    identifier_stem=identifier_stem, id_value=id_value
+                    identifier_stem=self._driving_identifier_stem, id_value=id_value
                 )
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                     raise e
 
-    def _put_new_ids(self, identifier_stem, id_values):
-        vertex_regulator = VertexRegulator.get_for_object_type(identifier_stem.object_type)
+    def _link_new_ids(self, id_values):
         for id_value in id_values:
-            object_data = identifier_stem.for_extractor
+            object_data = self._driving_identifier_stem.for_extractor
             object_data['id_value'] = id_value
-            potential_vertex = vertex_regulator.create_potential_vertex(object_data)
+            potential_vertex = self._driving_vertex_regulator.create_potential_vertex(object_data)
             try:
-                self._leech_driver.set_assimilated_vertex(
-                    potential_vertex, False, identifier_stem=identifier_stem, id_value=id_value)
                 self._leech_driver.set_link_object(
                     potential_vertex.internal_id, self._identifier_stem.get('id_source'), False,
-                    identifier_stem=identifier_stem, id_value=id_value
+                    identifier_stem=self._driving_identifier_stem, id_value=id_value
                 )
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                    raise e
+
+    def _put_new_ids(self, id_values):
+        for id_value in id_values:
+            object_data = self._driving_identifier_stem.for_extractor
+            object_data['id_value'] = id_value
+            potential_vertex = self._driving_vertex_regulator.create_potential_vertex(object_data)
+            try:
+                self._leech_driver.set_assimilated_vertex(
+                    potential_vertex, False, identifier_stem=self._driving_identifier_stem, id_value=id_value)
             except ClientError as e:
                 if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                     raise e

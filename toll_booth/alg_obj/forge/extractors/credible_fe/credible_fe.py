@@ -22,7 +22,7 @@ class CredibleFrontEndDriver:
         'Employees': '/employee/emp_hipaalog.asp',
         'DataDict': '/common/hipaalog_datadict.asp',
         'ChangeDetail': '/common/hipaalog_details.asp',
-        'EmployeeAdvanced': '/employee/list_emps_adv.asp'
+        'Employee Advanced': '/employee/list_emps_adv.asp'
     }
     _monitor_extract_stems = {
         'Employees': '/employee/list_emps_adv.asp',
@@ -213,6 +213,8 @@ class CredibleFrontEndDriver:
             'btn_export': 'Export'
         }
         response = self._session.post(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError('could not get the change logs for %s' % data)
         csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
         return csv_response
 
@@ -232,7 +234,7 @@ class CredibleFrontEndDriver:
         page_number = kwargs.get('page_number', 1)
         url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
         data = {
-            kwargs['driving_id_name']: kwargs['driving_id_name'],
+            kwargs['driving_id_name']: kwargs['driving_id_value'],
             'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
             'changelogcategory_id': '',
             'changelogtype_id': '',
@@ -282,6 +284,8 @@ class CredibleFrontEndDriver:
         }
         page_number += 1
         response = self._session.post(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError('could not retrieve change details for %s' % data)
         row_match = re.compile(row_pattern).search(response.text).group('rows')
         row_soup = bs4.BeautifulSoup(row_match)
         table_rows = row_soup.find_all('a')

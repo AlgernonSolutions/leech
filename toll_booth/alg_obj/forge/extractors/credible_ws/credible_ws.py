@@ -236,7 +236,7 @@ def get_report(domain_name, sql, access_key=None, session=None):
             if session:
                 cr = session.post(url, data=payload)
             else:
-                cr = requests.post(url, parms=payload)
+                cr = requests.post(url, data=payload)
             raw_xml = cr.content
             document = minidom.parseString(raw_xml).childNodes[0]
             if len(document.childNodes) > 0:
