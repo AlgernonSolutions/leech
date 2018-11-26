@@ -86,10 +86,13 @@ def propagate(event, context):
 @lambda_logged
 def fruit(event, context):
     logging.info(f'starting a fruit call with event: {event}')
-    event = event.update({'context': context})
+    task_args = event['task_args']
+    propagation_id = event['propagation_id']
+    task_args['context'] = context
+    task_args['propagation_id'] = propagation_id
     event = {
         'task_name': 'fruit',
-        'task_args': event
+        'task_args': task_args
     }
     work_results = work(event, context)
     logging.info('completed a fruit call, results: %s' % work_results)
