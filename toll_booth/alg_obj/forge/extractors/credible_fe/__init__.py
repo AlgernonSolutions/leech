@@ -19,12 +19,17 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
             return cls._run_single_extract(**kwargs)
 
     @classmethod
-    def _run_single_extract(cls, id_source, identifier_stem, **kwargs):
+    def _run_single_extract(cls, id_source, identifier, **kwargs):
         extracted_data = {}
+        id_value = identifier['identifier_stem']
+        identifier_stem = identifier['identifier_stem']
+        identifier_stem = IdentifierStem.from_raw(identifier_stem)
         object_type = identifier_stem.object_type
         with CredibleFrontEndDriver(id_source) as driver:
             if object_type == 'ExternalId':
                 source_extraction = driver.get_ext_id(identifier_stem)
+            if object_type == 'ChangeLog':
+                return cls._extract_change_logs(driver, id_source, identifier_stem, id_value)
 
     @classmethod
     def _run_multi_extract(cls, id_source, **kwargs):
@@ -33,31 +38,11 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
         with CredibleFrontEndDriver(id_source) as driver:
             for identifier in identifier_stems:
                 identifier_stem = identifier['identifier_stem']
-                driving_stem = IdentifierStem.from_raw(identifier_stem.get('identifier_stem'))
                 id_value = identifier['id_value']
                 object_type = identifier_stem.object_type
                 if object_type == 'ChangeLog':
-                    driving_id_type = driving_stem.get('id_type')
-                    driving_id_name = driving_stem.get('id_name')
-                    driving_id_value = identifier_stem.get('id_value')
-                    mapping = kwargs['mapping']
-                    id_source_mapping = mapping.get(id_source, mapping['default'])
-                    object_mapping = id_source_mapping[driving_id_type]
-                    extraction_args = {
-                        'driving_id_type': driving_id_type,
-                        'driving_id_name': driving_id_name,
-                        'driving_id_value': driving_id_value,
-                        'local_change_log_id_value': id_value
-                    }
-                    source_extraction = driver.get_change_logs(**extraction_args)
-                    # change_detail_extraction = driver.get_change_details(**extraction_args)
-                    # emp_ids = driver.get_emp_ids(**extraction_args)
-                    # for change_date, entry in source_extraction.items():
-                    #   entry['User'] = emp_ids[change_date]
-                    formatted_extraction = cls._format_change_log_data(
-                        identifier_stem, source_extraction, object_mapping=object_mapping, driver=driver
-                    )
-                    extracted_data.update(formatted_extraction)
+                    extracted_data.update(
+                        cls._extract_change_logs(driver, id_source, identifier_stem, id_value, **kwargs))
                     continue
                 if object_type == 'ExternalId':
                     mapping = kwargs['mapping']
@@ -67,6 +52,31 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
                 raise NotImplementedError(
                     'do not know how to extract object %s through the Credible Front End' % object_type)
         return extracted_data
+
+    @classmethod
+    def _extract_change_logs(cls, driver, id_source, identifier_stem, id_value, **kwargs):
+        driving_stem = IdentifierStem.from_raw(identifier_stem.get('identifier_stem'))
+        driving_id_type = driving_stem.get('id_type')
+        driving_id_name = driving_stem.get('id_name')
+        driving_id_value = identifier_stem.get('id_value')
+        mapping = kwargs['mapping']
+        id_source_mapping = mapping.get(id_source, mapping['default'])
+        object_mapping = id_source_mapping[driving_id_type]
+        extraction_args = {
+            'driving_id_type': driving_id_type,
+            'driving_id_name': driving_id_name,
+            'driving_id_value': driving_id_value,
+            'local_change_log_id_value': id_value
+        }
+        source_extraction = driver.get_change_logs(**extraction_args)
+        # change_detail_extraction = driver.get_change_details(**extraction_args)
+        # emp_ids = driver.get_emp_ids(**extraction_args)
+        # for change_date, entry in source_extraction.items():
+        #   entry['User'] = emp_ids[change_date]
+        formatted_extraction = cls._format_change_log_data(
+            identifier_stem, source_extraction, object_mapping=object_mapping, driver=driver
+        )
+        return formatted_extraction
 
     @classmethod
     def get_monitor_extraction(cls, **kwargs):

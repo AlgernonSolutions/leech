@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.forge.extractors.credible_ws.credible_ws import CredibleReport
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -25,9 +26,17 @@ def spike():
             identifier_stem = IdentifierStem('vertex', 'ChangeLogType', pairs)
             new_item = {
                 'sid_value': identifier_stem.for_dynamo,
-                'identifier_stem': str(identifier_stem)
+                'identifier_stem': str(identifier_stem),
+                'category': entry.get('category_name', None),
+                'action': entry.get('action', None),
+                'has_details': entry.get('has_details', None)
             }
-            writer.put_item(Item=new_item)
+            if new_item['action'] == '':
+                new_item['action'] = 'unspecified'
+            try:
+                writer.put_item(Item=new_item)
+            except ClientError as e:
+                print(e)
     print()
 
 

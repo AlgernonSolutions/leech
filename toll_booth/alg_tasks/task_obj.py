@@ -1,6 +1,11 @@
 import json
+from datetime import datetime
 
 from toll_booth.alg_obj.serializers import AlgDecoder
+
+
+class InsufficientOperationTimeException(Exception):
+    pass
 
 
 class QueuedTaskParameters:
@@ -153,5 +158,26 @@ def remote_task(production_function):
             worker_args=worker_args,
             context=context
         )
+
+    return wrapper
+
+
+def metered(production_function):
+    def wrapper(*args, **kwargs):
+        parent_object = args[0]
+        values = args[1]
+        context = kwargs['context']
+        running_times = []
+        results = []
+        for value in values:
+            start = datetime.now()
+            results.append(production_function(parent_object, value, **kwargs))
+            end = datetime.now()
+            running_times.append((end - start).microseconds / 1000)
+            time_left = context.get_remaining_time_in_millis()
+            average_run_time = sum(running_times) / float(len(running_times))
+            if time_left < 10 * average_run_time:
+                raise InsufficientOperationTimeException
+        return results
 
     return wrapper

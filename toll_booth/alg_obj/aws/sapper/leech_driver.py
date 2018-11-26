@@ -565,6 +565,28 @@ class LeechDriver:
             **leech_record.for_link_object(linked_internal_id, id_source, is_unlink)
         )
 
+    def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values):
+        driving_id_values = {x: 'unworked' for x in driving_id_values}
+        self._table.put_item(Item={
+            'sid_value': propagation_id,
+            'identifier_stem': 'propagation',
+            'driving_identifier_stem': str(driving_identifier_stem),
+            'extracted_identifier_stem': str(identifier_stem),
+            'driving_id_values': driving_id_values
+        })
+
+    def get_propagated_vertexes(self, propagation_id):
+        results = self._table.get_item(
+            Key={
+                'sid_value': propagation_id,
+                'identifier_stem': 'propagation'
+            }
+        )
+        try:
+            return results['Item']
+        except KeyError:
+            raise MissingObjectException
+
     def get_extractor_setup(self, identifier_stem, include_field_values=False):
         setup = {}
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
@@ -619,6 +641,8 @@ class LeechDriver:
             results = {'linked': set(), 'unlinked': set(), 'all': set()}
         for page in pages:
             items = page['Items']
+            total = len(items)
+            progress = 0
             for item in items:
                 id_value = item['id_value']['N']
                 if vertex_regulator:
@@ -632,6 +656,8 @@ class LeechDriver:
                     else:
                         results['unlinked'].add(id_value)
                     results['all'].add(id_value)
+                    progress += 1
+                    logging.debug(f'{progress}/{total}')
                     continue
                 results.add(id_value)
         return results
@@ -694,6 +720,7 @@ class LeechDriver:
         return {'field_values': field_values, 'extractor_names': extractor_function_names}
 
     def get_changelog_types(self, **kwargs):
+        index_name = kwargs.get('index_name', 'change_types')
         changelog_types = {}
         paginator = boto3.client('dynamodb').get_paginator('scan')
         comparison_stem = '#vertex#ChangeLogType#'
@@ -702,6 +729,7 @@ class LeechDriver:
             comparison_stem = '#vertex#ChangeLogType#{"category": "%s' % category
         pages = paginator.paginate(
             TableName=self._table_name,
+            IndexName=index_name,
             FilterExpression='begins_with(identifier_stem, :stem)',
             ExpressionAttributeValues={
                 ':stem': {'S': comparison_stem}

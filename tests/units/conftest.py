@@ -283,6 +283,7 @@ def mock_context():
     context.function_name = 'test_function'
     context.invoked_function_arn = 'test_function_arn'
     context.aws_request_id = '12344_request_id'
+    context.get_remaining_time_in_millis = 10001
     return context
 
 
@@ -480,3 +481,8 @@ def specified_identifier_stem(request):
     driving_stem = IdentifierStem('vertex', 'ExternalId', identifiers)
     specified_stem = identifier_stem.specify(driving_stem, params[4])
     return specified_stem
+
+
+@pytest.fixture
+def propagation_id():
+    return 'f07365392bb7495b94f56c04f0bec1f2'

@@ -770,7 +770,10 @@
           "extraction_source": "CredibleFrontEndExtractor",
           "extraction_properties": {
             "driving_vertex_type": "ExternalId",
-            "mapping":  {"$ref": "#/commons/mapping"}
+            "mapping":  {"$ref": "#/commons/mapping"},
+            "extracted_categories": {
+              "*": "*"
+            }
           }
         }
       ]

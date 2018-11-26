@@ -68,3 +68,29 @@ def exploded(event, context):
     work_results = work(new_event, context)
     logging.info('completed a call to process a dynamo entry, results: %s' % work_results)
     return work_results
+
+
+@lambda_logged
+def propagate(event, context):
+    logging.info(f'starting a propagate call with event: {event}')
+    event = event.update({'context': context})
+    event = {
+        'task_name': 'propagate',
+        'task_args': event
+    }
+    work_results = work(event, context)
+    logging.info('completed a propagate call, results: %s' % work_results)
+    return work_results
+
+
+@lambda_logged
+def fruit(event, context):
+    logging.info(f'starting a fruit call with event: {event}')
+    event = event.update({'context': context})
+    event = {
+        'task_name': 'fruit',
+        'task_args': event
+    }
+    work_results = work(event, context)
+    logging.info('completed a fruit call, results: %s' % work_results)
+    return work_results

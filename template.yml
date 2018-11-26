@@ -222,3 +222,23 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+  propagate:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/toll_booth.propagate
+      Runtime: python3.6
+      FunctionName: leech-propagate
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 300
+      MemorySize: 448
+      Tracing: Active
+  fruit:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/toll_booth.fruit
+      Runtime: python3.6
+      FunctionName: leech-fruit
+      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+      Timeout: 600
+      MemorySize: 448
+      Tracing: Active
