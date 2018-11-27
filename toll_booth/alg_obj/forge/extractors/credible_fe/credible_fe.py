@@ -207,8 +207,8 @@ class CredibleFrontEndDriver:
         url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
-            'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
-            'changelogcategory_id': '',
+            'start_date': self._format_datetime_id_value(kwargs['local_max_value']),
+            'changelogcategory_id': kwargs.get('category_id', ''),
             'changelogtype_id': '',
             'btn_export': 'Export'
         }

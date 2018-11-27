@@ -486,3 +486,266 @@ def specified_identifier_stem(request):
 @pytest.fixture
 def propagation_id():
     return 'f07365392bb7495b94f56c04f0bec1f2'
+
+
+@pytest.fixture(params=[
+    {
+        'identifier': {
+            'identifier_stem': IdentifierStem('vertex', 'ChangeLog', {
+                'identifier_stem': IdentifierStem('vertex', 'ExternalId', {
+                    'id_source': 'MBI', 'id_type': 'Employees', 'id_name': 'emp_id'
+                })
+            }),
+            'id_value': 5400,
+            'local_max_values': {
+                1: None
+            }
+        },
+        'id_source': 'MBI'
+    }
+])
+def credible_fe_args(request):
+    params = request.param
+    params['mapping'] = {
+      "DCDBH": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        }
+      },
+      "MBI": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        }
+      },
+      "default": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Client Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": None
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": None
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": None
+          },
+          "Action": {
+            "name": "action",
+            "mutation": None
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": None
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": None
+          }
+        }
+      }
+    }
+    return params

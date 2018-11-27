@@ -448,6 +448,7 @@ class LeechDriver:
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
     _field_value_index = os.getenv('FIELD_VALUE_INDEX', 'field_values')
     _links_index = os.getenv('LINKS_INDEX', 'links')
+    _credible_change_index = os.getenv('CREDIBLE_CHANGES', 'credible_change_stems')
 
     def __init__(self, **kwargs):
         table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'VdGraphObjects'))
@@ -565,7 +566,7 @@ class LeechDriver:
             **leech_record.for_link_object(linked_internal_id, id_source, is_unlink)
         )
 
-    def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values):
+    def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values, **kwargs):
         driving_id_values = {x: 'unworked' for x in driving_id_values}
         self._table.put_item(Item={
             'sid_value': propagation_id,
@@ -608,6 +609,28 @@ class LeechDriver:
                 raise MissingFieldValuesException(
                     'could not find field values for identifier stem %s' % identifier_stem)
         return setup
+
+    def scan_index_value_max(self, identifier_match, index_name=None):
+        if not index_name:
+            index_name = self._credible_change_index
+        index_values = []
+        paginator = boto3.client('dynamodb').get_paginator('scan')
+        pages = paginator.paginate(
+            TableName=self._table_name,
+            IndexName=index_name,
+            FilterExpression='begins_with(change_stem, :stem)',
+            ExpressionAttributeValues={
+                ':stem': {'S': identifier_match}
+            }
+        )
+        for page in pages:
+            for item in page['Items']:
+                sid_value = item['sid_value']['S']
+                sid_value = Decimal(sid_value)
+                index_values.append(sid_value)
+        if not index_values:
+            raise EmptyIndexException
+        return max(index_values)
 
     def query_index_value_max(self, identifier_stem, index_name=None):
         if not index_name:
@@ -744,6 +767,11 @@ class LeechDriver:
                 changelog_types[category].append(identifier_stem)
         if kwargs.get('categories_only', False):
             return [x for x in changelog_types.keys()]
+        if kwargs.get('category_ids_only', False):
+            identifier_stems = []
+            for entry in changelog_types.values():
+                identifier_stems.extend(entry)
+            return [x.get('category_id') for x in identifier_stems]
         if category:
             return changelog_types[category]
         return changelog_types

@@ -10,6 +10,7 @@ def spike():
     sql = '''
         SELECT
             clt.changelogtype_id,
+            clc.category_id,
             clt.action,
             clt.has_details,
             clc.category_name
@@ -20,6 +21,8 @@ def spike():
         for id_value, entry in credible_report.items():
             pairs = {
                 'category': entry['category_name'],
+                'category_id': entry['category_id'],
+                'action_id': entry['changelogtype_id'],
                 'action': entry['action'],
                 'has_details': entry['has_details']
             }
@@ -27,12 +30,14 @@ def spike():
             new_item = {
                 'sid_value': identifier_stem.for_dynamo,
                 'identifier_stem': str(identifier_stem),
-                'category': entry.get('category_name', None),
-                'action': entry.get('action', None),
-                'has_details': entry.get('has_details', None)
+                'change_category': entry.get('category_name', None),
+                'change_action': entry.get('action', None),
+                'has_details': entry.get('has_details', None),
+                'category_id': entry.get('category_id'),
+                'action_id': entry.get('changelogtype_id')
             }
-            if new_item['action'] == '':
-                new_item['action'] = 'unspecified'
+            if new_item['change_action'] == '':
+                new_item['change_action'] = 'unspecified'
             try:
                 writer.put_item(Item=new_item)
             except ClientError as e:

@@ -59,9 +59,9 @@ class Spore:
         extraction_properties.update(schema_extraction_properties.extraction_properties)
         return extraction_properties
 
-    def _mark_propagation(self, remote_id_values):
+    def _mark_propagation(self, remote_id_values, **kwargs):
             self._leech_driver.mark_propagated_vertexes(
-                self._spore_id, self._identifier_stem, self._driving_identifier_stem, remote_id_values
+                self._spore_id, self._identifier_stem, self._driving_identifier_stem, remote_id_values, **kwargs
             )
 
     def _manage_driven_ids(self, remote_id_values, local_id_values):
@@ -150,29 +150,52 @@ class Shroom:
 
     @metered
     def _fruit(self, id_value, **kwargs):
-        extractor_fn_name = kwargs['extractor_fn_name']
         extraction_properties = kwargs['extraction_properties']
-        identifier_stem = kwargs['identifier_stem']
-        driving_identifier_stem = kwargs['driving_identifier_stem']
-        specified_stem = identifier_stem.specify(driving_identifier_stem, id_value)
-        try:
-            local_max_value = self._leech_driver.query_index_value_max(specified_stem)
-        except EmptyIndexException:
-            local_max_value = None
-        return self._perform_remote_extraction(specified_stem, local_max_value, extractor_fn_name, extraction_properties)
+        extracted_categories = extraction_properties['extracted_categories']
+        local_max_values = self._get_local_max_values(id_value, extracted_categories, **kwargs)
+        return self._perform_remote_extraction(id_value, local_max_values, **kwargs)
 
     def _mark_objects_as_working(self, id_value, identifier_stem, extracted_data):
         return self._leech_driver.put_vertex_driven_seed(
             extracted_data, identifier_stem=identifier_stem, id_value=id_value)
 
     @classmethod
-    def _perform_remote_extraction(cls, identifier_stem, local_max_value, extractor_fn_name, extraction_properties):
+    def _perform_remote_extraction(cls, id_value, local_max_values, **kwargs):
+        identifier_stem = kwargs['driving_identifier_stem']
         step_args = {
             'id_source': identifier_stem.get('id_source'),
-            'identifier': {'identifier_stem': str(identifier_stem), 'id_value': local_max_value}
+            'identifier': {
+                'identifier_stem': str(identifier_stem),
+                'id_value': id_value,
+                'local_max_values': local_max_values
+            }
         }
-        step_args.update(extraction_properties)
+        step_args.update(kwargs['extraction_properties'])
         step_args.update(identifier_stem.for_extractor)
-        manager_args = (extractor_fn_name, step_args)
+        manager_args = (kwargs['extractor_fn_name'], step_args)
         remote_objects = StageManager.run_extraction(*manager_args)
         return remote_objects
+
+    def _get_local_max_values(self, driving_id_value, extracted_categories, **kwargs):
+        local_max_values = {}
+        driving_identifier_stem = kwargs['driving_identifier_stem']
+        id_source = driving_identifier_stem.get('id_source')
+        id_type = driving_identifier_stem.get('id_type')
+        category_ids = self._filter_category_ids(extracted_categories)
+        for category_id in category_ids:
+            change_stem = f'#{id_source}#{id_type}#{driving_id_value}#{category_id}'
+            try:
+                local_max_value = self._leech_driver.scan_index_value_max(change_stem)
+            except EmptyIndexException:
+                local_max_value = None
+            local_max_values[category_id] = local_max_value
+        return local_max_values
+
+    def _filter_category_ids(self, extracted_categories):
+        change_types = self._leech_driver.get_changelog_types(category_ids_only=True)
+        for extracted_category in extracted_categories:
+            if extracted_category == '*':
+                return change_types
+            if extracted_category not in change_types:
+                raise NotImplementedError('attempted to extract change category of: %s, but that does not exist in the data space')
+        return extracted_categories

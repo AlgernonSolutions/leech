@@ -8,7 +8,7 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 @lambda_logged
 def handler(event, context):
-    logging.info('called the handler for the CredibleWS Extractor, event: %s' % event)
+    logging.info('called the handler for the CredibleFE Extractor, event: %s' % event)
     step_name = event['step_name']
     step_args = event.get('step_args', {})
     if step_name == 'monitor_extraction':
