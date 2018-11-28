@@ -121,7 +121,10 @@ class ObjectRegulator:
         if test_property == '':
             return None
         if property_data_type == 'Number':
-            return Decimal(test_property)
+            try:
+                return Decimal(test_property)
+            except TypeError:
+                return Decimal(test_property.timestamp())
         if property_data_type == 'String':
             return str(test_property)
         if property_data_type == 'DateTime':

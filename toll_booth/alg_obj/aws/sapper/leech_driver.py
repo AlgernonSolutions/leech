@@ -72,7 +72,11 @@ class LeechRecord:
         return base
 
     def for_vertex_driven_seed(self, extracted_data):
-        base = self._for_update('derivation', is_initial=True)
+        base = self._for_update('propagation', is_initial=True)
+        id_value = self._id_value
+        if isinstance(id_value, datetime):
+            id_value = Decimal(id_value.timestamp())
+        base['Key']['sid_value'] = str(id_value)
         base['UpdateExpression'] = base['UpdateExpression'] + ', #id=:id, #d=:d, #ot=:ot, #c=:c, #ex=:ex'
         base['ExpressionAttributeNames'].update({
             '#id': 'id_value',
@@ -82,7 +86,7 @@ class LeechRecord:
             '#ex': 'extracted_data'
         })
         base['ExpressionAttributeValues'].update({
-            ':id': self._id_value,
+            ':id': id_value,
             ':d': 'working',
             ':ot': self._object_type,
             ':c': False,
@@ -492,7 +496,8 @@ class LeechDriver:
     @leeched
     def put_vertex_driven_seed(self, extracted_data, leech_record):
         try:
-            self._table.update_item(**leech_record.for_vertex_driven_seed(extracted_data))
+            update_args = leech_record.for_vertex_driven_seed(extracted_data)
+            self._table.update_item(**update_args)
             return False
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
@@ -565,6 +570,15 @@ class LeechDriver:
         return self._table.update_item(
             **leech_record.for_link_object(linked_internal_id, id_source, is_unlink)
         )
+
+    def get_credible_id_name(self, id_type):
+        table_identifier_stem = IdentifierStem('vertex', 'CredibleTable', {'table_name': id_type})
+        results = self._table.get_item(
+            Key={'identifier_stem': str(table_identifier_stem), 'sid_value': table_identifier_stem.for_dynamo})
+        try:
+            return results['Item']['column_names'][0]
+        except KeyError:
+            raise MissingObjectException
 
     def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values, **kwargs):
         driving_id_values = {x: 'unworked' for x in driving_id_values}

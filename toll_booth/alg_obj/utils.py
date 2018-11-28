@@ -1,5 +1,17 @@
 from datetime import datetime
 
+from dateutil.parser import parse
+
+
+def convert_credible_fe_datetime_to_python(datetime_string, is_utc=False):
+    from pytz import timezone
+    python_datetime = parse(datetime_string)
+    if not is_utc:
+        return python_datetime
+    naive_datetime = python_datetime.replace(tzinfo=None)
+    utc_datetime = timezone('UTC').localize(naive_datetime)
+    return utc_datetime
+
 
 def convert_credible_datetime_to_gremlin(credible_datetime, is_utc=False):
     from pytz import timezone

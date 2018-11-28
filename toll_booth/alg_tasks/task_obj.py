@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 from toll_booth.alg_obj.serializers import AlgDecoder
@@ -169,15 +170,22 @@ def metered(production_function):
         context = kwargs['context']
         running_times = []
         results = []
+        total = len(values)
+        progress = 0
+        logging.info('working a metered task')
         for value in values:
             start = datetime.now()
             results.append(production_function(parent_object, value, **kwargs))
             end = datetime.now()
-            running_times.append((end - start).microseconds / 1000)
+            running_times.append((end - start).seconds * 1000)
             time_left = context.get_remaining_time_in_millis()
             average_run_time = sum(running_times) / float(len(running_times))
+            progress += 1
+            logging.debug(f'{progress}/{total}')
             if time_left < 10 * average_run_time:
-                raise InsufficientOperationTimeException
+                logging.info('ran out of time before the ask was completed')
+                return results
+        logging.info('completed the metered task')
         return results
 
     return wrapper

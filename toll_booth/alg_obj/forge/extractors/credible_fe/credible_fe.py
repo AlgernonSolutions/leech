@@ -22,7 +22,8 @@ class CredibleFrontEndDriver:
         'Employees': '/employee/emp_hipaalog.asp',
         'DataDict': '/common/hipaalog_datadict.asp',
         'ChangeDetail': '/common/hipaalog_details.asp',
-        'Employee Advanced': '/employee/list_emps_adv.asp'
+        'Employee Advanced': '/employee/list_emps_adv.asp',
+        'Global': '/admin/global_hipaalog.aspx'
     }
     _monitor_extract_stems = {
         'Employees': '/employee/list_emps_adv.asp',
@@ -203,6 +204,39 @@ class CredibleFrontEndDriver:
                 values.append(entry)
         return values
 
+    def get_global_hipaa_log(self, id_type, category_id, start_date, end_date):
+        id_types = {
+            'Employees': 'employee',
+            'Clients': 'client'
+        }
+        url = self._base_stem + self._url_stems['Global']
+        data = {
+            'run_report': True,
+            'rpt': 'RptGlbHipaaLog',
+            'btn_export': 'Export',
+            'rname': 'Global HIPAA Log',
+            'prompt_type1': 'DD',
+            'prompt_lbl1': 'Entity',
+            'prompt1': id_types[id_type],
+            'prompt_type2': 'DD',
+            'prompt_lbl2': 'Category',
+            'prompt2': category_id,
+            'prompt_type3': 'DD',
+            'prompt_lbl3': 'Action',
+            'prompt3': '',
+            'prompt_type4':' DATE',
+            'prompt_lbl4': 'Start Date',
+            'prompt4': self._format_datetime_value(start_date),
+            'prompt_type5': 'DATE',
+            'prompt_lbl5': 'End Date',
+            'prompt5': self._format_datetime_value(end_date)
+        }
+        response = self._session.post(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError('could not get the change logs for %s' % data)
+        csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
+        return csv_response
+
     def get_change_logs(self, **kwargs):
         url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
         data = {
@@ -277,9 +311,9 @@ class CredibleFrontEndDriver:
         page_number = kwargs.get('page_number', 1)
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
-            'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
-            'changelogcategory_id': '',
-            'changelogtype_id': '',
+            'start_date': self._format_datetime_id_value(kwargs['local_max_value']),
+            'changelogcategory_id': kwargs.get('category_id', ''),
+            'changelogtype_id': kwargs.get('action_id', ''),
             'page': page_number
         }
         page_number += 1
@@ -351,6 +385,13 @@ class CredibleFrontEndDriver:
         if id_value is None:
             id_value = datetime.datetime.now() - datetime.timedelta(days=3650)
         return id_value.strftime(credible_format)
+
+    @classmethod
+    def _format_datetime_value(cls, datetime_value):
+        credible_format = '%m/%d/%Y %I:%M %p'
+        if datetime_value is None:
+            datetime_value = datetime.datetime.now() - datetime.timedelta(days=3650)
+        return datetime_value.strftime(credible_format)
 
     @classmethod
     def _parse_csv_response(cls, csv_string, key_name=None):
