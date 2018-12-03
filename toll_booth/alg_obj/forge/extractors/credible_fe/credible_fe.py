@@ -224,7 +224,7 @@ class CredibleFrontEndDriver:
             'prompt_type3': 'DD',
             'prompt_lbl3': 'Action',
             'prompt3': '',
-            'prompt_type4':' DATE',
+            'prompt_type4': 'DATE',
             'prompt_lbl4': 'Start Date',
             'prompt4': self._format_datetime_value(start_date),
             'prompt_type5': 'DATE',

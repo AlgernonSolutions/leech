@@ -34,6 +34,9 @@ Resources:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
           EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   monitorObject:
     Type: AWS::Serverless::Function
     Properties:
@@ -56,6 +59,8 @@ Resources:
           SCHEMA_TABLE: Schema
           TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
           LINK_URL: https://sqs.us-east-1.amazonaws.com/803040539655/link
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
   extract:
     Type: AWS::Serverless::Function
     Properties:
@@ -77,6 +82,9 @@ Resources:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
           TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   transform:
     Type: AWS::Serverless::Function
     Properties:
@@ -97,6 +105,9 @@ Resources:
         Variables:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   assimilate:
     Type: AWS::Serverless::Function
     Properties:
@@ -117,6 +128,9 @@ Resources:
         Variables:
           WORK_FUNCTION: leech-work
           SCHEMA_TABLE: Schema
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   load:
     Type: AWS::Serverless::Function
     Properties:
@@ -144,6 +158,9 @@ Resources:
         Variables:
           NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
           GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   audit:
     Type: AWS::Serverless::Function
     Properties:
@@ -161,6 +178,9 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   aphid:
     Type: AWS::Serverless::Function
     Properties:
@@ -182,6 +202,9 @@ Resources:
         Variables:
           NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
           GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   explode:
     Type: AWS::Serverless::Function
     Properties:
@@ -192,6 +215,9 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   log:
     Type: AWS::Serverless::Function
     Properties:
@@ -202,6 +228,9 @@ Resources:
       Timeout: 300
       MemorySize: 128
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   credibleWsExtractor:
     Type: AWS::Serverless::Function
     Properties:
@@ -212,6 +241,9 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   credibleFeExtractor:
     Type: AWS::Serverless::Function
     Properties:
@@ -222,6 +254,9 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   propagate:
     Type: AWS::Serverless::Function
     Properties:
@@ -232,6 +267,9 @@ Resources:
       Timeout: 300
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   fruit:
     Type: AWS::Serverless::Function
     Properties:
@@ -242,3 +280,5 @@ Resources:
       Timeout: 600
       MemorySize: 448
       Tracing: Active
+      Layers:
+        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
