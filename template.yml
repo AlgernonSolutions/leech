@@ -7,46 +7,57 @@ Parameters:
   ProjectId:
     Type: String
     Description: CodeStar projectId used to associate new resources to team members
+  LeechVpcSg:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: List of security groups the Leech will use to access the data space
+    Default: "sg-06b3a26ff04155688"
+  LeechVpcSn:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of subnet ids that the Leech can launch into to access the data space
+    Default: "subnet-872a24cc, subnet-29497e4d, subnet-acef95f1"
+
+
+Globals:
+  Function:
+    Runtime: python3.6
+    Layers:
+      - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:2"
+    Tracing: Active
+    Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+    Environment:
+      Variables:
+        WORK_FUNCTION: leech-work
+        SCHEMA_TABLE: Schema
+        EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
+        TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
+        ASSIMILATE_URL: https://sqs.us-east-1.amazonaws.com/803040539655/assimilate
+        LOAD_URL:  https://sqs.us-east-1.amazonaws.com/803040539655/load
+        LINK_URL: https://sqs.us-east-1.amazonaws.com/803040539655/link
+        NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+        GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
 
 Resources:
   work:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
-      Runtime: python3.6
       FunctionName: leech-work
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   monitor:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
-      Runtime: python3.6
       FunctionName: leech-monitor
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 60
       MemorySize: 448
-      Tracing: Active
-      Environment:
-        Variables:
-          WORK_FUNCTION: leech-work
-          SCHEMA_TABLE: Schema
-          EXTRACTION_URL: https://sqs.us-east-1.amazonaws.com/803040539655/extraction
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   monitorObject:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-monitor-object
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
       Events:
@@ -55,22 +66,12 @@ Resources:
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:monitor
             BatchSize: 10
-      Tracing: Active
-      Environment:
-        Variables:
-          WORK_FUNCTION: leech-work
-          SCHEMA_TABLE: Schema
-          TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
-          LINK_URL: https://sqs.us-east-1.amazonaws.com/803040539655/link
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
+
   extract:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-extract
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 60
       MemorySize: 448
       Events:
@@ -79,22 +80,12 @@ Resources:
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:extraction
             BatchSize: 10
-      Tracing: Active
-      Environment:
-        Variables:
-          WORK_FUNCTION: leech-work
-          SCHEMA_TABLE: Schema
-          TRANSFORM_URL: https://sqs.us-east-1.amazonaws.com/803040539655/transform
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   transform:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-transform
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 120
       MemorySize: 448
       Events:
@@ -103,21 +94,12 @@ Resources:
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:transform
             BatchSize: 10
-      Tracing: Active
-      Environment:
-        Variables:
-          WORK_FUNCTION: leech-work
-          SCHEMA_TABLE: Schema
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   assimilate:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-assimilate
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 120
       MemorySize: 448
       Events:
@@ -126,28 +108,17 @@ Resources:
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:assimilate
             BatchSize: 10
-      Tracing: Active
-      Environment:
-        Variables:
-          WORK_FUNCTION: leech-work
-          SCHEMA_TABLE: Schema
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   load:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-load
       VpcConfig:
         SecurityGroupIds:
-        - sg-06b3a26ff04155688
+          Ref: LeechVpcSg
         SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+          Ref: LeechVpcSn
       Timeout: 300
       MemorySize: 448
       Events:
@@ -156,132 +127,77 @@ Resources:
           Properties:
             Queue: arn:aws:sqs:us-east-1:803040539655:load
             BatchSize: 10
-      Tracing: Active
-      Environment:
-        Variables:
-          NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-          GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   audit:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
-      Runtime: python3.6
       FunctionName: leech-audit
       VpcConfig:
         SecurityGroupIds:
-        - sg-06b3a26ff04155688
+          Ref: LeechVpcSg
         SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+          Ref: LeechVpcSn
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   aphid:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.aphid
-      Runtime: python3.6
       FunctionName: leech-aphid
       VpcConfig:
         SecurityGroupIds:
-        - sg-06b3a26ff04155688
+          Ref: LeechVpcSg
         SubnetIds:
-        - subnet-872a24cc
-        - subnet-29497e4d
-        - subnet-acef95f1
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
+          Ref: LeechVpcSn
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Environment:
-        Variables:
-          NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-          GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   explode:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.exploded
-      Runtime: python3.6
       FunctionName: leech-explode
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   log:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/log_process.handler
-      Runtime: python3.6
       FunctionName: leech-process-log
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 128
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   credibleWsExtractor:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
-      Runtime: python3.6
       FunctionName: leech-extract-crediblews
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   credibleFeExtractor:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
-      Runtime: python3.6
       FunctionName: leech-extract-crediblefe
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   propagate:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/extractors/toll_booth.propagate
-      Runtime: python3.6
       FunctionName: leech-propagate
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 300
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
 
   fruit:
     Type: AWS::Serverless::Function
     Properties:
       Handler: toll_booth/alg_tasks/extractors/toll_booth.fruit
-      Runtime: python3.6
       FunctionName: leech-fruit
-      Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
       Timeout: 600
       MemorySize: 448
-      Tracing: Active
-      Layers:
-        - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:1"
