@@ -1,7 +1,7 @@
 import json
 import logging
 
-from toll_booth.alg_obj.serializers import GqlDecoder
+from toll_booth.alg_obj.serializers import GqlDecoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 from toll_booth.alg_tasks.worker import Worker
 
@@ -79,20 +79,20 @@ def propagate(event, context):
         'task_args': event
     }
     work_results = work(event, context)
-    logging.info('completed a propagate call, results: %s' % work_results)
-    return work_results
+    results = json.loads(work_results, cls=AlgDecoder)
+    logging.info('completed a propagate call, results: %s' % results)
+    return results
 
 
 @lambda_logged
 def fruit(event, context):
     logging.info(f'starting a fruit call with event: {event}')
-    task_args = event['task_args']
+    event.update({'context': context})
     propagation_id = event['propagation_id']
-    task_args['context'] = context
-    task_args['propagation_id'] = propagation_id
+    event['propagation_id'] = propagation_id
     event = {
         'task_name': 'fruit',
-        'task_args': task_args
+        'task_args': event
     }
     work_results = work(event, context)
     logging.info('completed a fruit call, results: %s' % work_results)
