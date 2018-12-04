@@ -15,6 +15,10 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of subnet ids that the Leech can launch into to access the data space
     Default: "subnet-872a24cc, subnet-29497e4d, subnet-acef95f1"
+  LambdaRoleARN:
+    Type: String
+    Description: The ARN of the IAM role that lambda functions will use to interact with the resources
+    Default: "arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE"
 
 
 Globals:
@@ -23,7 +27,6 @@ Globals:
     Layers:
       - "arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:2"
     Tracing: Active
-    Role: arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE
     Environment:
       Variables:
         WORK_FUNCTION: leech-work
@@ -42,6 +45,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
       FunctionName: leech-work
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -50,6 +55,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
       FunctionName: leech-monitor
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 60
       MemorySize: 448
 
@@ -58,6 +65,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-monitor-object
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
       Events:
@@ -72,6 +81,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-extract
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 60
       MemorySize: 448
       Events:
@@ -86,6 +97,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-transform
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 120
       MemorySize: 448
       Events:
@@ -100,6 +113,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-assimilate
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 120
       MemorySize: 448
       Events:
@@ -114,6 +129,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-load
+      Role:
+        Ref: LambdaRoleArn
       VpcConfig:
         SecurityGroupIds:
           Ref: LeechVpcSg
@@ -133,6 +150,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.queued
       FunctionName: leech-audit
+      Role:
+        Ref: LambdaRoleArn
       VpcConfig:
         SecurityGroupIds:
           Ref: LeechVpcSg
@@ -146,6 +165,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.aphid
       FunctionName: leech-aphid
+      Role:
+        Ref: LambdaRoleArn
       VpcConfig:
         SecurityGroupIds:
           Ref: LeechVpcSg
@@ -159,6 +180,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.exploded
       FunctionName: leech-explode
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -167,6 +190,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/log_process.handler
       FunctionName: leech-process-log
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 128
 
@@ -175,6 +200,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
       FunctionName: leech-extract-crediblews
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -183,6 +210,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
       FunctionName: leech-extract-crediblefe
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -191,6 +220,8 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/toll_booth.propagate
       FunctionName: leech-propagate
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -199,5 +230,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/toll_booth.fruit
       FunctionName: leech-fruit
+      Role:
+        Ref: LambdaRoleArn
       Timeout: 600
       MemorySize: 448
