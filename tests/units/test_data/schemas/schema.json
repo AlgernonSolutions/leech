@@ -99,8 +99,8 @@
       "vertex_name": "Change",
       "vertex_properties": [
         {
-          "property_name": "detail_id",
-          "property_data_type": "Number",
+          "property_name": "change_date_utc",
+          "property_data_type": "DateTime",
           "is_id_value": true
         },
         {
@@ -691,9 +691,11 @@
                 "target_specifiers": [
                   {
                     "specifier_name": "change_target",
-                    "specifier_type": "extraction",
-                    "extracted_properties": [
-                      "detail_id"
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "by_emp_id",
+                      "change_date_utc"
                     ]
                   }
                 ],
@@ -703,8 +705,12 @@
                     "constant_value": "source.id_source"
                   },
                   {
-                    "constant_name": "changelog_id",
-                    "constant_value": "source.changelog_id"
+                    "constant_name": "by_emp_id",
+                    "constant_value": "source.by_emp_id"
+                  },
+                  {
+                    "constant_name": "change_date_utc",
+                    "constant_value": "source.change_date_utc"
                   }
                 ],
                 "if_absent": "create"
@@ -715,8 +721,7 @@
                 "target_specifiers": [
                   {
                     "specifier_name": "changed_target",
-                    "specifier_type": "function",
-                    "function_name": "derive_change_targeted",
+                    "specifier_type": "extraction",
                     "extracted_properties": [
                       "id_source",
                       "id_type",

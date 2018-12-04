@@ -182,9 +182,10 @@ def extraction_order(request):
 
 
 @pytest.fixture(params=[
+    ('ChangeLog', change_log_identifier_stem, change_log_id_value, change_log_extracted_data),
     ('ExternalId', ext_id_identifier_stem, ext_id_id_value, ext_id_extracted_data),
     ('Change', change_identifier_stem, change_id_value, change_extracted_data),
-    ('Change', change_identifier_stem, second_change_id_value, second_change_extracted_data),
+    ('Change', change_identifier_stem, second_change_id_value, second_change_extracted_data)
 ])
 def transform_order(request):
     from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
@@ -485,7 +486,7 @@ def specified_identifier_stem(request):
 
 @pytest.fixture
 def propagation_id():
-    return 'f07365392bb7495b94f56c04f0bec1f2'
+    return '1872e100c7024bc28ae7ed9034cf8b29'
 
 
 @pytest.fixture(params=[

@@ -808,6 +808,14 @@ class LeechDriver:
         except IndexError:
             raise MissingObjectException()
 
+    def mark_fruiting_complete(self, propagation_id, fruited_id_value):
+        self._table.update_item(
+            Key={'sid_value': propagation_id, 'identifier_stem': 'propagation'},
+            UpdateExpression='SET #did.#id = :id',
+            ExpressionAttributeNames={'#did': 'driving_id_values', '#id': str(fruited_id_value)},
+            ExpressionAttributeValues={':id': 'worked'}
+        )
+
     def _scan_vertexes(self, object_type, vertex_properties, token=None):
         filter_properties = [f'(begins_with(identifier_stem, :is) OR begins_with(identifier_stem, :stub))']
         expression_names = {}

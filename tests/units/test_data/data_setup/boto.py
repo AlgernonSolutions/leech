@@ -274,4 +274,6 @@ def intercept(*args, **kwargs):
                 mock_lambda = MockLambdaResponse(json.dumps([1001, 1002, 1003, 1004]))
                 return mock_lambda.as_response
             return credible_fe.handler(payload, mock_context.context)
+    if operation_name == 'SendMessageBatch':
+        return None
     raise NotImplementedError(f'cannot find an intercept command for {args}')

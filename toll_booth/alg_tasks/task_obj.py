@@ -6,7 +6,8 @@ from toll_booth.alg_obj.serializers import AlgDecoder
 
 
 class InsufficientOperationTimeException(Exception):
-    pass
+    def __init__(self, completed_results):
+        self._completed_results = completed_results
 
 
 class QueuedTaskParameters:
@@ -184,7 +185,7 @@ def metered(production_function):
             logging.debug(f'{progress}/{total}')
             if time_left < 10 * average_run_time:
                 logging.info('ran out of time before the ask was completed')
-                return results
+                raise InsufficientOperationTimeException(results)
         logging.info('completed the metered task')
         return results
 

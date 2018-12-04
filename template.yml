@@ -20,7 +20,6 @@ Parameters:
     Description: The ARN of the IAM role that lambda functions will use to interact with the resources
     Default: "arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE"
 
-
 Globals:
   Function:
     Runtime: python3.6

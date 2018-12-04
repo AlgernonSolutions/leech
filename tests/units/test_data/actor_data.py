@@ -94,3 +94,32 @@ second_rule_constants = []
 second_rule_specifiers = SharedPropertySpecifier('changelog_source', ['id_source', 'changelog_id'])
 second_rule = VertexLinkRuleEntry('ChangeLogEntry', '_change_', second_rule_constants, second_rule_specifiers, 'stub',
                                   True)
+change_log_identifier_stem = '#vertex#ChangeLog#{"id_source": "MBI", "id_type": "ChangeLog", "id_name": "change_date_utc"}#'
+change_log_id_value = 1532974725
+change_log_extracted_data = {
+    "source": {
+        "change_date_utc": datetime.datetime.fromtimestamp(1532974725.0),
+        "change_description": None,
+        "change_date": datetime.datetime.fromtimestamp(1532956725.0),
+        "action": "INSERT CLIENT VISIT WEBFORMS",
+        "action_id": 38,
+        "id_source": "MBI",
+        "id_type": "ChangeLog",
+        "id_name": "change_date_utc",
+        "done_by": "Samuels, I"
+    },
+    "changed_target": [
+        {
+            "id_source": "MBI",
+            "id_type": "Clients",
+            "id_name": "client_id",
+            "id_value": 10165
+        },
+        {
+            "id_source": "MBI",
+            "id_type": "ClientVisit",
+            "id_name": "clientvisit_id",
+            "id_value": 1439730
+        }
+    ]
+}

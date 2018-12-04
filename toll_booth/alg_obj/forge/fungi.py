@@ -12,7 +12,7 @@ from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, VertexRegulator
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
-from toll_booth.alg_tasks.task_obj import metered
+from toll_booth.alg_tasks.task_obj import metered, InsufficientOperationTimeException
 
 
 class Spore:
@@ -123,35 +123,23 @@ class Shroom:
         self._change_types = ChangeTypes.get(leech_driver=self._leech_driver)
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
 
-    # noinspection PyTypeChecker
     def fruit(self):
         schema_entry = SchemaVertexEntry.get(self._extracted_identifier_stem.object_type)
         extractor_setup = self._leech_driver.get_extractor_setup(self._driving_identifier_stem)
         extraction_properties = schema_entry.extract[extractor_setup['type']].extraction_properties
-        remote_objects = self._fruit(
-            self._driving_id_values,
-            schema_entry=schema_entry,
-            identifier_stem=self._extracted_identifier_stem,
-            driving_identifier_stem=self._driving_identifier_stem,
-            extractor_fn_name=extractor_setup['extraction'],
-            extraction_properties=extraction_properties,
-            context=self._context
-        )
-        flattened_objects = [x for y in remote_objects for x in y]
-        for change_object in flattened_objects:
-            id_value = change_object['source']['change_date_utc']
-            pairs = {
-                'id_source': change_object['source']['id_source'],
-                'id_type': change_object['source']['id_type'],
-                'id_name': change_object['source']['id_name']
-            }
-            identifier_stem = IdentifierStem('vertex', 'ChangeLog', pairs)
-            is_working_already = self._mark_objects_as_working(id_value, identifier_stem, change_object)
-            if not is_working_already:
-                order_args = (identifier_stem, id_value, change_object, schema_entry)
-                transform_order = TransformObjectOrder(*order_args)
-                self._transform_queue.add_order(transform_order)
-                self._transform_queue.push_orders()
+        try:
+            self._fruit(
+                self._driving_id_values,
+                schema_entry=schema_entry,
+                identifier_stem=self._extracted_identifier_stem,
+                driving_identifier_stem=self._driving_identifier_stem,
+                extractor_fn_name=extractor_setup['extraction'],
+                extraction_properties=extraction_properties,
+                context=self._context
+            )
+        except InsufficientOperationTimeException:
+            return False
+        return True
 
     @metered
     def _fruit(self, id_value, **kwargs):
@@ -175,7 +163,7 @@ class Shroom:
                 for change_date, remote_change in remote_changes.items():
                     change_log_data = self._generate_change_log(remote_change, change_category, mapping)
                     action_id = change_log_data['source']['action_id']
-
+                    change_log_data['change_target'] = []
                     if change_category.action_has_details(action_id):
                         change_details = driver.get_change_details(**{
                             'driving_id_type': driving_identifier_stem.get('id_type'),
@@ -187,6 +175,8 @@ class Shroom:
                         })
                         change_log_data['change_target'] = change_details
                     fruit.append(change_log_data)
+        self._set_fruit(fruit, kwargs['schema_entry'])
+        self._leech_driver.mark_fruiting_complete(self._propagation_id, id_value)
         return fruit
 
     def _mark_objects_as_working(self, id_value, identifier_stem, extracted_data):
@@ -300,6 +290,22 @@ class Shroom:
             'changed_target': changed_target
         }
         return returned_data
+
+    def _set_fruit(self, remote_objects, schema_entry):
+        for change_object in remote_objects:
+            id_value = change_object['source']['change_date_utc']
+            pairs = {
+                'id_source': change_object['source']['id_source'],
+                'id_type': change_object['source']['id_type'],
+                'id_name': change_object['source']['id_name']
+            }
+            identifier_stem = IdentifierStem('vertex', 'ChangeLog', pairs)
+            is_working_already = self._mark_objects_as_working(id_value, identifier_stem, change_object)
+            if not is_working_already:
+                order_args = (identifier_stem, id_value, change_object, schema_entry)
+                transform_order = TransformObjectOrder(*order_args)
+                self._transform_queue.add_order(transform_order)
+        self._transform_queue.push_orders()
 
     @classmethod
     def _generate_mapping(cls, extraction_properties, id_source, driving_id_type):
