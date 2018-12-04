@@ -73,7 +73,7 @@ def exploded(event, context):
 @lambda_logged
 def propagate(event, context):
     logging.info(f'starting a propagate call with event: {event}')
-    event = event.update({'context': context})
+    event.update({'context': context})
     event = {
         'task_name': 'propagate',
         'task_args': event
