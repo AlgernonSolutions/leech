@@ -217,7 +217,7 @@ Resources:
   propagate:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth/alg_tasks/extractors/toll_booth.propagate
+      Handler: toll_booth/alg_tasks/toll_booth.propagate
       FunctionName: leech-propagate
       Role:
         Ref: LambdaRoleArn
@@ -227,7 +227,7 @@ Resources:
   fruit:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth/alg_tasks/extractors/toll_booth.fruit
+      Handler: toll_booth/alg_tasks/toll_booth.fruit
       FunctionName: leech-fruit
       Role:
         Ref: LambdaRoleArn
