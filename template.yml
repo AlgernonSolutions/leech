@@ -15,7 +15,7 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of subnet ids that the Leech can launch into to access the data space
     Default: "subnet-872a24cc, subnet-29497e4d, subnet-acef95f1"
-  LambdaRoleARN:
+  LambdaRoleArn:
     Type: String
     Description: The ARN of the IAM role that lambda functions will use to interact with the resources
     Default: "arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE"
