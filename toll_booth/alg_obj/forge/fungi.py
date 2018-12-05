@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 from decimal import Decimal, InvalidOperation
@@ -150,6 +151,7 @@ class Shroom:
         mapping = self._generate_mapping(extraction_properties, id_source, driving_identifier_stem.get('id_type'))
         with CredibleFrontEndDriver(id_source) as driver:
             for change_category in self._change_types.categories.values():
+                logging.info(f'started the extraction for id_value: {id_value}, change_category: {change_category}')
                 local_max_value = self._get_local_max_value(id_value, change_category)
                 extraction_args = {
                     'driving_id_type': driving_identifier_stem.get('id_type'),
@@ -175,6 +177,7 @@ class Shroom:
                         })
                         change_log_data['change_target'] = change_details
                     fruit.append(change_log_data)
+                logging.info(f'finished the extraction for id_value: {id_value}, change_category: {change_category}')
         self._set_fruit(fruit, kwargs['schema_entry'])
         self._leech_driver.mark_fruiting_complete(self._propagation_id, id_value)
         return fruit
