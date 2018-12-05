@@ -581,7 +581,13 @@ class LeechDriver:
             raise MissingObjectException
 
     def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values, **kwargs):
-        driving_id_values = {x: 'unworked' for x in driving_id_values}
+        change_types = kwargs['change_types']
+        driving_id_values = {}
+        for id_value in driving_id_values:
+            id_change_types = {}
+            for change_category in change_types.categories.values():
+                id_change_types[change_category] = 'unworked'
+            driving_id_values[id_value] = id_change_types
         self._table.put_item(Item={
             'sid_value': propagation_id,
             'identifier_stem': 'propagation',
@@ -808,11 +814,11 @@ class LeechDriver:
         except IndexError:
             raise MissingObjectException()
 
-    def mark_fruiting_complete(self, propagation_id, fruited_id_value):
+    def mark_fruiting_complete(self, propagation_id, fruited_id_value, fruited_category):
         self._table.update_item(
             Key={'sid_value': propagation_id, 'identifier_stem': 'propagation'},
-            UpdateExpression='SET #did.#id = :id',
-            ExpressionAttributeNames={'#did': 'driving_id_values', '#id': str(fruited_id_value)},
+            UpdateExpression='SET #did.#id.#ct = :id',
+            ExpressionAttributeNames={'#did': 'driving_id_values', '#id': str(fruited_id_value), '#ct': fruited_category},
             ExpressionAttributeValues={':id': 'worked'}
         )
 

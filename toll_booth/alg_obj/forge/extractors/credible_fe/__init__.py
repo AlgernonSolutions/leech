@@ -77,7 +77,7 @@ class CredibleFrontEndExtractor(AbstractVertexDrivenExtractor):
             }
             source_extraction = driver.get_change_logs(**extraction_args)
             # change_detail_extraction = driver.get_change_details(**extraction_args)
-            # emp_ids = driver.get_emp_ids(**extraction_args)
+            emp_ids = driver.get_emp_ids(**extraction_args)
             # for change_date, entry in source_extraction.items():
             #   entry['User'] = emp_ids[change_date]
             formatted_extraction = cls._format_change_log_data(
