@@ -13,7 +13,7 @@ def batch_dynamo_write(*args, **kwargs):
     table = boto3.resource('dynamodb').Table(table_name)
     results = {'success': [], 'failed': []}
     try:
-        with table.batch_writer() as writer:
+        with table.batch_writer(overwrite_by_pkeys=['sid_value', 'identifier_stem']) as writer:
             for entry in entries:
                 writer.put_item(**entry['item'])
                 results['success'].append(entry['id'])

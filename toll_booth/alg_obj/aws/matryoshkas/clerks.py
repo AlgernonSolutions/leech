@@ -8,11 +8,13 @@ class ClerkSwarm:
             pending_entries = []
         self._table_name = table_name
         self._pending_entries = pending_entries
+        self._keys = set()
+        for pending_entry in pending_entries:
+            self._keys.add((pending_entry['sid_value'], pending_entry['identifier_stem']))
         self._current_retries = 0
         self._max_retries = max_retries
         self._receipt = {}
 
-    @property
     def batched_entries(self):
         batches = []
         entries = []
@@ -41,11 +43,15 @@ class ClerkSwarm:
         return True
 
     def add_pending_write(self, pending_item):
+        key_value = (pending_item['sid_value'], pending_item['identifier_stem'])
+        if key_value in self._keys:
+            raise RuntimeError('duplicate item added to clerk_swarm: %s' % pending_item)
+        self._keys.add(key_value)
         self._pending_entries.append(pending_item)
 
     def send(self):
         from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
-        batched_entries = self.batched_entries
+        batched_entries = self.batched_entries()
         self._pending_entries = []
         if not batched_entries:
             return True

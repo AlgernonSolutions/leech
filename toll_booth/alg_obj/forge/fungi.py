@@ -185,9 +185,11 @@ class Mycelium:
         for remote_change in remote_changes:
             action = remote_change['Action']
             change_date_utc = remote_change['UTCDate']
+            record = remote_change['Record']
             pairs = OrderedDict()
             pairs['category'] = str(category)
             pairs['action'] = str(action)
+            pairs['record'] = record
             pairs['done_by'] = remote_change['Done By']
             pairs['change_date_utc'] = str(change_date_utc.timestamp())
             pairs.update(self._driving_identifier_stem.paired_identifiers)
@@ -195,7 +197,10 @@ class Mycelium:
             kwargs['sid_value'] = self._propagation_id
             kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
             kwargs['driving_identifier_stem'] = str(self._driving_identifier_stem)
-            clerks.add_pending_write(kwargs)
+            try:
+                clerks.add_pending_write(kwargs)
+            except RuntimeError:
+                pass
         clerks.send()
 
     @classmethod
