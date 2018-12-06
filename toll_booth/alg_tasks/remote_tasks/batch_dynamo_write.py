@@ -14,7 +14,7 @@ def batch_dynamo_write(*args, **kwargs):
     try:
         with table.batch_writer() as writer:
             for entry in entries:
-                writer.put_item(entry)
+                writer.put_item(**entry)
         return 'success'
     except ClientError as e:
         return e.response

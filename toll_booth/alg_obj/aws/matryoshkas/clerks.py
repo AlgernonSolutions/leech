@@ -41,8 +41,9 @@ class ClerkSwarm:
 
     def send(self):
         from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
+        batched_entries = self.batched_entries
         self._pending_entries = []
-        if not self.batched_entries:
+        if not batched_entries:
             return True
         send_task_name = 'batch_dynamo_write'
         lambda_arn = os.environ['WORK_FUNCTION']
@@ -50,7 +51,7 @@ class ClerkSwarm:
         logging.info('preparing to send a batch of write commands through the clerk swarm')
         m_cluster = MatryoshkaCluster.calculate_for_concurrency(
             100, send_task_name, lambda_arn,
-            task_args=self.batched_entries, task_constants=task_params, max_m_concurrency=25)
+            task_args=batched_entries, task_constants=task_params, max_m_concurrency=25)
         m = Matryoshka.for_root(m_cluster)
         logging.info('completed the clerk send')
         agg_results = m.aggregate_results
