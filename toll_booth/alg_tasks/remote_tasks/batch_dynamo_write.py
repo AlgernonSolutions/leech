@@ -11,10 +11,13 @@ def batch_dynamo_write(*args, **kwargs):
     table_name = task_args['table_name']
     entries = task_args['entries']
     table = boto3.resource('dynamodb').Table(table_name)
+    results = {'success': [], 'failed': []}
     try:
         with table.batch_writer() as writer:
             for entry in entries:
                 writer.put_item(**entry)
-        return 'success'
+                results['success'].append(entry['Item']['sid_value'])
     except ClientError as e:
-        return e.response
+        for entry in entries:
+            results['failed'].append({'exception': e.response, 'Id': entry['Item']['sid_value']})
+    return results
