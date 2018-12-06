@@ -249,7 +249,7 @@ class CredibleFrontEndDriver:
         response = self._session.post(url, data=data)
         if response.status_code != 200:
             raise RuntimeError('could not get the change logs for %s' % data)
-        csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
+        csv_response = self._parse_csv_response(response.text)
         return csv_response
 
     def get_emp_ids(self, **kwargs):

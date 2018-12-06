@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from collections import OrderedDict
 from datetime import datetime
 from decimal import Decimal
 
@@ -581,32 +582,91 @@ class LeechDriver:
             raise MissingObjectException
 
     def mark_propagated_vertexes(self, propagation_id, identifier_stem, driving_identifier_stem, driving_id_values, **kwargs):
+        driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
+        driving_pairs = driving_identifier_stem.paired_identifiers
         change_types = kwargs['change_types']
-        driving_id_values = {}
-        for id_value in driving_id_values:
-            id_change_types = {}
-            for change_category in change_types.categories.values():
-                id_change_types[change_category] = 'unworked'
-            driving_id_values[id_value] = id_change_types
-        self._table.put_item(Item={
-            'sid_value': propagation_id,
-            'identifier_stem': 'propagation',
-            'driving_identifier_stem': str(driving_identifier_stem),
-            'extracted_identifier_stem': str(identifier_stem),
-            'driving_id_values': driving_id_values
-        })
+        with self._table.batch_writer() as writer:
+            for id_value in driving_id_values:
+                for change_category in change_types.categories.values():
+                    change_pairs = driving_pairs.copy()
+                    change_pairs['id_value'] = id_value
+                    change_pairs['category'] = str(change_category)
+                    change_identifier_stem = IdentifierStem('propagation', identifier_stem.object_type, change_pairs)
+                    change = {
+                        'identifier_stem': str(change_identifier_stem),
+                        'sid_value': str(propagation_id),
+                        'driving_identifier_stem': str(driving_identifier_stem),
+                        'extracted_identifier_stem': str(identifier_stem),
+                        'driving_id_value': id_value
+                    }
+                    writer.put_item(Item=change)
 
     def get_propagated_vertexes(self, propagation_id):
-        results = self._table.get_item(
-            Key={
-                'sid_value': propagation_id,
-                'identifier_stem': 'propagation'
+        paginator = boto3.client('dynamodb').get_paginator('query')
+        iterator = paginator.paginate(
+            TableName=self._table_name,
+            KeyConditionExpression='#sid=:sid AND begins_with(#id, :id)',
+            ExpressionAttributeNames={
+                '#sid': 'sid_value', '#id': 'identifier_stem'
+            },
+            ExpressionAttributeValues={
+                ':sid': {'S': str(propagation_id)},
+                ':id': {'S': '#propagation#'}
             }
         )
-        try:
-            return results['Item']
-        except KeyError:
-            raise MissingObjectException
+        for page in iterator:
+            for item in page['Items']:
+                vertex = {
+                    'driving_identifier_stem': item['driving_identifier_stem']['S'],
+                    'extracted_identifier_stem': item['extracted_identifier_stem']['S'],
+                    'driving_id_value': item['driving_id_value']['S'],
+                    'identifier_stem': item['identifier_stem']['S']
+                }
+                yield vertex
+
+    def mark_creep_vertexes(self, remote_changes, category, propagation_id, **kwargs):
+        with self._table.batch_writer() as writer:
+            driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+            for remote_change in remote_changes:
+                action = remote_change['Action']
+                change_date_utc = remote_change['UTCDate']
+                pairs = OrderedDict()
+                pairs['category'] = str(category)
+                pairs['action'] = str(action)
+                pairs['done_by'] = remote_change['Done By']
+                pairs['change_date_utc'] = str(change_date_utc.timestamp())
+                pairs.update(driving_identifier_stem.paired_identifiers)
+                kwargs['identifier_stem'] = str(IdentifierStem('creep', 'ChangeLog', pairs))
+                kwargs['sid_value'] = propagation_id
+                kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
+                kwargs['driving_identifier_stem'] = str(driving_identifier_stem)
+                writer.put_item(Item=kwargs)
+
+    def get_seed_creep_vertex(self, propagation_id):
+        pass
+
+    def get_creep_vertexes(self, propagation_id, change_category):
+        paginator = boto3.client('dynamodb').get_paginator('query')
+        iterator = paginator.paginate(
+            TableName=self._table_name,
+            KeyConditionExpression='#sid=:sid AND begins_with(#id, :id)',
+            ExpressionAttributeNames={
+                '#sid': 'sid_value', '#id': 'identifier_stem'
+            },
+            ExpressionAttributeValues={
+                ':sid': {'S': str(propagation_id)},
+                ':id': {'S': '#creep#ChangeLog#{"action_id": "' + change_category}
+            }
+        )
+        for page in iterator:
+            for item in page['Items']:
+                vertex = {
+                    'driving_identifier_stem': item['driving_identifier_stem']['S'],
+                    'extracted_identifier_stem': item['extracted_identifier_stem']['S'],
+                    'driving_id_value': item['driving_id_value']['S'],
+                    'identifier_stem': item['identifier_stem']['S']
+                }
+                yield vertex
 
     def get_extractor_setup(self, identifier_stem, include_field_values=False):
         setup = {}
@@ -767,9 +827,9 @@ class LeechDriver:
         changelog_types = {}
         paginator = boto3.client('dynamodb').get_paginator('scan')
         comparison_stem = '#vertex#ChangeLogType#'
-        category = kwargs.get('category', None)
-        if category:
-            comparison_stem = '#vertex#ChangeLogType#{"category": "%s' % category
+        filter_category = kwargs.get('category', None)
+        if filter_category:
+            comparison_stem = '#vertex#ChangeLogType#{"category": "%s' % filter_category
         pages = paginator.paginate(
             TableName=self._table_name,
             IndexName=index_name,
@@ -792,8 +852,8 @@ class LeechDriver:
             for entry in changelog_types.values():
                 identifier_stems.extend(entry)
             return [x.get('category_id') for x in identifier_stems]
-        if category:
-            return changelog_types[category]
+        if filter_category:
+            return changelog_types[filter_category]
         return changelog_types
 
     def check_if_id_value_linked(self, id_source, internal_id, index_name=None):

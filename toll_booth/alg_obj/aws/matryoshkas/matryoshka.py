@@ -106,7 +106,7 @@ class Matryoshka(AlgObject):
             if 'errorMessage' in raw_results:
                 if 'stackTrace' in raw_results:
                     stack_trace = raw_results['stackTrace']
-                    print(stack_trace)
+                    logging.warning(stack_trace)
                     result = (raw_results['errorType'] + '  ' + raw_results['errorMessage'] + ' ' + '%s' % payload)
                 else:
                     result = raw_results['errorMessage']
@@ -140,7 +140,7 @@ class Matryoshka(AlgObject):
             raw_results = json.loads(response['Payload'].read())
             if 'errorMessage' in raw_results:
                 stack_trace = raw_results['stackTrace']
-                print(stack_trace)
+                logging.warning(stack_trace)
                 result = (raw_results['errorType'] + '  ' + raw_results['errorMessage'] + ' ' + '%s' % event)
             else:
                 result = json.loads(raw_results, cls=AlgDecoder)

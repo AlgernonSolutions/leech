@@ -1,4 +1,5 @@
 from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 class ChangeType:
@@ -8,6 +9,11 @@ class ChangeType:
         self._action_id = action_id
         self._action = action
         self._has_details = has_details
+
+    @classmethod
+    def get_from_change_identifier(cls, change_identifier):
+        change_identifier = IdentifierStem.from_raw(change_identifier)
+        return cls(**change_identifier.paired_identifiers)
 
     @property
     def category_id(self):
@@ -40,6 +46,15 @@ class ChangeTypeCategory:
         self._category_id = category_id
         self._category = category
         self._change_types = change_types
+
+    @classmethod
+    def get_from_change_identifiers(cls, change_identifiers):
+        change_types = {}
+        for change_identifier in change_identifiers:
+            change_type = ChangeType.get_from_change_identifier(change_identifier)
+            change_types[change_type.action_id] = change_type
+        for change_type in change_types.values():
+            return cls(change_type.category_id, change_type.category, change_types)
 
     @property
     def category_id(self):
@@ -85,9 +100,10 @@ class ChangeTypes:
         change_types = {}
         leech_driver = kwargs.get('leech_driver', LeechDriver(**kwargs))
         change_type_data = leech_driver.get_changelog_types()
-        for entry in change_type_data:
-            change_type = ChangeType(**entry.paired_identifiers)
-            change_types[change_type.action_id] = change_type
+        for category_name, entries in change_type_data.items():
+            for entry in entries:
+                change_type = ChangeType(**entry.paired_identifiers)
+                change_types[change_type.action_id] = change_type
         return cls(change_types)
 
     @property

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from datetime import datetime
 
 from toll_booth.alg_obj.serializers import AlgDecoder
@@ -167,25 +168,21 @@ def remote_task(production_function):
 def metered(production_function):
     def wrapper(*args, **kwargs):
         parent_object = args[0]
-        values = args[1]
+        value = args[1]
         context = kwargs['context']
-        running_times = []
-        results = []
-        total = len(values)
-        progress = 0
         logging.info('working a metered task')
-        for value in values:
-            start = datetime.now()
-            results.append(production_function(parent_object, value, **kwargs))
-            end = datetime.now()
-            running_times.append((end - start).seconds * 1000)
-            time_left = context.get_remaining_time_in_millis()
-            average_run_time = sum(running_times) / float(len(running_times))
-            progress += 1
-            logging.debug(f'{progress}/{total}')
-            if time_left < 10 * average_run_time:
-                logging.info('ran out of time before the ask was completed')
-                raise InsufficientOperationTimeException(results)
+        start = datetime.now()
+        results = production_function(parent_object, value, **kwargs)
+        end = datetime.now()
+        running_time = (end - start).seconds * 1000
+        run_times = os.getenv('run_times', [])
+        run_times.append(running_time)
+        os.environ['run_time'] = run_times
+        time_left = context.get_remaining_time_in_millis()
+        average_run_time = sum(run_times) / float(len(run_times))
+        if time_left < 10 * average_run_time:
+            logging.info('ran out of time before the ask was completed')
+            raise InsufficientOperationTimeException(results)
         logging.info('completed the metered task')
         return results
 

@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexEx
 from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
-from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
+from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes, ChangeTypeCategory
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, VertexRegulator
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
@@ -114,49 +114,43 @@ class Spore:
                     raise e
 
 
-class Shroom:
-    def __init__(self, propagation_id, **kwargs):
+class Mycelium:
+    def __init__(self, propagation_id, id_source, **kwargs):
         self._propagation_id = propagation_id
+        self._id_source = id_source
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
-        propagation = self._leech_driver.get_propagated_vertexes(self._propagation_id)
-        self._extracted_identifier_stem = IdentifierStem.from_raw(propagation['extracted_identifier_stem'])
-        self._driving_identifier_stem = IdentifierStem.from_raw(propagation['driving_identifier_stem'])
-        self._driving_id_pairs = self._pair_driving_ids(propagation['driving_id_values'])
+        self._driving_identifier_stem = None
+        self._extracted_identifier_stem = None
         self._context = kwargs['context']
-        self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
 
-    def fruit(self):
-        schema_entry = SchemaVertexEntry.get(self._extracted_identifier_stem.object_type)
-        extractor_setup = self._leech_driver.get_extractor_setup(self._driving_identifier_stem)
-        extraction_properties = schema_entry.extract[extractor_setup['type']].extraction_properties
-        id_source = self._driving_identifier_stem.get('id_source')
-        with CredibleFrontEndDriver(id_source) as driver:
-            try:
-                self._fruit(
-                    self._driving_id_pairs,
-                    schema_entry=schema_entry,
-                    identifier_stem=self._extracted_identifier_stem,
-                    driving_identifier_stem=self._driving_identifier_stem,
-                    extractor_fn_name=extractor_setup['extraction'],
-                    extraction_properties=extraction_properties,
-                    context=self._context,
-                    driver=driver
-                )
-            except InsufficientOperationTimeException:
-                return False
-            return True
+    def creep(self):
+        with CredibleFrontEndDriver(self._id_source) as driver:
+            for entry in self._leech_driver.get_propagated_vertexes(self._propagation_id):
+                if not self._driving_identifier_stem:
+                    self._driving_identifier_stem = IdentifierStem.from_raw(entry['driving_identifier_stem'])
+                if not self._extracted_identifier_stem:
+                    self._extracted_identifier_stem = IdentifierStem.from_raw(entry['extracted_identifier_stem'])
+                try:
+                    self._creep(
+                        entry,
+                        identifier_stem=self._extracted_identifier_stem,
+                        driving_identifier_stem=self._driving_identifier_stem,
+                        context=self._context,
+                        driver=driver
+                    )
+                except InsufficientOperationTimeException:
+                    return False
+        return True
 
     @metered
-    def _fruit(self, id_pair, **kwargs):
-        fruit = []
-        id_value = id_pair[0]
-        change_category = id_pair[1]
-        extraction_properties = kwargs['extraction_properties']
+    def _creep(self, entry, **kwargs):
         driving_identifier_stem = kwargs['driving_identifier_stem']
-        id_source = driving_identifier_stem.get('id_source')
-        mapping = self._generate_mapping(extraction_properties, id_source, driving_identifier_stem.get('id_type'))
         driver = kwargs['driver']
-        logging.info(f'started the extraction for id_value: {id_value}, change_category: {change_category}')
+        identifier_stem = IdentifierStem.from_raw(entry['identifier_stem'])
+        id_value = entry['driving_id_value']
+        change_category_data = self._leech_driver.get_changelog_types(category=identifier_stem.get('category'))
+        change_category = ChangeTypeCategory.get_from_change_identifiers(change_category_data)
+        logging.info(f'started the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
         local_max_value = self._get_local_max_value(id_value, change_category)
         extraction_args = {
             'driving_id_type': driving_identifier_stem.get('id_type'),
@@ -164,83 +158,65 @@ class Shroom:
             'driving_id_value': id_value,
             'local_max_value': local_max_value,
             'category_id': change_category.category_id,
-            'change_types': change_category.change_types
+            'driving_identifier_stem': driving_identifier_stem,
+            'identifier_stem': identifier_stem,
+            'category': change_category
         }
         remote_changes = driver.get_change_logs(**extraction_args)
-        for change_date, remote_change in remote_changes.items():
-            change_log_data = self._generate_change_log(remote_change, change_category, mapping)
-            action_id = change_log_data['source']['action_id']
-            change_log_data['change_target'] = []
-            if change_category.action_has_details(action_id):
-                change_details = driver.get_change_details(**{
-                    'driving_id_type': driving_identifier_stem.get('id_type'),
-                    'driving_id_name': driving_identifier_stem.get('id_name'),
-                    'driving_id_value': id_value,
-                    'local_max_value': local_max_value,
-                    'category_id': change_category.category_id,
-                    'action_id': int(action_id)
-                })
-                change_log_data['change_target'] = change_details
-            fruit.append(change_log_data)
-        logging.info(f'finished the extraction for id_value: {id_value}, change_category: {change_category}')
-        self._set_fruit(fruit, kwargs['schema_entry'])
-        self._leech_driver.mark_fruiting_complete(self._propagation_id, id_value, change_category)
-        return fruit
-
-    def _mark_objects_as_working(self, id_value, identifier_stem, extracted_data):
-        return self._leech_driver.put_vertex_driven_seed(
-            extracted_data, identifier_stem=identifier_stem, id_value=id_value)
-
-    @classmethod
-    def _perform_remote_extraction(cls, id_value, local_max_values, **kwargs):
-        identifier_stem = kwargs['driving_identifier_stem']
-        step_args = {
-            'id_source': identifier_stem.get('id_source'),
-            'identifier': {
-                'identifier_stem': str(identifier_stem),
-                'id_value': id_value,
-                'local_max_values': local_max_values
-            }
-        }
-        step_args.update(kwargs['extraction_properties'])
-        step_args.update(identifier_stem.for_extractor)
-        manager_args = (kwargs['extractor_fn_name'], step_args)
-        remote_objects = StageManager.run_extraction(*manager_args)
-        return remote_objects
+        logging.info(f'completed the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
+        self._leech_driver.mark_creep_vertexes(remote_changes, propagation_id=self._propagation_id, **extraction_args)
 
     def _get_local_max_value(self, driving_id_value, change_type):
         id_source = self._driving_identifier_stem.get('id_source')
         id_type = self._driving_identifier_stem.get('id_type')
-        change_stem = f'#{id_source}#{id_type}#{driving_id_value}#{change_type.category_id}'
+        change_stem = f'#{id_source}#{id_type}#{driving_id_value}#{change_type}'
         try:
             local_max_value = self._leech_driver.scan_index_value_max(change_stem)
         except EmptyIndexException:
             local_max_value = None
         return local_max_value
 
-    def _get_local_max_values(self, driving_id_value, extracted_categories, **kwargs):
-        local_max_values = {}
-        driving_identifier_stem = kwargs['driving_identifier_stem']
-        id_source = driving_identifier_stem.get('id_source')
-        id_type = driving_identifier_stem.get('id_type')
-        category_ids = self._filter_category_ids(extracted_categories)
-        for category_id in category_ids:
-            change_stem = f'#{id_source}#{id_type}#{driving_id_value}#{category_id}'
-            try:
-                local_max_value = self._leech_driver.scan_index_value_max(change_stem)
-            except EmptyIndexException:
-                local_max_value = None
-            local_max_values[category_id] = local_max_value
-        return local_max_values
+    @classmethod
+    def _organize_remote_changes_by_action(cls, remote_changes):
+        organized = {}
+        for remote_change in remote_changes:
+            action = remote_change['Action']
+            if action not in organized:
+                organized[action] = []
+            organized[action].append(remote_change)
+        return organized
 
-    def _filter_category_ids(self, extracted_categories):
-        change_types = self._leech_driver.get_changelog_types(category_ids_only=True)
-        for extracted_category in extracted_categories:
-            if extracted_category == '*':
-                return change_types
-            if extracted_category not in change_types:
-                raise NotImplementedError('attempted to extract change category of: %s, but that does not exist in the data space')
-        return extracted_categories
+
+class Mushroom:
+    def __init__(self, propagation_id, **kwargs):
+        self._propagation_id = propagation_id
+        self._leech_driver = LeechDriver(table_name='VdGraphObjects')
+        self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
+
+    def fruit(self):
+        pass
+
+    def _fruit(self, change_category):
+        change_detail_data = {}
+        for entry in self._leech_driver.get_creep_vertexes(self._propagation_id, change_category):
+            mapping = self._generate_mapping(extraction_properties, id_source, driving_identifier_stem.get('id_type'))
+            for change_date, remote_change in remote_changes.items():
+                change_log_data = self._generate_change_log(remote_change, change_category, mapping)
+                action_id = change_log_data['source']['action_id']
+                change_log_data['change_target'] = []
+                if change_category.action_has_details(action_id):
+                    try:
+                        change_details = change_detail_data[action_id]
+                    except KeyError:
+                        change_details = self._perform_change_detail_extraction(
+                            driver, id_value, local_max_value, change_category, action_id, driving_identifier_stem
+                        )
+                        change_detail_data[action_id] = change_details
+                    if change_details:
+                        change_log_data['change_target'] = change_details[change_date]
+                fruit.append(change_log_data)
+            logging.info(
+                f'finished the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
 
     def _generate_change_log(self, remote_change, change_category, mapping):
         extracted_data = {}
@@ -299,7 +275,7 @@ class Shroom:
         }
         return returned_data
 
-    def _set_fruit(self, remote_objects, schema_entry):
+    def _set_fruit(self, remote_objects):
         for change_object in remote_objects:
             id_value = change_object['source']['change_date_utc']
             pairs = {
@@ -310,26 +286,27 @@ class Shroom:
             identifier_stem = IdentifierStem('vertex', 'ChangeLog', pairs)
             is_working_already = self._mark_objects_as_working(id_value, identifier_stem, change_object)
             if not is_working_already:
-                order_args = (identifier_stem, id_value, change_object, schema_entry)
+                order_args = (identifier_stem, id_value, change_object, self._schema_entry)
                 transform_order = TransformObjectOrder(*order_args)
                 self._transform_queue.add_order(transform_order)
         self._transform_queue.push_orders()
 
-    @classmethod
-    def _pair_driving_ids(cls, driving_id_values):
-        pairs = []
-        for id_value, change_categories in driving_id_values.items():
-            for change_category, work_status in change_categories.items():
-                if work_status == 'unworked':
-                    pairs.append((id_value, change_category))
-        return pairs
+    def _mark_objects_as_working(self, id_value, identifier_stem, extracted_data):
+        return self._leech_driver.put_vertex_driven_seed(
+            extracted_data, identifier_stem=identifier_stem, id_value=id_value)
 
     @classmethod
-    def _generate_mapping(cls, extraction_properties, id_source, driving_id_type):
-        mapping = extraction_properties['mapping']
-        id_source_mapping = mapping.get(id_source, mapping['default'])
-        object_mapping = id_source_mapping[driving_id_type]
-        return object_mapping
+    def _perform_change_detail_extraction(cls, driver, driving_id_value, local_max_value,
+                                          change_category, action_id, driving_identifier_stem):
+        change_details = driver.get_change_details(**{
+            'driving_id_type': driving_identifier_stem.get('id_type'),
+            'driving_id_name': driving_identifier_stem.get('id_name'),
+            'driving_id_value': driving_id_value,
+            'local_max_value': local_max_value,
+            'category_id': change_category.category_id,
+            'action_id': int(action_id)
+        })
+        return change_details
 
     @classmethod
     def _split_record_id(cls, field_value, **kwargs):
@@ -368,3 +345,10 @@ class Shroom:
     def _convert_datetime(cls, field_value):
         from toll_booth.alg_obj.utils import convert_credible_fe_datetime_to_python
         return convert_credible_fe_datetime_to_python(field_value, False)
+
+    @classmethod
+    def _generate_mapping(cls, extraction_properties, id_source, driving_id_type):
+        mapping = extraction_properties['mapping']
+        id_source_mapping = mapping.get(id_source, mapping['default'])
+        object_mapping = id_source_mapping[driving_id_type]
+        return object_mapping

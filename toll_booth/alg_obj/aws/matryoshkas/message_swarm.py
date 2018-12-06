@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +22,7 @@ class MessageSwarm:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             import traceback
-            print('exception while running the swarm send: %s, %s' % (exc_type, exc_val))
+            logging.warning('exception while running the swarm send: %s, %s' % (exc_type, exc_val))
             traceback.print_exc()
         if self._outbound_messages:
             self.send()
@@ -61,11 +62,11 @@ class MessageSwarm:
         send_task_name = 'send_message_batch'
         lambda_arn = os.environ['WORK_FUNCTION']
         task_params = {'target_queue_url': self._queue_url}
-        print('preparing to send a batch of messages through the swarm')
+        logging.info('preparing to send a batch of messages through the swarm')
         m_cluster = MatryoshkaCluster.calculate_for_concurrency(
             100, send_task_name, lambda_arn, task_args=batches, task_constants=task_params, max_m_concurrency=25)
         m = Matryoshka.for_root(m_cluster)
-        print('completed the swarm send')
+        logging.info('completed the swarm send')
         agg_results = m.aggregate_results
         failed_messages = []
         for result in agg_results:
@@ -74,28 +75,28 @@ class MessageSwarm:
             except TypeError:
                 pass
         if failed_messages:
-            print('some messages failed, going to retry')
+            logging.info('some messages failed, going to retry')
             for failed_message in failed_messages:
                 message_id = failed_message['Id']
                 our_fault = failed_message['SenderFault']
                 if not our_fault:
                     self.add_message(receipt[message_id])
                 else:
-                    print('a message failed on our error: %s' % failed_message)
+                    logging.info('a message failed on our error: %s' % failed_message)
             self._current_retries += 1
             if self._current_retries > self._max_retries:
-                print('reached maximum retry count, still have errors: %s' % self._outbound_messages)
+                logging.info('reached maximum retry count, still have errors: %s' % self._outbound_messages)
                 return
             self.send()
 
     def send_simply(self):
         from toll_booth.alg_tasks.remote_tasks.send_message_batch import send_message_batch
-        print('sending the messages with no bother')
+        logging.info('sending the messages with no bother')
         batches = []
         entries = []
         counter = 0
         receipt = {}
-        print('splitting up the chunks')
+        logging.info('splitting up the chunks')
         total = len(self._outbound_messages)
         for message in self._outbound_messages:
             if len(entries) >= 10:
@@ -107,7 +108,7 @@ class MessageSwarm:
                 'Id': str(counter),
                 'MessageBody': json.dumps(message.message_body)
             })
-            print('%s/%s' % (counter, total))
+            logging.debug('%s/%s' % (counter, total))
         if entries:
             batches.append({'entries': entries, 'target_queue_url': self._queue_url})
         self._outbound_messages = []
@@ -118,4 +119,4 @@ class MessageSwarm:
             results = executor.map(send_message_batch, batches)
             for _ in results:
                 pointer += 1
-                print('%s/%s' % (pointer, total))
+                logging.debug('%s/%s' % (pointer, total))
