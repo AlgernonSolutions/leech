@@ -15,9 +15,9 @@ def batch_dynamo_write(*args, **kwargs):
     try:
         with table.batch_writer() as writer:
             for entry in entries:
-                writer.put_item(**entry)
-                results['success'].append(entry['Item']['sid_value'])
+                writer.put_item(**entry['item'])
+                results['success'].append(entry['id'])
     except ClientError as e:
         for entry in entries:
-            results['failed'].append({'exception': e.response, 'Id': entry['Item']['sid_value']})
+            results['failed'].append({'exception': e.response, 'id': entry['id']})
     return results

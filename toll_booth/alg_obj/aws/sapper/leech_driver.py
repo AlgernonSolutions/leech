@@ -460,6 +460,10 @@ class LeechDriver:
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
 
+    @property
+    def table_name(self):
+        return self._table_name
+
     @leeched
     def get_object(self, leech_record):
         results = self._table.get_item(**leech_record.for_key)
@@ -623,24 +627,6 @@ class LeechDriver:
                     'identifier_stem': item['identifier_stem']['S']
                 }
                 yield vertex
-
-    def mark_creep_vertexes(self, remote_changes, category, propagation_id, **kwargs):
-        with self._table.batch_writer() as writer:
-            driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
-            for remote_change in remote_changes:
-                action = remote_change['Action']
-                change_date_utc = remote_change['UTCDate']
-                pairs = OrderedDict()
-                pairs['category'] = str(category)
-                pairs['action'] = str(action)
-                pairs['done_by'] = remote_change['Done By']
-                pairs['change_date_utc'] = str(change_date_utc.timestamp())
-                pairs.update(driving_identifier_stem.paired_identifiers)
-                kwargs['identifier_stem'] = str(IdentifierStem('creep', 'ChangeLog', pairs))
-                kwargs['sid_value'] = propagation_id
-                kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
-                kwargs['driving_identifier_stem'] = str(driving_identifier_stem)
-                writer.put_item(Item=kwargs)
 
     def get_seed_creep_vertex(self, propagation_id):
         pass

@@ -1,10 +1,13 @@
+import json
 import logging
 import re
 import uuid
+from collections import OrderedDict
 from decimal import Decimal, InvalidOperation
 
 from botocore.exceptions import ClientError
 
+from toll_booth.alg_obj.aws.matryoshkas.clerks import ClerkSwarm
 from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException, MissingObjectException
 from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
@@ -13,6 +16,7 @@ from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes, ChangeTypeC
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, VertexRegulator
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
+from toll_booth.alg_obj.serializers import AlgEncoder
 from toll_booth.alg_tasks.task_obj import metered, InsufficientOperationTimeException
 
 
@@ -164,7 +168,7 @@ class Mycelium:
         }
         remote_changes = driver.get_change_logs(**extraction_args)
         logging.info(f'completed the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
-        self._leech_driver.mark_creep_vertexes(remote_changes, propagation_id=self._propagation_id, **extraction_args)
+        self._mark_creep_vertexes(remote_changes, **extraction_args)
 
     def _get_local_max_value(self, driving_id_value, change_type):
         id_source = self._driving_identifier_stem.get('id_source')
@@ -175,6 +179,24 @@ class Mycelium:
         except EmptyIndexException:
             local_max_value = None
         return local_max_value
+
+    def _mark_creep_vertexes(self, remote_changes, category, **kwargs):
+        clerks = ClerkSwarm(self._leech_driver.table_name)
+        for remote_change in remote_changes:
+            action = remote_change['Action']
+            change_date_utc = remote_change['UTCDate']
+            pairs = OrderedDict()
+            pairs['category'] = str(category)
+            pairs['action'] = str(action)
+            pairs['done_by'] = remote_change['Done By']
+            pairs['change_date_utc'] = str(change_date_utc.timestamp())
+            pairs.update(self._driving_identifier_stem.paired_identifiers)
+            kwargs['identifier_stem'] = str(IdentifierStem('creep', 'ChangeLog', pairs))
+            kwargs['sid_value'] = self._propagation_id
+            kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
+            kwargs['driving_identifier_stem'] = str(self._driving_identifier_stem)
+            clerks.add_pending_write(kwargs)
+        clerks.send()
 
     @classmethod
     def _organize_remote_changes_by_action(cls, remote_changes):

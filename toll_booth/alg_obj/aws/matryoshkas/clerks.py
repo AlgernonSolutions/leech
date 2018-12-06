@@ -8,6 +8,7 @@ class ClerkSwarm:
             pending_entries = []
         self._table_name = table_name
         self._pending_entries = pending_entries
+        self._current_retries = 0
         self._max_retries = max_retries
         self._receipt = {}
 
@@ -22,7 +23,7 @@ class ClerkSwarm:
                 entries = []
             counter += 1
             self._receipt[str(counter)] = entry
-            entries.append({'Item': entry})
+            entries.append({'item': {'Item': entry}, 'id': str(counter)})
         if entries:
             batches.append({'entries': entries})
         return batches
@@ -38,6 +39,9 @@ class ClerkSwarm:
         if self._pending_entries:
             self.send()
         return True
+
+    def add_pending_write(self, pending_item):
+        self._pending_entries.append(pending_item)
 
     def send(self):
         from toll_booth.alg_obj.aws.matryoshkas.matryoshka import Matryoshka, MatryoshkaCluster
@@ -57,5 +61,17 @@ class ClerkSwarm:
         agg_results = m.aggregate_results
         failed_messages = []
         for result in agg_results:
-            print(result)
-        pass
+            try:
+                failed_messages.extend(result['failed'])
+            except TypeError:
+                pass
+        if failed_messages:
+            logging.info('some writes failed, going to retry')
+            for failed_message in failed_messages:
+                failed_id_value = failed_message['id']
+                self._pending_entries.append(self._receipt[failed_id_value])
+            self._current_retries += 1
+            if self._current_retries > self._max_retries:
+                logging.warning('reached maximum retry count, still have errors: %s' % self._pending_entries)
+                return
+            self.send()
