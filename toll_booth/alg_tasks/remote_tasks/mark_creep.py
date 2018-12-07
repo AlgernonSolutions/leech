@@ -14,16 +14,10 @@ def mark_creep(*args, **kwargs):
     results = {'success': [], 'failed': []}
     try:
         with table.batch_writer(overwrite_by_pkeys=['sid_value', 'identifier_stem']) as writer:
-            delete_key = None
             for entry in entries:
                 write_item = entry['item']
-                delete_key = {'Key': {
-                    'sid_value': write_item['sid_value'],
-                    'identifier_stem': write_item['propagation_identifier_stem']
-                }}
                 writer.put_item(**write_item)
                 results['success'].append(entry['id'])
-            writer.delete_item(**delete_key)
     except ClientError as e:
         for entry in entries:
             results['failed'].append({'exception': e.response, 'id': entry['id']})

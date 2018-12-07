@@ -126,6 +126,7 @@ class Mycelium:
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
         self._driving_identifier_stem = None
         self._extracted_identifier_stem = None
+        self._propagation_identifier_stem = None
         self._context = kwargs['context']
 
     def creep(self):
@@ -135,6 +136,8 @@ class Mycelium:
                     self._driving_identifier_stem = IdentifierStem.from_raw(entry['driving_identifier_stem'])
                 if not self._extracted_identifier_stem:
                     self._extracted_identifier_stem = IdentifierStem.from_raw(entry['extracted_identifier_stem'])
+                if not self._propagation_identifier_stem:
+                    self._propagation_identifier_stem = IdentifierStem.from_raw(entry['identifier_stem'])
                 try:
                     self._creep(
                         entry,
@@ -210,6 +213,7 @@ class Mycelium:
             except RuntimeError:
                 pass
         clerks.send()
+        self._leech_driver.delete_propagated_vertex(self._propagation_id, self._propagation_identifier_stem)
 
 
 class Mushroom:

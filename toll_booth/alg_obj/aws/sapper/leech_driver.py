@@ -629,6 +629,12 @@ class LeechDriver:
                 }
                 yield vertex
 
+    def delete_propagated_vertex(self, propagation_id, identifier_stem):
+        self._table.delete_item(Key={
+            'sid_value': str(propagation_id),
+            'identifier_stem': str(identifier_stem)
+        })
+
     def get_creep_id_values(self, propagation_id):
         paginator = boto3.client('dynamodb').get_paginator('query')
         iterator = paginator.paginate(
