@@ -175,10 +175,13 @@ def metered(production_function):
         results = production_function(parent_object, value, **kwargs)
         end = datetime.now()
         running_time = (end - start).seconds * 1000
-        run_times = os.getenv('run_times', [])
-        run_times = json.loads(run_times)
+        run_times = os.getenv('run_times')
+        if not run_times:
+            run_times = []
+        else:
+            run_times = json.loads(run_times)
         run_times.append(running_time)
-        os.environ['run_time'] = json.dumps(run_times)
+        os.environ['run_times'] = json.dumps(run_times)
         time_left = context.get_remaining_time_in_millis()
         average_run_time = sum(run_times) / float(len(run_times))
         if time_left < 10 * average_run_time:

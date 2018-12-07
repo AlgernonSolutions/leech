@@ -182,8 +182,9 @@ class Mycelium:
         return local_max_value
 
     def _mark_creep_vertexes(self, remote_changes, category, **kwargs):
-        clerks = ClerkSwarm(self._leech_driver.table_name)
+        clerks = ClerkSwarm(self._leech_driver.table_name, 'mark_creep')
         driving_id_value = kwargs['driving_id_value']
+        propagation_identifier_stem = kwargs['identifier_stem']
         for remote_change in remote_changes:
             action = remote_change['Action']
             change_date_utc = remote_change['UTCDate']
@@ -199,7 +200,7 @@ class Mycelium:
             kwargs['identifier_stem'] = str(IdentifierStem('creep', 'ChangeLog', pairs))
             kwargs['sid_value'] = self._propagation_id
             kwargs['propagation_id'] = self._propagation_id
-            kwargs['propagation_identifier_stem'] = str(kwargs['identifier_stem'])
+            kwargs['propagation_identifier_stem'] = str(propagation_identifier_stem)
             kwargs['creep_identifier'] = f'#{str(driving_id_value)}#{str(category)}#{str(action)}#'
             kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
             kwargs['driving_identifier_stem'] = str(self._driving_identifier_stem)
