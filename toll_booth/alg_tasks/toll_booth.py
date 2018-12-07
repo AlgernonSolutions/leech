@@ -85,11 +85,32 @@ def propagate(event, context):
 
 
 @lambda_logged
+def creep(event, context):
+    logging.info(f'starting a creep call with event: {event}')
+    event.update({'context': context})
+    run_data = event['run_data']
+    propagation_id = run_data['propagation_id']
+    id_source = run_data['id_source']
+    event['propagation_id'] = propagation_id
+    event['id_source'] = id_source
+    event = {
+        'task_name': 'creep',
+        'task_args': event
+    }
+    work_results = work(event, context)
+    logging.info('completed a creep call, results: %s' % work_results)
+    return work_results
+
+
+@lambda_logged
 def fruit(event, context):
     logging.info(f'starting a fruit call with event: {event}')
     event.update({'context': context})
-    propagation_id = event['propagation_id']
+    run_data = event['run_data']
+    propagation_id = run_data['propagation_id']
+    id_source = run_data['id_source']
     event['propagation_id'] = propagation_id
+    event['id_source'] = id_source
     event = {
         'task_name': 'fruit',
         'task_args': event

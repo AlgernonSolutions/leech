@@ -486,7 +486,7 @@ def specified_identifier_stem(request):
 
 @pytest.fixture
 def propagation_id():
-    return 'fc89d151e61f4c5bb943d41eef0fbaf0'
+    return '0425dd0d055e419cb30b4931506e5311'
 
 
 @pytest.fixture(params=[

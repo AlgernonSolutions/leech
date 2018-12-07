@@ -176,8 +176,9 @@ def metered(production_function):
         end = datetime.now()
         running_time = (end - start).seconds * 1000
         run_times = os.getenv('run_times', [])
+        run_times = json.loads(run_times)
         run_times.append(running_time)
-        os.environ['run_time'] = run_times
+        os.environ['run_time'] = json.dumps(run_times)
         time_left = context.get_remaining_time_in_millis()
         average_run_time = sum(run_times) / float(len(run_times))
         if time_left < 10 * average_run_time:

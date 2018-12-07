@@ -13,7 +13,7 @@ class TestShrooms:
         print(results)
 
     @pytest.mark.creep
-    def test_fruiting(self, propagation_id, mock_context):
+    def test_creep(self, propagation_id, mock_context):
         shroom = Mycelium(propagation_id, 'MBI', context=mock_context)
         results = shroom.creep()
         print()

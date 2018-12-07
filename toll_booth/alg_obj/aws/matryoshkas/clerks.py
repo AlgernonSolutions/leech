@@ -3,10 +3,11 @@ import os
 
 
 class ClerkSwarm:
-    def __init__(self, table_name, pending_entries=None, max_retries=3):
+    def __init__(self, table_name, send_task_name='batch_dynamo_write', pending_entries=None, max_retries=3):
         if not pending_entries:
             pending_entries = []
         self._table_name = table_name
+        self._send_task_name = send_task_name
         self._pending_entries = pending_entries
         self._keys = set()
         for pending_entry in pending_entries:
@@ -55,12 +56,11 @@ class ClerkSwarm:
         self._pending_entries = []
         if not batched_entries:
             return True
-        send_task_name = 'batch_dynamo_write'
         lambda_arn = os.environ['WORK_FUNCTION']
         task_params = {'table_name': self._table_name}
         logging.info('preparing to send a batch of write commands through the clerk swarm')
         m_cluster = MatryoshkaCluster.calculate_for_concurrency(
-            100, send_task_name, lambda_arn,
+            100, self._send_task_name, lambda_arn,
             task_args=batched_entries, task_constants=task_params, max_m_concurrency=25)
         m = Matryoshka.for_root(m_cluster)
         logging.info('completed the clerk send')

@@ -8,14 +8,31 @@ from boto3.dynamodb.conditions import Attr
 
 
 class DynamoScanner:
-    def __init__(self, index_name, **kwargs):
-        table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'GraphObjects'))
+    def __init__(self, index_name=None, **kwargs):
+        table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'VdGraphObjects'))
         self._table_name = table_name
         self._table = boto3.resource('dynamodb').Table(self._table_name)
         self._worker_count = kwargs.get('thread_count', 5)
         self._index_name = index_name
         self._workers = []
         self._results = deque()
+
+    def scan_creep_id_values(self, propagation_id, change_category):
+        id_values = []
+        scan_kwargs = {
+            'KeyConditionExpression': '#sid=:sid AND begins_with(#id, :id) AND ',
+            'ExpressionAttributeNames': {
+                '#sid': 'sid_value', '#id': 'identifier_stem'
+            },
+            'ExpressionAttributeValues': {
+                ':sid': {'S': str(propagation_id)},
+                ':id': {'S': '#creep#ChangeLog#{"category": "' + str(change_category)}
+            }
+        }
+        self._scan(scan_kwargs)
+        for result in self._results:
+            id_values.extend(result)
+        return id_values
 
     def scan_leech_stages(self):
         scan_kwargs = {'ProjectionExpression': 'last_stage_seen, sid_value'}
@@ -59,9 +76,10 @@ class DynamoScanner:
         scan_kwargs.update({
             'Segment': worker_number,
             'TotalSegments': self._worker_count,
-            'TableName': self._table_name,
-            'IndexName': self._index_name
+            'TableName': self._table_name
         })
+        if self._index_name:
+            scan_kwargs['IndexName'] = self._index_name
         if token:
             scan_kwargs['ExclusiveStartKey'] = token
         results = self._table.scan(**scan_kwargs)

@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.matryoshkas.clerks import ClerkSwarm
+from toll_booth.alg_obj.aws.sapper.dynamo_scanner import DynamoScanner
 from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException, MissingObjectException
 from toll_booth.alg_obj.forge.comms.orders import TransformObjectOrder
 from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
@@ -39,7 +40,7 @@ class Spore:
         local_id_values = self._perform_local_monitor_extraction()
         self._manage_driven_ids(remote_id_values, local_id_values)
         self._mark_propagation(remote_id_values)
-        return self._spore_id
+        return {'propagation_id': self._spore_id, 'id_source': self._driving_identifier_stem.get('id_source')}
 
     def _perform_remote_monitor_extraction(self):
         step_args = self._extractor_setup.copy()
@@ -144,7 +145,7 @@ class Mycelium:
                     )
                 except InsufficientOperationTimeException:
                     return False
-        return True
+        return {'propagation_id': self._propagation_id, 'id_source': self._id_source}
 
     @metered
     def _creep(self, entry, **kwargs):
@@ -182,12 +183,14 @@ class Mycelium:
 
     def _mark_creep_vertexes(self, remote_changes, category, **kwargs):
         clerks = ClerkSwarm(self._leech_driver.table_name)
+        driving_id_value = kwargs['driving_id_value']
         for remote_change in remote_changes:
             action = remote_change['Action']
             change_date_utc = remote_change['UTCDate']
             record = remote_change['Record']
             pairs = OrderedDict()
             pairs['category'] = str(category)
+            pairs['id_value'] = driving_id_value
             pairs['action'] = str(action)
             pairs['record'] = record
             pairs['done_by'] = remote_change['Done By']
@@ -195,55 +198,69 @@ class Mycelium:
             pairs.update(self._driving_identifier_stem.paired_identifiers)
             kwargs['identifier_stem'] = str(IdentifierStem('creep', 'ChangeLog', pairs))
             kwargs['sid_value'] = self._propagation_id
+            kwargs['propagation_id'] = self._propagation_id
+            kwargs['propagation_identifier_stem'] = str(kwargs['identifier_stem'])
+            kwargs['creep_identifier'] = f'#{str(driving_id_value)}#{str(category)}#{str(action)}#'
             kwargs['remote_change'] = json.dumps(remote_change, cls=AlgEncoder)
             kwargs['driving_identifier_stem'] = str(self._driving_identifier_stem)
+            kwargs['extracted_identifier_stem'] = str(self._extracted_identifier_stem)
             try:
                 clerks.add_pending_write(kwargs)
             except RuntimeError:
                 pass
         clerks.send()
 
-    @classmethod
-    def _organize_remote_changes_by_action(cls, remote_changes):
-        organized = {}
-        for remote_change in remote_changes:
-            action = remote_change['Action']
-            if action not in organized:
-                organized[action] = []
-            organized[action].append(remote_change)
-        return organized
-
 
 class Mushroom:
-    def __init__(self, propagation_id, **kwargs):
+    def __init__(self, propagation_id, id_source, **kwargs):
         self._propagation_id = propagation_id
+        self._id_source = id_source
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
+        self._leech_scanner = DynamoScanner(table_name='VdGraphObjects')
         self._transform_queue = kwargs.get('transform_queue', ForgeQueue.get_for_transform_queue(swarm=True, **kwargs))
+        self._change_types = ChangeTypes.get(leech_driver=self._leech_driver)
+        self._driving_identifier_stem = None
+        self._extracted_identifier_stem = None
+        self._schema_entry = None
+        self._context = kwargs['context']
 
     def fruit(self):
-        pass
+        mapping = self._generate_mapping()
+        with CredibleFrontEndDriver(self._id_source) as driver:
+                for id_value in creep_id_values:
 
-    def _fruit(self, change_category):
+                    for entry in self._leech_driver.get_creep_vertexes(self._propagation_id, change_category, id_value):
+                        if not self._extracted_identifier_stem:
+                            self._extracted_identifier_stem = IdentifierStem.from_raw(entry['extracted_identifier_stem'])
+                        if not self._driving_identifier_stem:
+                            self._driving_identifier_stem = IdentifierStem.from_raw(entry['driving_identifier_stem'])
+                        if not self._schema_entry:
+                            self._schema_entry = SchemaVertexEntry.get(self._extracted_identifier_stem.object_type)
+                        try:
+                            self._fruit(change_category)
+                        except InsufficientOperationTimeException:
+                            return False
+        return True
+
+    @metered
+    def _fruit(self, remote_change, local_max_value, id_value, change_category, mapping, driver):
         change_detail_data = {}
-        for entry in self._leech_driver.get_creep_vertexes(self._propagation_id, change_category):
-            mapping = self._generate_mapping(extraction_properties, id_source, driving_identifier_stem.get('id_type'))
-            for change_date, remote_change in remote_changes.items():
-                change_log_data = self._generate_change_log(remote_change, change_category, mapping)
-                action_id = change_log_data['source']['action_id']
-                change_log_data['change_target'] = []
-                if change_category.action_has_details(action_id):
-                    try:
-                        change_details = change_detail_data[action_id]
-                    except KeyError:
-                        change_details = self._perform_change_detail_extraction(
-                            driver, id_value, local_max_value, change_category, action_id, driving_identifier_stem
-                        )
-                        change_detail_data[action_id] = change_details
-                    if change_details:
-                        change_log_data['change_target'] = change_details[change_date]
-                fruit.append(change_log_data)
-            logging.info(
-                f'finished the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
+        change_log_data = self._generate_change_log(remote_change, change_category, mapping)
+        action_id = change_log_data['source']['action_id']
+        change_log_data['change_target'] = []
+        if change_category.action_has_details(action_id):
+            try:
+                change_details = change_detail_data[action_id]
+            except KeyError:
+                change_details = self._perform_change_detail_extraction(
+                    driver, id_value, local_max_value, change_category, action_id, self._driving_identifier_stem
+                )
+                change_detail_data[action_id] = change_details
+            if change_details:
+                change_log_data['change_target'] = change_details[change_date]
+        fruit.append(change_log_data)
+        logging.info(
+            f'finished the extraction for id_value: {id_value}, change_category_id: {change_category.category_id}')
 
     def _generate_change_log(self, remote_change, change_category, mapping):
         extracted_data = {}
@@ -373,9 +390,9 @@ class Mushroom:
         from toll_booth.alg_obj.utils import convert_credible_fe_datetime_to_python
         return convert_credible_fe_datetime_to_python(field_value, False)
 
-    @classmethod
-    def _generate_mapping(cls, extraction_properties, id_source, driving_id_type):
+    def _generate_mapping(self):
+        extraction_properties = self._schema_entry.extract[self._id_source]
         mapping = extraction_properties['mapping']
-        id_source_mapping = mapping.get(id_source, mapping['default'])
-        object_mapping = id_source_mapping[driving_id_type]
+        id_source_mapping = mapping.get(self._id_source, mapping['default'])
+        object_mapping = id_source_mapping[self._driving_identifier_stem.object_type]
         return object_mapping
