@@ -1,4 +1,3 @@
-from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
@@ -56,6 +55,15 @@ class ChangeTypeCategory:
         for change_type in change_types.values():
             return cls(change_type.category_id, change_type.category, change_types)
 
+    @classmethod
+    def get_from_change_name(cls, change_name, **kwargs):
+        driver = kwargs.get('driver', None)
+        if not driver:
+            from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
+            driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
+        results = driver.get_changelog_types(category=change_name)
+        return cls.get_from_change_identifiers(results)
+
     @property
     def category_id(self):
         return self._category_id
@@ -97,6 +105,7 @@ class ChangeTypes:
 
     @classmethod
     def get(cls, **kwargs):
+        from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
         change_types = {}
         leech_driver = kwargs.get('leech_driver', LeechDriver(**kwargs))
         change_type_data = leech_driver.get_changelog_types()

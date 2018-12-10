@@ -167,12 +167,10 @@ def remote_task(production_function):
 
 def metered(production_function):
     def wrapper(*args, **kwargs):
-        parent_object = args[0]
-        value = args[1]
         context = kwargs['context']
         logging.info('working a metered task')
         start = datetime.now()
-        results = production_function(parent_object, value, **kwargs)
+        results = production_function(*args, **kwargs)
         end = datetime.now()
         running_time = (end - start).seconds * 1000
         run_times = os.getenv('run_times')

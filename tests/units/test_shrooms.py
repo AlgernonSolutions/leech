@@ -1,7 +1,7 @@
 import pytest
 
 from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
-from toll_booth.alg_obj.forge.fungi import Spore, Mycelium
+from toll_booth.alg_obj.forge.fungi import Spore, Mycelium, Mushroom
 
 
 @pytest.mark.usefixtures('mock_schema')
@@ -14,8 +14,14 @@ class TestShrooms:
 
     @pytest.mark.creep
     def test_creep(self, propagation_id, mock_context):
-        shroom = Mycelium(propagation_id, 'MBI', context=mock_context)
-        results = shroom.creep()
+        mycelium = Mycelium(propagation_id, 'MBI', context=mock_context)
+        results = mycelium.creep()
+        print()
+
+    @pytest.mark.fruit
+    def test_fruit(self, propagation_id, mock_context):
+        shroom = Mushroom(propagation_id, 'MBI', context=mock_context)
+        results = shroom.fruit()
         print()
 
     @pytest.mark.get_changelog_types
