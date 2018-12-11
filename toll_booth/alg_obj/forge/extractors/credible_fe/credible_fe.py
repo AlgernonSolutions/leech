@@ -252,6 +252,82 @@ class CredibleFrontEndDriver:
         csv_response = self._parse_csv_response(response.text)
         return csv_response
 
+    def enrich_change_logs(self, **kwargs):
+        enrichment = {}
+        enriched_data, page_number = self._get_changelog_page(**kwargs)
+        for enriched_name, entry in enriched_data.items():
+            enrichment[enriched_name] = entry
+        while page_number is not None:
+            kwargs['page_number'] = page_number
+            enriched_data, page_number = self._get_changelog_page(**kwargs)
+            for enriched_name, entry in enriched_data.items():
+                enrichment[enriched_name].update(entry)
+        return enrichment
+
+    def _get_changelog_page(self, **kwargs):
+        changelog_data = {}
+        row_pattern = re.compile('(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
+        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        page_number = kwargs.get('page_number', 1)
+        data = {
+            kwargs['driving_id_name']: kwargs['driving_id_value'],
+            'start_date': self._format_datetime_id_value(kwargs['local_max_value']),
+            'changelogcategory_id': kwargs.get('category_id', ''),
+            'changelogtype_id': kwargs.get('action_id', ''),
+            'page': page_number
+        }
+        page_number += 1
+        response = self._session.post(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError('could not retrieve change details for %s' % data)
+        row_match = re.compile(row_pattern).search(response.text).group('rows')
+        row_soup = bs4.BeautifulSoup(row_match)
+        emp_ids, more_pages = self._strain_emp_ids(row_soup)
+        changelog_data['emp_ids'] = emp_ids
+        if kwargs.get('has_details'):
+            change_details = self._strain_change_details(row_soup)
+            changelog_data['change_details'] = change_details
+        if more_pages:
+            return changelog_data, page_number
+        return changelog_data, None
+
+    @classmethod
+    def _strain_emp_ids(cls, row_soup):
+        emp_ids = {}
+        table_rows = row_soup.find_all('tr')
+        if len(table_rows) <= 3:
+            return [], None
+        for row in table_rows:
+            if 'style' in row.attrs:
+                utc_change_date = row.contents[15].string
+                entry = datetime.datetime.strptime(utc_change_date, '%m/%d/%Y %I:%M:%S %p')
+                entry = entry.timestamp()
+                change_time = datetime.datetime.fromtimestamp(entry, tz=datetime.timezone.utc)
+                emp_entry = row.contents[3]
+                numeric_inside = re.compile('(?P<outside>[\w\s]+?)\s*\((?P<inside>[\d]+)\)')
+                match = numeric_inside.search(emp_entry.string).group('inside')
+                emp_id = Decimal(match)
+                emp_ids[change_time] = emp_id
+        return emp_ids, True
+
+    def _strain_change_details(self, row_soup):
+        change_details = {}
+        table_rows = row_soup.find_all('a')
+        if len(table_rows) <= 6:
+            return []
+        for row in table_rows:
+            if 'href' in row.attrs and 'title' in row.attrs and row.attrs['href'] != '#':
+                target = row.attrs['href']
+                changelog_id = re.compile('changelog_id=(?P<changelog_id>\d+)').search(target).group('changelog_id')
+                changes = self.__get_change_details(changelog_id)
+                containing_row = row.parent.parent
+                change_date_string = containing_row.contents[15].string
+                change_date = datetime.datetime.strptime(change_date_string, '%m/%d/%Y %I:%M:%S %p')
+                change_date = change_date.timestamp()
+                change_date = datetime.datetime.fromtimestamp(change_date, tz=datetime.timezone.utc)
+                change_details[change_date] = changes
+        return change_details
+
     def get_emp_ids(self, **kwargs):
         emp_ids = {}
         emps, page_number = self._get_emp_ids(**kwargs)

@@ -8,6 +8,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
+from toll_booth.alg_obj.forge.credible_specifics import ChangeTypeCategory, ChangeType
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator, PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
@@ -453,7 +454,7 @@ class LeechDriver:
     _field_value_index = os.getenv('FIELD_VALUE_INDEX', 'field_values')
     _links_index = os.getenv('LINKS_INDEX', 'links')
     _credible_change_index = os.getenv('CREDIBLE_CHANGES', 'credible_change_stems')
-    _creep_id_value_index = os.getenv('CREEP_ID_VALUES', 'creep_id_values')
+    _creep_id_value_index = os.getenv('CREEP_ID_VALUES', 'creep_index')
 
     def __init__(self, **kwargs):
         table_name = kwargs.get('table_name', os.getenv('TABLE_NAME', 'VdGraphObjects'))
@@ -650,7 +651,7 @@ class LeechDriver:
         )
         for page in iterator:
             for item in page['Items']:
-                yield item['id_value']['S']
+                yield item['driving_id_value']['S']
 
     def get_creep_categories(self, propagation_id, id_value):
         paginator = boto3.client('dynamodb').get_paginator('query')
@@ -669,9 +670,9 @@ class LeechDriver:
         )
         for page in iterator:
             for item in page['Items']:
-                yield item['category']
+                yield ChangeTypeCategory.get_from_change_name(item['category']['S'], driver=self)
 
-    def get_creep_changes(self, propagation_id, id_value, change_category):
+    def get_creep_actions(self, propagation_id, id_value, change_category):
         paginator = boto3.client('dynamodb').get_paginator('query')
         iterator = paginator.paginate(
             TableName=self._table_name,
@@ -683,16 +684,44 @@ class LeechDriver:
             },
             ExpressionAttributeValues={
                 ':pi': {'S': str(propagation_id)},
-                ':c': {'S': f'#{id_value}#{change_category}'}
+                ':c': {'S': f'#{id_value}#{str(change_category)}'}
             }
         )
         for page in iterator:
             for item in page['Items']:
+                try:
+                    yield change_category.change_types[item['action_id']['N']]
+                except KeyError:
+                    action_id = change_category.get_action_id(item['action']['S'])
+                    yield change_category.change_types[action_id]
+
+    def get_creep_changes(self, propagation_id, id_value, change_category, change_action):
+        paginator = boto3.client('dynamodb').get_paginator('query')
+        iterator = paginator.paginate(
+            TableName=self._table_name,
+            IndexName=self._creep_id_value_index,
+            KeyConditionExpression='#pi=:pi AND begins_with(#c, :c)',
+            ExpressionAttributeNames={
+                '#pi': 'propagation_id',
+                '#c': 'creep_identifier'
+            },
+            ExpressionAttributeValues={
+                ':pi': {'S': str(propagation_id)},
+                ':c': {'S': f'#{id_value}#{str(change_category)}#{str(change_action)}'}
+            }
+        )
+        for page in iterator:
+            for item in page['Items']:
+                local_max_value = item['local_max_value']
+                try:
+                    local_max_value = local_max_value['N']
+                except KeyError:
+                    local_max_value = None
                 vertex = {
                     'driving_identifier_stem': item['driving_identifier_stem']['S'],
                     'extracted_identifier_stem': item['extracted_identifier_stem']['S'],
-                    'local_max_value': item['identifier_stem']['N'],
-                    'remote_change': json.loads(item['identifier_stem']['S'], cls=AlgDecoder)
+                    'local_max_value': local_max_value,
+                    'remote_change': json.loads(item['remote_change']['S'], cls=AlgDecoder)
                 }
                 yield vertex
 
