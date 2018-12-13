@@ -31,38 +31,69 @@ class EmailDriver:
                                    )
         self.organization_dict = organization_dict
 
-    def send_raw_email(self, data):
+    def send_raw_email(self, data, recipient_list):
+        """
+        Takes a MIME formatted content, and recipient list to construct an email
+        :param data: This is the return value of the create email method of MIMEEmail
+        :param recipient_list: a list of emails of people who should receive this information
+        e.g. [test@abc.com, jim@ccorp.com]
+        :return: returns the boto response object
+        """
         response = self.client.send_raw_email(
             Source="beta@algernon.solutions",
-            Destinations=[
-                "mschappacher@algernon.solutions",
-            ],
+            Destinations=recipient_list,
             RawMessage={
                 'Data': data.as_string()
             }
         )
         return response
 
-    @staticmethod
-    def create_raw_message(recipient, subject, html_body, plain_body, attachments):
-        msg = MIMEMultipart("mixed")
-        msg["Subject"] = subject
-        msg["From"] = "beta@algernon.solutions"
-        msg["To"] = recipient
-        msg_body = MIMEMultipart("alternative")
-        textpart = MIMEText(plain_body.encode("utf-8"), "plain", "utf-8")
-        htmlpart = MIMEText(html_body.encode("utf-8"), "html", "utf-8")
-        msg_body.attach(textpart)
-        msg_body.attach(htmlpart)
-        att = MIMEApplication(attachments)
-        att.add_header("Content-Disposition", "attachment", filename="data.csv")
-        msg.attach(msg_body)
-        msg.attach(att)
-        return msg
 
+class MIMEEmail:
+    """
+    Handles the creation of the email body, and attachments that will be sent in the email.
+    """
+    def __init__(self, recipient: str, subject: str, html_body: str, plain_body: str, attachments: list):
+        self.recipient = recipient
+        self.subject = subject
+        self.html_body = html_body
+        self.plain_body = plain_body
+        self.attachments = attachments
+        self.msg = MIMEMultipart("mixed")
+        self.msg_body = MIMEMultipart("alternative")
 
-    def send_bulk_email(self):
-        pass
+    def create_email(self):
+        self.create_email_header()
+        self.create_email_body()
+        self.create_email_attachments()
+        return self.msg
+
+    def create_email_header(self):
+        """
+        Adds the subject, recipient, and sender to the MIME email
+        """
+        self.msg["Subject"] = self.subject
+        self.msg["From"] = "beta@algernon.solutions"
+        self.msg["To"] = self.recipient
+
+    def create_email_body(self):
+        """
+        Creates the content of the email, providing for an html, and plain text version
+        """
+        text_part = MIMEText(self.plain_body.encode("utf-8"), "plain", "utf-8")
+        html_part = MIMEText(self.html_body.encode("utf-8"), "html", "utf-8")
+        self.msg_body.attach(text_part)
+        self.msg_body.attach(html_part)
+        self.msg.attach(self.msg_body)
+
+    def create_email_attachments(self):
+        """
+        iterate through and create email attachments for the MIME message
+        """
+        for attachment in self.attachments:
+            att = MIMEApplication(attachment)
+            att.add_header("Content-Disposition", "attachment", filename="data.csv")
+            self.msg.attach(att)
 
 
 class EmailForm:
