@@ -34,7 +34,7 @@ class EmailDriver:
     def send_raw_email(self, data, recipient_list):
         """
         Takes a MIME formatted content, and recipient list to construct an email
-        :param data: This is the return value of the create email method of MIMEEmail
+        :param data: This is the return value of the create_email() method of the MIMEEmail object
         :param recipient_list: a list of emails of people who should receive this information
         e.g. [test@abc.com, jim@ccorp.com]
         :return: returns the boto response object
@@ -54,6 +54,13 @@ class MIMEEmail:
     Handles the creation of the email body, and attachments that will be sent in the email.
     """
     def __init__(self, recipient: str, subject: str, html_body: str, plain_body: str, attachments: list):
+        """
+        :param recipient: Name of the recipient who will be receiving the email
+        :param subject: The subject line of the email
+        :param html_body: html version of the email
+        :param plain_body: plain text of the email
+        :param attachments: list of pre formatted csv strings
+        """
         self.recipient = recipient
         self.subject = subject
         self.html_body = html_body
@@ -63,6 +70,11 @@ class MIMEEmail:
         self.msg_body = MIMEMultipart("alternative")
 
     def create_email(self):
+        """
+        Completes the assembly of all the various parts of the MIMEEmail object then returns the final contents
+        to be used in the EmailDriver
+        :return: returns the constructed MIMEEmail
+        """
         self.create_email_header()
         self.create_email_body()
         self.create_email_attachments()
