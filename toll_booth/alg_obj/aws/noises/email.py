@@ -1,5 +1,7 @@
 import json
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 import boto3
 
 """
@@ -29,10 +31,38 @@ class EmailDriver:
                                    )
         self.organization_dict = organization_dict
 
-    def send_email(self):
-            for email_subscriber in self.organization_dict.subscribers:
-                email = email_subscriber.email
-                data = EmailForm(email_subscriber)
+    def send_raw_email(self, data):
+        response = self.client.send_raw_email(
+            Source="beta@algernon.solutions",
+            Destinations=[
+                "mschappacher@algernon.solutions",
+            ],
+            RawMessage={
+                'Data': data.as_string()
+            }
+        )
+        return response
+
+    @staticmethod
+    def create_raw_message(recipient, subject, html_body, plain_body, attachments):
+        msg = MIMEMultipart("mixed")
+        msg["Subject"] = subject
+        msg["From"] = "beta@algernon.solutions"
+        msg["To"] = recipient
+        msg_body = MIMEMultipart("alternative")
+        textpart = MIMEText(plain_body.encode("utf-8"), "plain", "utf-8")
+        htmlpart = MIMEText(html_body.encode("utf-8"), "html", "utf-8")
+        msg_body.attach(textpart)
+        msg_body.attach(htmlpart)
+        att = MIMEApplication(attachments)
+        att.add_header("Content-Disposition", "attachment", filename="data.csv")
+        msg.attach(msg_body)
+        msg.attach(att)
+        return msg
+
+
+    def send_bulk_email(self):
+        pass
 
 
 class EmailForm:
@@ -47,9 +77,6 @@ class EmailForm:
             "csv": [],
             "email": []
         }
-
-    def create_view(self):
-        pass
 
     def create_csv(self):
         pass
@@ -107,8 +134,8 @@ class EmailSubscriber:
         self.email = kwargs.get("email")
         self.team = kwargs.get("team")
         self.organization = kwargs.get("organization")
-        self.view = kwargs.get("view")
-        self.reports = kwargs.get("reports")
+        self.view = kwargs.get("view", "null")
+        self.reports = kwargs.get("reports", "null")
 
 
 class EmailDataExtractor:
@@ -230,11 +257,43 @@ class EmailDataExtractor:
 
 class UserReports:
     """
-    defines and creates the canned and custom reports necessary fo each individual.
+    defines and creates the canned and custom reports necessary fo each individual. Returns JSON object for further
+    processing
     """
-    def __init__(self, subscriber: object):
-        self.subscriber = subscriber
+    def __init__(self, data: object):
+        self.data = data
+        self.user_report = {}
 
-    def tx_report(self):
-        self.subscriber
+    def tx_report(self, subscriber: object):
+        """Defines report that returns TX plan information regarding start dates and end dates"""
+        tx_report = []
+        if subscriber.view is "admin":
+            for client in self.data["organization"][subscriber.organization]["clients"]:
+                data = {
+                    "first_name": client["first_name"],
+                    "last_name": client["last_name"],
+                    "id": client["id"],
+                    "team": client["team"],
+                    "tx_plan_start": client["tx_plan_start"],
+                    "tx_plan_end": client["tx_plan_end"]
+                }
+                tx_report.append(data)
+        if subscriber.view is "team":
+            for client in self.data["organization"][subscriber.organization]["clients"]:
+                if client["team"] is subscriber.team:
+                    data = {
+                        "first_name": client["first_name"],
+                        "last_name": client["last_name"],
+                        "id": client["id"],
+                        "team": client["team"],
+                        "tx_plan_start": client["tx_plan_start"],
+                        "tx_plan_end": client["tx_plan_end"]
+                    }
+                    tx_report.append(data)
+                else:
+                    continue
+        self.user_report["tx_report"] = tx_report
+
+
+
 
