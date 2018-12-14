@@ -168,24 +168,28 @@ def remote_task(production_function):
 def metered(production_function):
     def wrapper(*args, **kwargs):
         context = kwargs['context']
-        logging.info('working a metered task')
+        logging.debug('working a metered task')
         start = datetime.now()
         results = production_function(*args, **kwargs)
         end = datetime.now()
-        running_time = (end - start).seconds * 1000
+        running_time = (end - start).seconds
+        if running_time == 0:
+            running_time = 1
+        running_time = running_time * 1000
         run_times = os.getenv('run_times')
         if not run_times:
             run_times = []
         else:
             run_times = json.loads(run_times)
+        if len(run_times) >= 500:
+            run_times.pop(0)
         run_times.append(running_time)
         os.environ['run_times'] = json.dumps(run_times)
         time_left = context.get_remaining_time_in_millis()
         average_run_time = sum(run_times) / float(len(run_times))
         if time_left < 10 * average_run_time:
-            logging.info('ran out of time before the ask was completed')
+            logging.warning('ran out of time before the ask was completed')
             raise InsufficientOperationTimeException(results)
-        logging.info('completed the metered task')
+        logging.debug('completed the metered task')
         return results
-
     return wrapper

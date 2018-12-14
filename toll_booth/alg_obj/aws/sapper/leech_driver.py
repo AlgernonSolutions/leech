@@ -8,7 +8,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.forge.credible_specifics import ChangeTypeCategory, ChangeType
+from toll_booth.alg_obj.forge.credible_specifics import ChangeTypeCategory
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator, PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
@@ -577,6 +577,24 @@ class LeechDriver:
             **leech_record.for_link_object(linked_internal_id, id_source, is_unlink)
         )
 
+    @leeched
+    def mark_fruited_vertex(self, propagation_id, creep_identifier_stem, extracted_data, leech_record):
+        creep_identifier_stem = IdentifierStem.from_raw(creep_identifier_stem)
+        try:
+            self._table.update_item(**leech_record.for_vertex_driven_seed(extracted_data))
+            working = False
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise e
+            working = True
+        self._table.delete_item(
+            Key={
+                'sid_value': str(propagation_id),
+                'identifier_stem': str(creep_identifier_stem)
+            }
+        )
+        return working
+
     def get_credible_id_name(self, id_type):
         table_identifier_stem = IdentifierStem('vertex', 'CredibleTable', {'table_name': id_type})
         results = self._table.get_item(
@@ -653,7 +671,8 @@ class LeechDriver:
             for item in page['Items']:
                 yield item['driving_id_value']['S']
 
-    def get_creep_categories(self, propagation_id, id_value):
+    def get_creep_categories(self, propagation_id, id_value, change_types=None):
+        seen_categories = []
         paginator = boto3.client('dynamodb').get_paginator('query')
         iterator = paginator.paginate(
             TableName=self._table_name,
@@ -670,9 +689,18 @@ class LeechDriver:
         )
         for page in iterator:
             for item in page['Items']:
-                yield ChangeTypeCategory.get_from_change_name(item['category']['S'], driver=self)
+                if change_types:
+                    category_id = int(item['category_id']['N'])
+                    change_category = change_types.categories[category_id]
+                else:
+                    category_name = item['category']['S']
+                    change_category = ChangeTypeCategory.get_from_change_name(category_name, driver=self)
+                if str(change_category) not in seen_categories:
+                    yield change_category
+                    seen_categories.append(str(change_category))
 
-    def get_creep_actions(self, propagation_id, id_value, change_category):
+    def get_creep_actions(self, propagation_id, id_value, change_category, **kwargs):
+        seen_actions = []
         paginator = boto3.client('dynamodb').get_paginator('query')
         iterator = paginator.paginate(
             TableName=self._table_name,
@@ -690,10 +718,14 @@ class LeechDriver:
         for page in iterator:
             for item in page['Items']:
                 try:
-                    yield change_category.change_types[item['action_id']['N']]
+                    action = change_category.change_types[item['action_id']['N']]
                 except KeyError:
                     action_id = change_category.get_action_id(item['action']['S'])
-                    yield change_category.change_types[action_id]
+                    action = change_category.change_types[action_id]
+                if str(action) not in seen_actions:
+                    yield action
+                    seen_actions.append(str(action))
+        print()
 
     def get_creep_changes(self, propagation_id, id_value, change_category, change_action):
         paginator = boto3.client('dynamodb').get_paginator('query')
@@ -720,6 +752,7 @@ class LeechDriver:
                 vertex = {
                     'driving_identifier_stem': item['driving_identifier_stem']['S'],
                     'extracted_identifier_stem': item['extracted_identifier_stem']['S'],
+                    'identifier_stem': item['identifier_stem']['S'],
                     'local_max_value': local_max_value,
                     'remote_change': json.loads(item['remote_change']['S'], cls=AlgDecoder)
                 }
@@ -743,6 +776,7 @@ class LeechDriver:
                 vertex = {
                     'driving_identifier_stem': item['driving_identifier_stem']['S'],
                     'extracted_identifier_stem': item['extracted_identifier_stem']['S'],
+                    'identifier_stem': item['identifier_stem']['S'],
                     'remote_change': json.loads(item['remote_change']['S'], cls=AlgDecoder),
                     'local_max_value': item['local_max_value']['S']
                 }
@@ -924,7 +958,12 @@ class LeechDriver:
                 category = identifier_stem.get('category')
                 if category not in changelog_types:
                     changelog_types[category] = []
-                changelog_types[category].append(identifier_stem)
+                changelog_types[category].append({
+                    'identifier_stem': identifier_stem,
+                    'id_type': item['id_type']['S'],
+                    'id_name': item['id_name']['S'],
+                    'is_static': bool(item.get('is_static', {'BOOL': False})['BOOL'])
+                })
         if kwargs.get('categories_only', False):
             return [x for x in changelog_types.keys()]
         if kwargs.get('category_ids_only', False):

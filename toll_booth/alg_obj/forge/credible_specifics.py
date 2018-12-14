@@ -2,12 +2,15 @@ from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 class ChangeType:
-    def __init__(self, category_id, category, action_id, action, has_details):
+    def __init__(self, category_id, category, action_id, action, id_type, id_name, has_details, is_static):
         self._category_id = category_id
         self._category = category
         self._action_id = action_id
         self._action = action
+        self._id_type = id_type
+        self._id_name = id_name
         self._has_details = has_details
+        self._is_static = is_static
 
     @classmethod
     def get_from_change_identifier(cls, change_identifier):
@@ -31,8 +34,28 @@ class ChangeType:
         return self._action
 
     @property
+    def id_name(self):
+        return self._id_name
+
+    @property
+    def id_type(self):
+        return self._id_type
+
+    @property
     def has_details(self):
         return self._has_details
+
+    @property
+    def is_static(self):
+        return self._is_static
+
+    @property
+    def change_target(self):
+        static_types = self._statics.get(str(self._category), {})
+        for static_name, statics in static_types.items():
+            if str(self._action) in statics:
+                return self._base_objects[static_name]
+        return 'dynamic'
 
     def __str__(self):
         return self._action
@@ -111,7 +134,11 @@ class ChangeTypes:
         change_type_data = leech_driver.get_changelog_types()
         for category_name, entries in change_type_data.items():
             for entry in entries:
-                change_type = ChangeType(**entry.paired_identifiers)
+                paired_identifiers = entry['identifier_stem'].paired_identifiers
+                paired_identifiers['id_type'] = entry['id_type']
+                paired_identifiers['id_name'] = entry['id_name']
+                paired_identifiers['is_static'] = entry['is_static']
+                change_type = ChangeType(**paired_identifiers)
                 change_types[change_type.action_id] = change_type
         return cls(change_types)
 
@@ -143,6 +170,9 @@ class ChangeTypes:
     def actions(self):
         return list(self._change_types.values())
 
+    def __getitem__(self, item):
+        return self._change_types[item]
+
     def values(self):
         return self._change_types.values()
 
@@ -152,3 +182,8 @@ class ChangeTypes:
                 return change_type.action_id
         raise AttributeError
 
+    def get_category_by_name(self, category_name):
+        for category_id, category in self.categories.items():
+            if category.category == category_name:
+                return self.categories[category_id]
+        raise AttributeError

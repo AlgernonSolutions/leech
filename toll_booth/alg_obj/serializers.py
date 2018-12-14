@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 
+import pytz
 from jsonref import JsonRef
 
 from toll_booth.alg_obj import AlgObject
@@ -18,7 +19,9 @@ class AlgEncoder(json.JSONEncoder):
         if isinstance(obj, tuple):
             return {'_alg_class': 'tuple', 'value': obj}
         if isinstance(obj, datetime):
-            return {'_alg_class': 'datetime', 'value': obj.timestamp()}
+            if obj.tzinfo is None:
+                return {'_alg_class': 'datetime', 'value': {'tz': None, 'timestamp': obj.timestamp()}}
+            return {'_alg_class': 'datetime', 'value': {'tz': obj.tzinfo.zone, 'timestamp': obj.timestamp()}}
         if isinstance(obj, Decimal):
             return {'_alg_class': 'decimal', 'value': str(obj)}
         if isinstance(obj, JsonRef):
@@ -43,7 +46,11 @@ class AlgDecoder(json.JSONDecoder):
         if alg_class == 'tuple':
             return tuple(x for x in obj_value)
         if alg_class == 'datetime':
-            return datetime.fromtimestamp(obj_value)
+            tz_info = obj_value['tz']
+            timestamp = obj_value['timestamp']
+            if tz_info is None:
+                return datetime.fromtimestamp(timestamp)
+            return datetime.fromtimestamp(timestamp, pytz.timezone(tz_info))
         if alg_class == 'decimal':
             return Decimal(obj_value)
         if alg_class in alg_classes:

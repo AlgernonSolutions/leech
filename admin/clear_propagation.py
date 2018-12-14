@@ -24,4 +24,4 @@ def clear_propagation_id(propagation_id, table_name='VdGraphObjects'):
 
 
 if __name__ == '__main__':
-    clear_propagation_id('fc89d151e61f4c5bb943d41eef0fbaf0')
+    clear_propagation_id('abb05f9470d34aa3a7d3b1e0d9f97a91')

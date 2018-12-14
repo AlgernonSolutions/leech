@@ -279,12 +279,22 @@ def stub_potential_vertex(request):
 
 
 @pytest.fixture
-def mock_context():
+def timed_mock_context():
     context = MagicMock(name='context')
     context.function_name = 'test_function'
     context.invoked_function_arn = 'test_function_arn'
     context.aws_request_id = '12344_request_id'
     context.get_remaining_time_in_millis.side_effect = [1000001, 500001, 250000, 0]
+    return context
+
+
+@pytest.fixture
+def mock_context():
+    context = MagicMock(name='context')
+    context.function_name = 'test_function'
+    context.invoked_function_arn = 'test_function_arn'
+    context.aws_request_id = '12344_request_id'
+    context.get_remaining_time_in_millis.return_value = 1000001
     return context
 
 
@@ -486,7 +496,7 @@ def specified_identifier_stem(request):
 
 @pytest.fixture
 def propagation_id():
-    return '2f4c7712a16c4954b1b15a6c98b392fe'
+    return 'a432c6e023e848a88207f7ab8791e538'
 
 
 @pytest.fixture(params=[

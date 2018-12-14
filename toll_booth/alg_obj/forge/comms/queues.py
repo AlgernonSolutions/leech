@@ -8,16 +8,20 @@ from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
 class SmallSwarm:
-    def __init__(self, queue_url):
+    def __init__(self, queue_url, **kwargs):
         self._messages = []
         self._queue = boto3.resource('sqs').Queue(queue_url)
+        self._auto_send_threshold = kwargs.get('auto_send_threshold', None)
 
     def add_order(self, order):
         self._messages.append(order)
+        if self._auto_send_threshold:
+            if len(self._messages) >= self._auto_send_threshold:
+                self.send()
 
     def add_orders(self, orders):
         for order in orders:
-            self._messages.append(order)
+            self.add_order(order)
 
     def send(self):
         counter = 1
@@ -38,15 +42,16 @@ class SmallSwarm:
             self._queue.send_messages(
                 Entries=entries
             )
+        self._messages = []
 
 
 class ForgeQueue:
-    def __init__(self, queue_name, queue_url, swarm=True):
-        order_swarm = SmallSwarm(queue_url)
+    def __init__(self, queue_name, queue_url, swarm=True, **kwargs):
+        order_swarm = SmallSwarm(queue_url, **kwargs)
         self._queue_name = queue_name
         self._queue_url = queue_url
         if swarm:
-            order_swarm = OrderSwarm(queue_url)
+            order_swarm = OrderSwarm(queue_url, **kwargs)
         self._order_swarm = order_swarm
 
     @classmethod
@@ -65,13 +70,13 @@ class ForgeQueue:
     def get_for_transform_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/transform'
         queue_url = kwargs.get('queue_url', os.getenv('TRANSFORM_URL', default_queue_url))
-        return cls('transform_queue', queue_url, swarm=kwargs.get('swarm', False))
+        return cls('transform_queue', queue_url, **kwargs)
 
     @classmethod
     def get_for_assimilation_queue(cls, **kwargs):
         default_queue_url = 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
         queue_url = kwargs.get('queue_url', os.getenv('ASSIMILATE_URL', default_queue_url))
-        return cls('assimilate_queue', queue_url, swarm=kwargs.get('swarm', False))
+        return cls('assimilate_queue', queue_url, swarm=kwargs.get('swarm', False), **kwargs)
 
     @classmethod
     def get_for_link_queue(cls, **kwargs):

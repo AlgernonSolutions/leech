@@ -13,9 +13,12 @@ def spike():
             clc.category_id,
             clt.action,
             clt.has_details,
-            clc.category_name
+            clc.category_name,
+            clt.record_type,
+            clt.primarykey_name
         FROM ChangeLogType as clt
-        INNER JOIN ChangeLogCategory as clc ON clt.category_id = clc.category_id'''
+        INNER JOIN ChangeLogCategory as clc ON clt.category_id = clc.category_id
+        '''
     credible_report = CredibleReport.from_sql('MBI', sql)
     with table.batch_writer() as writer:
         for id_value, entry in credible_report.items():
@@ -34,10 +37,16 @@ def spike():
                 'change_action': entry.get('action', None),
                 'has_details': entry.get('has_details', None),
                 'category_id': entry.get('category_id'),
-                'action_id': entry.get('changelogtype_id')
+                'action_id': entry.get('changelogtype_id'),
+                'id_name': entry.get('primarykey_name'),
+                'id_type': entry.get('record_type')
             }
             if new_item['change_action'] == '':
                 new_item['change_action'] = 'unspecified'
+            if new_item['id_name'] == '':
+                new_item['id_name'] = 'unspecified'
+            if new_item['id_type'] == '':
+                new_item['id_type'] = 'unspecified'
             try:
                 writer.put_item(Item=new_item)
             except ClientError as e:

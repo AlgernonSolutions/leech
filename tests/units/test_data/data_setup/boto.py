@@ -7,7 +7,6 @@ from dateutil.tz import tzlocal
 
 from tests.units.test_data.data_setup.schema_setup.schema_entry import MockVertexSchemaEntry, MockEdgeSchemaEntry
 from tests.units.test_data.schema_generator import get_schema_entry
-from toll_booth.alg_tasks.extractors import credible_fe
 
 
 class MockBoto:
@@ -273,6 +272,7 @@ def intercept(*args, **kwargs):
             if step_name == 'monitor_extraction':
                 mock_lambda = MockLambdaResponse(json.dumps([1001, 1002, 1003, 1004]))
                 return mock_lambda.as_response
+            from toll_booth.alg_tasks.extractors import credible_fe
             return credible_fe.handler(payload, mock_context.context)
     if operation_name == 'SendMessageBatch':
         return None

@@ -1,14 +1,27 @@
-import csv
 import datetime
-import io
+import logging
 import re
 from decimal import Decimal
 
 import bs4
+import pytz
 import requests
 from requests import cookies
+from retrying import retry
 
 from toll_booth.alg_obj.aws.squirrels.squirrel import Opossum
+from toll_booth.alg_obj.forge.extractors.credible_fe.credible_csv_parser import CredibleCsvParser
+from toll_booth.alg_obj.forge.extractors.credible_fe.cache import CachedEmployeeIds
+
+_base_stem = 'https://www.crediblebh.com'
+_url_stems = {
+    'Clients': '/client/client_hipaalog.asp',
+    'Employees': '/employee/emp_hipaalog.asp',
+    'DataDict': '/common/hipaalog_datadict.asp',
+    'ChangeDetail': '/common/hipaalog_details.asp',
+    'Employee Advanced': '/employee/list_emps_adv.asp',
+    'Global': '/admin/global_hipaalog.aspx'
+}
 
 
 class CredibleFrontEndLoginException(Exception):
@@ -16,15 +29,6 @@ class CredibleFrontEndLoginException(Exception):
 
 
 class CredibleFrontEndDriver:
-    _base_stem = 'https://www.crediblebh.com'
-    _url_stems = {
-        'Clients': '/client/client_hipaalog.asp',
-        'Employees': '/employee/emp_hipaalog.asp',
-        'DataDict': '/common/hipaalog_datadict.asp',
-        'ChangeDetail': '/common/hipaalog_details.asp',
-        'Employee Advanced': '/employee/list_emps_adv.asp',
-        'Global': '/admin/global_hipaalog.aspx'
-    }
     _monitor_extract_stems = {
         'Employees': '/employee/list_emps_adv.asp',
         'Clients': '/client/list_clients_adv.asp',
@@ -142,9 +146,9 @@ class CredibleFrontEndDriver:
             'emp_id': 1,
             'emp_status': 1
         }
-        url = self._base_stem + self._url_stems['EmployeeAdvanced']
+        url = _base_stem + _url_stems['Employee Advanced']
         response = self._session.post(url, data=data)
-        possible_employees = self._parse_csv_response(response.text)
+        possible_employees = CredibleCsvParser.parse_csv_response(response.text)
         if len(possible_employees) == 1:
             for entry in possible_employees:
                 for cell_name, row in entry.items():
@@ -164,9 +168,9 @@ class CredibleFrontEndDriver:
             'btn_export': ' Export ',
             object_field_names['alg_name']: 1
         }
-        url = self._base_stem + self._monitor_extract_stems[id_type]
+        url = _base_stem + self._monitor_extract_stems[id_type]
         response = self._session.post(url, data=data)
-        possible_objects = self._parse_csv_response(response.text)
+        possible_objects = CredibleCsvParser.parse_csv_response(response.text)
         return [x[object_field_names['internal_name']] for x in possible_objects]
 
     def get_data_dict_field_values(self, id_type, id_value, data_dict_id):
@@ -178,7 +182,7 @@ class CredibleFrontEndDriver:
             'data_dict_id': data_dict_id,
             param_name: id_value
         }
-        url = self._base_stem + self._url_stems['DataDict']
+        url = _base_stem + _url_stems['DataDict']
         response = self._session.get(url, params=params)
         compiled_match = re.compile(pattern)
         compiled_emp_id = re.compile(emp_id_pattern)
@@ -209,7 +213,7 @@ class CredibleFrontEndDriver:
             'Employees': 'employee',
             'Clients': 'client'
         }
-        url = self._base_stem + self._url_stems['Global']
+        url = _base_stem + _url_stems['Global']
         data = {
             'run_report': True,
             'rpt': 'RptGlbHipaaLog',
@@ -234,11 +238,11 @@ class CredibleFrontEndDriver:
         response = self._session.post(url, data=data)
         if response.status_code != 200:
             raise RuntimeError('could not get the change logs for %s' % data)
-        csv_response = self._parse_csv_response(response.text, key_name='UTCDate')
+        csv_response = CredibleCsvParser.parse_csv_response(response.text, key_name='UTCDate')
         return csv_response
 
     def get_change_logs(self, **kwargs):
-        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        url = _base_stem + _url_stems[kwargs['driving_id_type']]
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
             'start_date': self._format_datetime_id_value(kwargs['local_max_value']),
@@ -249,11 +253,13 @@ class CredibleFrontEndDriver:
         response = self._session.post(url, data=data)
         if response.status_code != 200:
             raise RuntimeError('could not get the change logs for %s' % data)
-        csv_response = self._parse_csv_response(response.text)
+        csv_response = CredibleCsvParser.parse_csv_response(response.text)
         return csv_response
 
     def enrich_change_logs(self, **kwargs):
         enrichment = {}
+        cached_emp_ids = CachedEmployeeIds()
+        kwargs['cached_emp_ids'] = cached_emp_ids
         enriched_data, page_number = self._get_changelog_page(**kwargs)
         for enriched_name, entry in enriched_data.items():
             enrichment[enriched_name] = entry
@@ -266,8 +272,9 @@ class CredibleFrontEndDriver:
 
     def _get_changelog_page(self, **kwargs):
         changelog_data = {}
-        row_pattern = re.compile('(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
-        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        row_pattern = re.compile(
+            '(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
+        url = _base_stem + _url_stems[kwargs['driving_id_type']]
         page_number = kwargs.get('page_number', 1)
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
@@ -281,51 +288,106 @@ class CredibleFrontEndDriver:
         if response.status_code != 200:
             raise RuntimeError('could not retrieve change details for %s' % data)
         row_match = re.compile(row_pattern).search(response.text).group('rows')
-        row_soup = bs4.BeautifulSoup(row_match)
-        emp_ids, more_pages = self._strain_emp_ids(row_soup)
-        changelog_data['emp_ids'] = emp_ids
-        if kwargs.get('has_details'):
-            change_details = self._strain_change_details(row_soup)
-            changelog_data['change_details'] = change_details
-        if more_pages:
-            return changelog_data, page_number
-        return changelog_data, None
-
-    @classmethod
-    def _strain_emp_ids(cls, row_soup):
-        emp_ids = {}
+        row_soup = bs4.BeautifulSoup(row_match, features='html.parser')
         table_rows = row_soup.find_all('tr')
         if len(table_rows) <= 3:
-            return [], None
+            page_number = None
+        if kwargs.get('get_emp_ids'):
+            emp_ids = self._strain_emp_ids(table_rows, kwargs.get('cached_emp_ids'))
+            changelog_data['emp_ids'] = emp_ids
+        if kwargs.get('get_details'):
+            change_details = self._strain_change_details(row_soup)
+            changelog_data['change_details'] = change_details
+        return changelog_data, page_number
+
+    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    def retrieve_changelog_page(self, url, **kwargs):
+        page_number = kwargs.get('page_number', 1)
+        data = {
+            kwargs['driving_id_name']: kwargs['driving_id_value'],
+            'start_date': self._format_datetime_id_value(kwargs['local_max_value']),
+            'changelogcategory_id': kwargs.get('category_id', ''),
+            'changelogtype_id': kwargs.get('action_id', ''),
+            'page': page_number
+        }
+        response = self._session.post(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError('could not retrieve changelogs for %s' % data)
+        return response.text
+
+    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    def retrieve_change_detail_page(self, url, changelog_id):
+        response = self._session.get(url, params={'changelog_id': changelog_id})
+        if response.status_code != 200:
+            raise RuntimeError('could not retrieve change details for %s' % changelog_id)
+        return response.text
+
+    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    def retrieve_emp_id_search(self, url, last_name, first_initial):
+        data = {
+            'submitform': 'true',
+            'btn_export': ' Export ',
+            'wh_fld1': 'last_name',
+            'wh_cmp1': 'LIKE',
+            'wh_val1': f'*{last_name}*',
+            'wh_andor': 'AND',
+            'wh_fld2': 'first_name',
+            'wh_cmp2': 'LIKE',
+            'wh_val2': f'{first_initial}*',
+            'emp_id': 1,
+            'emp_status': 1
+        }
+        response = self._session.post(url, data=data)
+        return response.text
+
+    def _strain_emp_ids(self, table_rows, cached_emp_ids):
+        name_pattern = re.compile("(?P<last_name>\w+),\s+(?P<first_initial>\w)")
+        emp_ids = {}
         for row in table_rows:
             if 'style' in row.attrs:
-                utc_change_date = row.contents[15].string
-                entry = datetime.datetime.strptime(utc_change_date, '%m/%d/%Y %I:%M:%S %p')
-                entry = entry.timestamp()
-                change_time = datetime.datetime.fromtimestamp(entry, tz=datetime.timezone.utc)
-                emp_entry = row.contents[3]
-                numeric_inside = re.compile('(?P<outside>[\w\s]+?)\s*\((?P<inside>[\d]+)\)')
-                match = numeric_inside.search(emp_entry.string).group('inside')
-                emp_id = Decimal(match)
-                emp_ids[change_time] = emp_id
-        return emp_ids, True
+                utc_change_date_string = row.contents[15].string
+                try:
+                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+                except ValueError:
+                    utc_change_date_string = f'{utc_change_date_string} 12:00:00 AM'
+                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+                change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
+                done_by_entry = row.contents[9]
+                done_by_name = done_by_entry.string
+                matches = name_pattern.search(done_by_name)
+                last_name = matches.group('last_name')
+                first_initial = matches.group('first_initial')
+                emp_id = cached_emp_ids.get_emp_id(last_name, first_initial)
+                if emp_id is None:
+                    try:
+                        emp_id = self.search_employees(last_name, first_initial)
+                    except RuntimeError:
+                        logging.warning('could not determine the emp_id from their name: %s' %
+                                        f'{last_name}, {first_initial}, using default value of 0')
+                        emp_id = 0
+                    cached_emp_ids.add_emp_id(last_name, first_initial, emp_id)
+                emp_ids[change_date_utc.timestamp()] = emp_id
+        return emp_ids
 
     def _strain_change_details(self, row_soup):
         change_details = {}
         table_rows = row_soup.find_all('a')
         if len(table_rows) <= 6:
-            return []
+            return {}
         for row in table_rows:
-            if 'href' in row.attrs and 'title' in row.attrs and row.attrs['href'] != '#':
-                target = row.attrs['href']
-                changelog_id = re.compile('changelog_id=(?P<changelog_id>\d+)').search(target).group('changelog_id')
+            if 'clid' in row.attrs:
+                changelog_id = row.attrs['clid']
+                # changelog_id = re.compile('changelog_id=(?P<changelog_id>\d+)').search(target).group('changelog_id')
                 changes = self.__get_change_details(changelog_id)
                 containing_row = row.parent.parent
-                change_date_string = containing_row.contents[15].string
-                change_date = datetime.datetime.strptime(change_date_string, '%m/%d/%Y %I:%M:%S %p')
-                change_date = change_date.timestamp()
-                change_date = datetime.datetime.fromtimestamp(change_date, tz=datetime.timezone.utc)
-                change_details[change_date] = changes
+                utc_change_date_string = containing_row.contents[15].string
+                try:
+                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+                except ValueError:
+                    utc_change_date_string = f'{utc_change_date_string} 12:00:00 AM'
+                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+                change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
+                change_details[change_date_utc.timestamp()] = changes
         return change_details
 
     def get_emp_ids(self, **kwargs):
@@ -340,9 +402,10 @@ class CredibleFrontEndDriver:
 
     def _get_emp_ids(self, **kwargs):
         emp_ids = {}
-        row_pattern = re.compile('(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
+        row_pattern = re.compile(
+            '(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(</table>)')
         page_number = kwargs.get('page_number', 1)
-        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        url = _base_stem + _url_stems[kwargs['driving_id_type']]
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
             'start_date': self._format_datetime_id_value(kwargs['local_change_log_id_value']),
@@ -383,7 +446,7 @@ class CredibleFrontEndDriver:
     def _get_change_details(self, **kwargs):
         change_details = {}
         row_pattern = '(<table border=\"\d\"\scellpadding=\"\d\"\scellspacing=\"\d\"\swidth=\"[\d]+%\">)(?P<rows>[.\s\S]+?)(<\/table>)'
-        url = self._base_stem + self._url_stems[kwargs['driving_id_type']]
+        url = _base_stem + _url_stems[kwargs['driving_id_type']]
         page_number = kwargs.get('page_number', 1)
         data = {
             kwargs['driving_id_name']: kwargs['driving_id_value'],
@@ -414,11 +477,12 @@ class CredibleFrontEndDriver:
                 change_details[change_date] = changes
         return change_details, page_number
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def __get_change_details(self, changelog_id):
         changes = []
-        url = self._base_stem + self._url_stems['ChangeDetail']
+        url = _base_stem + _url_stems['ChangeDetail']
         response = self._session.get(url, params={'changelog_id': changelog_id})
-        detail_soup = bs4.BeautifulSoup(response.content)
+        detail_soup = bs4.BeautifulSoup(response.content, features='html.parser')
         all_rows = detail_soup.find_all('tr')
         interesting_rows = all_rows[4:]
         for row in interesting_rows:
@@ -468,56 +532,6 @@ class CredibleFrontEndDriver:
         if datetime_value is None:
             datetime_value = datetime.datetime.now() - datetime.timedelta(days=3650)
         return datetime_value.strftime(credible_format)
-
-    @classmethod
-    def _parse_csv_response(cls, csv_string, key_name=None):
-        response = []
-        if key_name:
-            response = {}
-        header = []
-        first = True
-        with io.StringIO(csv_string, newline='\r\n') as csv_string:
-            reader = csv.reader(csv_string, delimiter=',', quotechar='"')
-            for row in reader:
-                header_index = 0
-                row_entry = {}
-                if first:
-                    for entry in row:
-                        header.append(entry)
-                    first = False
-                    continue
-                for entry in row:
-                    try:
-                        header_name = header[header_index]
-                    except IndexError:
-                        raise RuntimeError(
-                            'the returned data from a csv query contained insufficient information to create the table')
-                    entry = cls._set_data_type(header_name, entry)
-                    row_entry[header_name] = entry
-                    header_index += 1
-                if key_name:
-                    key_value = row_entry[key_name]
-                    response[key_value] = row_entry
-                    continue
-                response.append(row_entry)
-        return response
-
-    @classmethod
-    def _set_data_type(cls, header_name, entry):
-        data_type = cls._field_value_maps.get(header_name, 'string')
-        if not entry:
-            return None
-        if data_type == 'string':
-            entry = str(entry)
-        if data_type == 'datetime':
-            entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
-        if data_type == 'utc_datetime':
-            entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
-            entry = entry.timestamp()
-            entry = datetime.datetime.fromtimestamp(entry, tz=datetime.timezone.utc)
-        if data_type == 'number':
-            entry = Decimal(entry)
-        return entry
 
     @classmethod
     def _logout(cls, cookie_jar, session):
