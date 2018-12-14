@@ -1,4 +1,5 @@
 import json
+import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -48,6 +49,46 @@ class EmailDriver:
         )
         return response
 
+    def send_bulk_templated_email(self, email_list: list, ):
+        chunked_email_list = []
+        if len(email_list) > 50:
+            for i in range(0, len(email_list), 50):
+                chunked_email_list.append(email_list[i: i + 50])
+        else:
+            chunked_email_list.append(email_list)
+        for smaller_email_list in chunked_email_list:
+            response = self.client.send_bulk_templated_email(
+                Source='beta@algernon.solutions',
+                ReplyToAddresses=[
+                    'beta@algernon.solutions',
+                ],
+                ReturnPath='beta@algernon.solutions',
+                Template='example template',
+                TemplateArn='arn of the template used to send this bulk email',
+                DefaultTemplateData='string',
+                Destinations=[
+                    {
+                        'Destination': {
+                            'ToAddresses': smaller_email_list,
+                            'CcAddresses': [
+                                'string',
+                            ],
+                            'BccAddresses': [
+                                'string',
+                            ]
+                        },
+                        'ReplacementTags': [
+                            {
+                                'Name': 'string',
+                                'Value': 'string'
+                            },
+                        ],
+                        'ReplacementTemplateData': 'string'
+                    },
+                ]
+            )
+            return response
+
 
 class MIMEEmail:
     """
@@ -78,6 +119,8 @@ class MIMEEmail:
         self.create_email_header()
         self.create_email_body()
         self.create_email_attachments()
+        if sys.getsizeof(self.msg) > 1000000:
+            raise ValueError
         return self.msg
 
     def create_email_header(self):
