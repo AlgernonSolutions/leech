@@ -300,7 +300,7 @@ class CredibleFrontEndDriver:
             changelog_data['change_details'] = change_details
         return changelog_data, page_number
 
-    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def retrieve_changelog_page(self, url, **kwargs):
         page_number = kwargs.get('page_number', 1)
         data = {
@@ -315,14 +315,14 @@ class CredibleFrontEndDriver:
             raise RuntimeError('could not retrieve changelogs for %s' % data)
         return response.text
 
-    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def retrieve_change_detail_page(self, url, changelog_id):
         response = self._session.get(url, params={'changelog_id': changelog_id})
         if response.status_code != 200:
             raise RuntimeError('could not retrieve change details for %s' % changelog_id)
         return response.text
 
-    #@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     def retrieve_emp_id_search(self, url, last_name, first_initial):
         data = {
             'submitform': 'true',

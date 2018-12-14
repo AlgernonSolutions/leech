@@ -234,7 +234,7 @@ class Mushroom:
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
         self._leech_scanner = DynamoScanner(table_name='VdGraphObjects')
         self._transform_queue = kwargs.get(
-            'transform_queue', ForgeQueue.get_for_transform_queue(swarm=False, auto_send_threshold=100, **kwargs))
+            'transform_queue', ForgeQueue.get_for_transform_queue(swarm=False, auto_send_threshold=1, **kwargs))
         self._change_types = ChangeTypes.get(leech_driver=self._leech_driver)
         self._driving_identifier_stem = None
         self._extracted_identifier_stem = None
