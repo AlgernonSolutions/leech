@@ -49,13 +49,12 @@ class EmailDriver:
         )
         return response
 
-    def send_bulk_templated_email(self, email_list: list, ):
-        chunked_email_list = []
-        if len(email_list) > 50:
-            for i in range(0, len(email_list), 50):
-                chunked_email_list.append(email_list[i: i + 50])
-        else:
-            chunked_email_list.append(email_list)
+    def send_bulk_templated_email(self, email_list: list, email_data, template, template_arn):
+        """
+        Calls to the email utility object in order to reduce the size of the email list to the prescribedk maximum of 50
+        recipients. Then utilized the boto client to send a pre templated email to users in bulk.
+        """
+        chunked_email_list = EmailUtility.email_chunker(email_list)
         for smaller_email_list in chunked_email_list:
             response = self.client.send_bulk_templated_email(
                 Source='beta@algernon.solutions',
@@ -379,6 +378,25 @@ class UserReports:
                 else:
                     continue
         self.user_report["tx_report"] = tx_report
+
+
+class EmailUtility:
+
+    @staticmethod
+    def email_chunker(email_list, max_chunk_size=50):
+        """
+        Splits email into chunks set by the max_chunk_size variable, then returns a list of smaller email lists.
+        :param email_list: a list of emails
+        :param max_chunk_size: maximum amount of emails allowed in a specific list
+        :return: list of smaller email lists
+        """
+        chunked_email_list = []
+        if len(email_list) > max_chunk_size:
+            for i in range(0, len(email_list), max_chunk_size):
+                chunked_email_list.append(email_list[i: i + max_chunk_size])
+        else:
+            chunked_email_list.append(email_list)
+        return chunked_email_list
 
 
 
