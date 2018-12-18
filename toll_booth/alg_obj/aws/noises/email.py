@@ -9,12 +9,6 @@ import boto3
 This module allows for the separation of data by organizations, then subdivided by admin/clinical/qi reports
 for individuals.
 
-Data is then formatted in an appropriate way and distributed to subscribers
-
-This module accepts JSON data objects. Defined within the EmailDataExtractor object.
-
-This drives the identification of subscribers, as well as the data that will be submitted to them.
-
 This module is predicated on the definition of canned reports, as well as creation of custom reports.
 
 """
@@ -51,7 +45,7 @@ class EmailDriver:
 
     def send_bulk_templated_email(self, email_list: list, email_data, template, template_arn):
         """
-        Calls to the email utility object in order to reduce the size of the email list to the prescribedk maximum of 50
+        Calls to the email utility object in order to reduce the size of the email list to the prescribed maximum of 50
         recipients. Then utilized the boto client to send a pre templated email to users in bulk.
         """
         chunked_email_list = EmailUtility.email_chunker(email_list)
@@ -222,162 +216,11 @@ class EmailSubscriber:
         self.view = kwargs.get("view", "null")
         self.reports = kwargs.get("reports", "null")
 
-
-class EmailDataExtractor:
-    """
-    Converts data into various metrics, and reports. Then returns the reports back to the
-        data = {
-        "organization": {
-            "mbi": {
-                "clients": [
-                    {
-                        "first_name": "Joe",
-                        "last_name": "Schmo",
-                        "team": "CSP 1",
-                        "id": "1111",
-                        "csw_first_name": "John",
-                        "csw_last_name": "Test",
-                        "tx_plan_start": "1/1/1111 1:11:11",
-                        "tx_plan_end": "1/7/1111 1:11:11",
-                        "da_plan_start": "1/1/1111 1:11:11",
-                        "da_plan_end": "1/1/1112 1:11:11",
-                        "services_past_week": 11,
-                        "services_past_month": 39,
-                        "auths": {
-                            "diagnostic": "1/1",
-                            "community_supt": "245/300",
-                            "psychiatry": "22/30"
-                        }
-                    },
-                    {
-                        "first_name": "Mr",
-                        "last_name": "Smith",
-                        "team": "CSP 1",
-                        "id": "1112",
-                        "csw_first_name": "John",
-                        "csw_last_name": "Test",
-                        "tx_plan_start": "1/1/1111 1:11:11",
-                        "tx_plan_end": "1/7/1111 1:11:11",
-                        "da_plan_start": "1/1/1111 1:11:11",
-                        "da_plan_end": "1/1/1112 1:11:11",
-                        "services_past_week": 11,
-                        "services_past_month": 39,
-                        "auths": {
-                            "diagnostic": "1/1",
-                            "community_supt": "245/300",
-                            "psychiatry": "22/30"
-                            }
-                    }
-                ],
-                "services": [
-                    {
-                        "service_id": "102546",
-
-                    }
-                ],
-                "users": [
-                         {
-                            "first_name": "Joe",
-                            "last_name": "Schmo",
-                            "email": "jschmo@gmail.com",
-                            "team": "CSP 1",
-                            "view": "admin",
-                            "reports": {
-                                "admin": {"payroll": "csv", "bonus": "email"},
-                                "clinical": {"tx": "csv", "da": "email"}
-                                }
-                        },
-                        {
-                            "first_name": "John",
-                            "last_name": "Test",
-                            "email": "jschmo@gmail.com",
-                            "team": "CSP 1",
-                            "view": "admin",
-                            "reports": {
-                                "admin": {"payroll": "csv", "bonus": "email"},
-                                "clinical": {"tx": "csv", "da": "email"}
-                        }
-                        }
-                ]
-            },
-            "psi": {
-
-            },
-            "icfs": {
-
-            }
-        }
-    }
-    """
-    def __init__(self, data: json):
-        self.data = data
-
-    def create_user_list(self):
+    def get_data(self):
         """
-         Parses through the JSON object in order to generate a list of users, then creates an OrganizationDict from the
-         users contained in the data.
+        used to retrieve data from an s3 bucket containing reports specific to the individual user
         """
-        org_dict = OrganizationDict()
-        for organization in self.data["organization"]:
-            if "users" in self.data["organization"][organization]:
-                for user in self.data["organization"][organization]["users"]:
-                    new_user = EmailSubscriber(
-                        first_name=user["first_name"],
-                        last_name=user["last_name"],
-                        email=user["email"],
-                        team=user["team"],
-                        organization=organization,
-                        view=user["view"],
-                        reports=user["reports"],
-                    )
-                    self.create_report_views(new_user.reports)
-                    org_dict.add_subscriber(new_user)
-            else:
-                continue
-        return org_dict
-
-    def create_report_views(self, report_data):
         pass
-
-
-class UserReports:
-    """
-    defines and creates the canned and custom reports necessary fo each individual. Returns JSON object for further
-    processing
-    """
-    def __init__(self, data: object):
-        self.data = data
-        self.user_report = {}
-
-    def tx_report(self, subscriber: object):
-        """Defines report that returns TX plan information regarding start dates and end dates"""
-        tx_report = []
-        if subscriber.view is "admin":
-            for client in self.data["organization"][subscriber.organization]["clients"]:
-                data = {
-                    "first_name": client["first_name"],
-                    "last_name": client["last_name"],
-                    "id": client["id"],
-                    "team": client["team"],
-                    "tx_plan_start": client["tx_plan_start"],
-                    "tx_plan_end": client["tx_plan_end"]
-                }
-                tx_report.append(data)
-        if subscriber.view is "team":
-            for client in self.data["organization"][subscriber.organization]["clients"]:
-                if client["team"] is subscriber.team:
-                    data = {
-                        "first_name": client["first_name"],
-                        "last_name": client["last_name"],
-                        "id": client["id"],
-                        "team": client["team"],
-                        "tx_plan_start": client["tx_plan_start"],
-                        "tx_plan_end": client["tx_plan_end"]
-                    }
-                    tx_report.append(data)
-                else:
-                    continue
-        self.user_report["tx_report"] = tx_report
 
 
 class EmailUtility:
