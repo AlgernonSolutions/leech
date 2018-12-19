@@ -178,7 +178,7 @@ class OrganizationDict:
     def __init__(self):
         self.organization_dict = {}
 
-    def add_subscriber(self, email_subscriber: object):
+    def add_subscriber(self, email_subscriber):
         if email_subscriber.organization in self.organization_dict:
             self.organization_dict[email_subscriber.organization].append(email_subscriber)
         else:
