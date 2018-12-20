@@ -1,12 +1,15 @@
+import json
+
 import pytest
 
 from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
 from toll_booth.alg_obj.forge.fungi import Spore, Mycelium, Mushroom
+from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 @pytest.mark.usefixtures('mock_schema')
 class TestShrooms:
-    @pytest.mark.propagate
+    @pytest.mark._propagate
     def test_propagation(self, propagated_identifier_stem):
         spore = Spore(**propagated_identifier_stem)
         results = spore.propagate()

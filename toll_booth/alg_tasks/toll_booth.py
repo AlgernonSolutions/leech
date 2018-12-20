@@ -1,7 +1,7 @@
 import json
 import logging
 
-from toll_booth.alg_obj.serializers import GqlDecoder, AlgDecoder
+from toll_booth.alg_obj.serializers import GqlDecoder, AlgDecoder, AlgEncoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 from toll_booth.alg_tasks.worker import Worker
 
@@ -73,6 +73,7 @@ def exploded(event, context):
 @lambda_logged
 def propagate(event, context):
     logging.info(f'starting a propagate call with event: {event}')
+    event = json.loads(event, cls=AlgEncoder)
     event.update({'context': context})
     event = {
         'task_name': 'propagate',
