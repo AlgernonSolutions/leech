@@ -75,7 +75,7 @@ class General:
         propagation_results = self._check_subtask_completion('propagate', sub_tasks)
         if propagation_results:
             made_decisions.add_decision(StartSubtask(
-                execution_id, 'creep', flow_input, version='3',
+                execution_id, 'creep', propagation_results, version='1',
                 task_list_name='creep', lambda_role=lambda_role
             ))
             self._client.respond_decision_task_completed(**made_decisions.for_commit)
@@ -107,9 +107,9 @@ class General:
             made_decisions.add_decision(ScheduleLambda(fn_name, flow_input))
             self._client.respond_decision_task_completed(**made_decisions.for_commit)
             return
-        propagation_results = self._check_lambda_completion(fn_name, lambda_tasks)
-        if propagation_results:
-            made_decisions.add_decision(CompleteWork(propagation_results))
+        lambda_results = self._check_lambda_completion(fn_name, lambda_tasks)
+        if lambda_results:
+            made_decisions.add_decision(CompleteWork(lambda_results))
             self._client.respond_decision_task_completed(**made_decisions.for_commit)
             return
         self._client.respond_decision_task_completed(**made_decisions.for_commit)

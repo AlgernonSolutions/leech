@@ -224,6 +224,16 @@ Resources:
       Timeout: 300
       MemorySize: 448
 
+  creep:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.creep
+      FunctionName: leech-creep
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+
   fruit:
     Type: AWS::Serverless::Function
     Properties:

@@ -38,6 +38,7 @@ _subtask_steps = {
 
 }
 
+
 class Event:
     def __init__(self, event_id, event_type, event_timestamp, event_attributes):
         self._event_id = event_id
@@ -201,20 +202,15 @@ class SubtaskEventSets:
     @classmethod
     def strain_from_events(cls, events: [Event]):
         subtask_events = {}
-        time_sorted = sorted(events, key=lambda x: x.event_id)
-        for event in time_sorted:
-            if event.event_type == 'ChildWorkflowExecutionStarted':
-                flow_id = event.event_attributes['workflowExecution']['workflowId']
-                pointer = time_sorted.index(event)
+        for event in events:
+            if 'ChildWorkflow' in event.event_type:
+                try:
+                    flow_id = event.event_attributes['workflowExecution']['workflowId']
+                except KeyError:
+                    flow_id = event.event_attributes['workflowId']
                 if flow_id not in subtask_events:
                     subtask_events[flow_id] = SubtaskEventSet(flow_id)
                 subtask_events[flow_id].add_event(event)
-                while pointer:
-                    pointer += 1
-                    next_event = time_sorted[pointer]
-                    if 'ChildWorkflow' not in next_event.event_type:
-                        break
-                    subtask_events[flow_id].add_event(next_event)
         return cls(list(subtask_events.values()))
 
     def get_for_task_name(self, task_name):
