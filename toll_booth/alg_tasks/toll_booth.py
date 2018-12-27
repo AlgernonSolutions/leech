@@ -90,18 +90,14 @@ def creep(event, context):
     logging.info(f'starting a creep call with event: {event}')
     event = json.loads(event, cls=AlgDecoder)
     event.update({'context': context})
-    run_data = event['run_data']
-    propagation_id = run_data['propagation_id']
-    id_source = run_data['id_source']
-    event['propagation_id'] = propagation_id
-    event['id_source'] = id_source
     event = {
         'task_name': 'creep',
         'task_args': event
     }
     work_results = work(event, context)
-    logging.info('completed a creep call, results: %s' % work_results)
-    return work_results
+    results = json.loads(work_results, cls=AlgDecoder)
+    logging.info('completed a creep call, results: %s' % results)
+    return results
 
 
 @lambda_logged
