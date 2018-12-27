@@ -1,59 +1,7 @@
 import json
 import uuid
 
-from toll_booth.alg_obj.aws.gentlemen.events import Event, EventHistory
 from toll_booth.alg_obj.serializers import AlgEncoder
-
-
-class DecisionParameters:
-    def __init__(self, flow_type: str, task_token: str, flow_id: str, run_id: str, event_history: EventHistory):
-        self._flow_type = flow_type
-        self._task_token = task_token
-        self._flow_id = flow_id
-        self._run_id = run_id
-        self._event_history = event_history
-
-    @property
-    def flow_type(self):
-        return self._flow_type
-
-    @property
-    def flow_id(self):
-        return self._flow_id
-
-    @property
-    def run_id(self):
-        return self._run_id
-
-    @property
-    def event_history(self):
-        return self._event_history
-
-    @property
-    def task_token(self):
-        return self._task_token
-
-    @classmethod
-    def parse_from_decision_poll(cls, poll_response):
-        flow_type = poll_response['workflowType']['name']
-        task_token = poll_response['taskToken']
-        execution_info = poll_response['workflowExecution']
-        flow_id = execution_info['workflowId']
-        run_id = execution_info['runId']
-        raw_events = poll_response['events']
-        events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
-        event_history = EventHistory.generate_from_events(events)
-        return cls(flow_type, task_token, flow_id, run_id, event_history)
-
-    @classmethod
-    def generate_empty(cls):
-        return cls('', '', '', '', EventHistory())
-
-    def add_additional_events(self, events):
-        self._event_history.add_events(events)
-
-    def __bool__(self):
-        return self._flow_type is not ''
 
 
 class Decision:

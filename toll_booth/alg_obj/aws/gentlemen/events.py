@@ -1,4 +1,6 @@
 _lambda_steps = {
+    'operation_first': 'LambdaFunctionScheduled',
+    'execution_first': 'LambdaFunctionStarted',
     'all': [
         'LambdaFunctionScheduled',
         'LambdaFunctionStarted',
@@ -12,9 +14,12 @@ _lambda_steps = {
     'failed': [
         'LambdaFunctionFailed', 'LambdaFunctionTimedOut',
         'ScheduleLambdaFunctionFailed', 'StartLambdaFunctionFailed'
-    ]
+    ],
+    'completed': 'LambdaFunctionCompleted'
 }
 _subtask_steps = {
+    'operation_first': 'StartChildWorkflowExecutionInitiated',
+    'execution_first': 'ChildWorkflowExecutionStarted',
     'all': [
         'StartChildWorkflowExecutionInitiated',
         'StartChildWorkflowExecutionFailed',
@@ -34,9 +39,12 @@ _subtask_steps = {
         'ChildWorkflowExecutionTimedOut',
         'ChildWorkflowExecutionCanceled',
         'ChildWorkflowExecutionTerminated'
-    ]
+    ],
+    'completed': 'ChildWorkflowExecutionCompleted'
 
 }
+
+_starting_step = 'WorkflowExecutionStarted'
 
 
 class Event:
@@ -87,170 +95,24 @@ class Event:
 'LambdaFunctionCompleted'
 'LambdaFunctionFailed'
 'LambdaFunctionTimedOut'
-'ScheduleLambdaFunctionFailed'
 'StartLambdaFunctionFailed'
+'ScheduleLambdaFunctionFailed'
 
 
-class EventHistory:
-    def __init__(self, events=None, events_by_type=None):
+class LambdaExecution:
+    def __init__(self, run_id: str, events: [Event] = None):
         if not events:
             events = []
-        if not events_by_type:
-            events_by_type = {}
-        self._events = events
-        self._events_by_type = events_by_type
-
-    @classmethod
-    def generate_from_events(cls, events: [Event]):
-        event_types = {}
-        for event in events:
-            event_type = event.event_type
-            if event_type not in event_types:
-                event_types[event_type] = []
-            event_types[event_type].append(event)
-        return cls(events, event_types)
-
-    @property
-    def events(self):
-        return self._events
-
-    @property
-    def events_by_type(self):
-        return self._events_by_type
-
-    def add_events(self, events: [Event]):
-        for event in events:
-            self.add_event(event)
-
-    def add_event(self, event: Event):
-        event_type = event.event_type
-        if event_type not in self._events_by_type:
-            self._events_by_type[event_type] = []
-        self._events_by_type[event_type].append(event)
-        self._events.append(event)
-
-    def get_event_by_type(self, event_type):
-        return self._events_by_type.get(event_type, None)
-
-    def get_lambda_sets(self, fn_name_filter=None):
-        return LambdaEventSets.strain_from_events(self._events, fn_name_filter)
-
-    def get_subtask_sets(self):
-        return SubtaskEventSets.strain_from_events(self._events)
-
-    def __iter__(self):
-        return iter(self._events)
-
-
-class SubtaskEventSet:
-    def __init__(self, execution_id, events: EventHistory = None):
-        if not events:
-            events = EventHistory()
-        self._execution_id = execution_id
+        self._run_id = run_id
         self._events = events
 
-    @classmethod
-    def strain_from_history(cls, target_id, event_history: EventHistory):
-        pass
-
     @property
-    def execution_id(self):
-        return self._execution_id
+    def run_id(self):
+        return self._run_id
 
     @property
     def status(self):
-        time_sorted = sorted(self._events.events, key=lambda x: x.event_timestamp, reverse=True)
-        return str(time_sorted[0])
-
-    @property
-    def is_live(self):
-        return self.status in _subtask_steps['live']
-
-    @property
-    def is_failed(self):
-        return self.status in _subtask_steps['failed']
-
-    @property
-    def is_completed(self):
-        return self.status == 'ChildWorkflowExecutionCompleted'
-
-    @property
-    def fail_reason(self):
-        if self.status in _subtask_steps['failed']:
-            return self.status
-        return None
-
-    @property
-    def results(self):
-        time_sorted = sorted(self._events.events, key=lambda x: x.event_timestamp, reverse=True)
-        try:
-            return time_sorted[0].event_attributes['result']
-        except KeyError:
-            return None
-
-    def add_event(self, event):
-        self._events.add_event(event)
-
-
-class SubtaskEventSets:
-    def __init__(self, event_sets: [SubtaskEventSet]):
-        self._event_sets = event_sets
-
-    def __bool__(self):
-        return bool(self._event_sets)
-
-    @classmethod
-    def strain_from_events(cls, events: [Event]):
-        subtask_events = {}
-        for event in events:
-            if 'ChildWorkflow' in event.event_type:
-                try:
-                    flow_id = event.event_attributes['workflowExecution']['workflowId']
-                except KeyError:
-                    flow_id = event.event_attributes['workflowId']
-                if flow_id not in subtask_events:
-                    subtask_events[flow_id] = SubtaskEventSet(flow_id)
-                subtask_events[flow_id].add_event(event)
-        return cls(list(subtask_events.values()))
-
-    def get_for_task_name(self, task_name):
-        return [x for x in self._event_sets if task_name in x.execution_id]
-
-
-class LambdaEventSet:
-    def __init__(self, execution_id, fn_name, events: EventHistory = None):
-        if not events:
-            events = EventHistory()
-        self._execution_id = execution_id
-        self._fn_name = fn_name
-        self._events = events
-
-    @classmethod
-    def strain_from_history(cls, target_id, event_history: EventHistory):
-        lambda_events = []
-        fn_name = None
-        for event in event_history:
-            if event.event_type in _lambda_steps['all']:
-                lambda_id = event.event_attributes['id']
-                if lambda_id == target_id:
-                    if not fn_name:
-                        fn_name = event.event_attributes['name']
-                    lambda_events.append(event)
-        if lambda_events:
-            return cls(target_id, fn_name, EventHistory.generate_from_events(lambda_events))
-        return None
-
-    @property
-    def execution_id(self):
-        return self._execution_id
-
-    @property
-    def fn_name(self):
-        return self._fn_name
-
-    @property
-    def status(self):
-        time_sorted = sorted(self._events.events, key=lambda x: x.event_timestamp, reverse=True)
+        time_sorted = sorted(self._events, key=lambda x: x.event_timestamp, reverse=True)
         return str(time_sorted[0])
 
     @property
@@ -263,7 +125,7 @@ class LambdaEventSet:
 
     @property
     def is_completed(self):
-        return self.status == 'LambdaFunctionCompleted'
+        return self.status == _lambda_steps['completed']
 
     @property
     def fail_reason(self):
@@ -273,45 +135,328 @@ class LambdaEventSet:
 
     @property
     def results(self):
-        time_sorted = sorted(self._events.events, key=lambda x: x.event_timestamp, reverse=True)
+        time_sorted = sorted(self._events, key=lambda x: x.event_timestamp, reverse=True)
         return time_sorted[0].event_attributes['result']
 
-    def add_lambda_event(self, lambda_event):
-        self._events.add_event(lambda_event)
+    def add_event(self, event: Event):
+        self._events.append(event)
 
 
-class LambdaEventSets:
-    def __init__(self, event_sets: [LambdaEventSet]):
-        self._event_sets = event_sets
+class LambdaOperation:
+    def __init__(self, fn_name: str, flow_id: str, run_id: str, task_args: str, lambda_executions: [LambdaExecution] = None):
+        if not lambda_executions:
+            lambda_executions = []
+        self._fn_name = fn_name
+        self._flow_id = flow_id
+        self._run_id = run_id
+        self._task_args = task_args
+        self._lambda_executions = lambda_executions
+        self._operation_failure = None
 
-    def __bool__(self):
-        return bool(self._event_sets)
+    @property
+    def run_id(self):
+        return self._run_id
 
-    def get_sets_by_name(self, fn_name):
-        return [x for x in self._event_sets if x.fn_name == fn_name]
+    @property
+    def results(self):
+        returned_results = []
+        for execution in self._lambda_executions:
+            if execution.results:
+                returned_results.append(execution.results)
+        if len(returned_results) > 1:
+            raise RuntimeError('multiple lambda invocations of the same workflow with the same input '
+                               'must return the same values, this was not the case')
+        for result in returned_results:
+            return result
+        return None
+
+    @property
+    def is_live(self):
+        for execution in self._lambda_executions:
+            if execution.is_live:
+                return True
+        return False
+
+    @property
+    def is_complete(self):
+        for execution in self._lambda_executions:
+            if execution.is_completed:
+                return True
+        return False
+
+    def add_execution(self, lambda_execution: LambdaExecution):
+        self._lambda_executions.append(lambda_execution)
+
+    def set_operation_failure(self, event: Event):
+        self._operation_failure = event
+
+    def invoke(self):
+        return
+
+
+class SubtaskExecution:
+    def __init__(self, flow_id: str, run_id: str, task_name: str, events: [Event] = None):
+        if not events:
+            events = []
+        self._flow_id = flow_id
+        self._run_id = run_id
+        self._task_name = task_name
+        self._events = events
+
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    @property
+    def run_id(self):
+        return self._run_id
+
+    @property
+    def status(self):
+        time_sorted = sorted(self._events, key=lambda x: x.event_timestamp, reverse=True)
+        return str(time_sorted[0])
+
+    @property
+    def is_live(self):
+        return self.status in _subtask_steps['live']
+
+    @property
+    def is_failed(self):
+        return self.status in _subtask_steps['failed']
+
+    @property
+    def is_completed(self):
+        return self.status == _subtask_steps['completed']
+
+    @property
+    def fail_reason(self):
+        if self.status in _subtask_steps['failed']:
+            return self.status
+        return None
+
+    @property
+    def results(self):
+        time_sorted = sorted(self._events, key=lambda x: x.event_timestamp, reverse=True)
+        if time_sorted:
+            try:
+                return time_sorted[0].event_attributes['result']
+            except KeyError:
+                return None
+        return None
+
+    def add_event(self, event: Event):
+        self._events.append(event)
+
+
+class SubtaskOperation:
+    def __init__(self, flow_id: str, task_name: str, task_args: str, subtask_executions: [SubtaskExecution] = None):
+        if not subtask_executions:
+            subtask_executions = []
+        self._flow_id = flow_id
+        self._task_name = task_name
+        self._task_args = task_args
+        self._subtask_executions = subtask_executions
+        self._operation_failure = None
+
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    @property
+    def task_name(self):
+        return self._task_name
+
+    @property
+    def results(self):
+        returned_results = []
+        for execution in self._subtask_executions:
+            if execution.results:
+                returned_results.append(execution.results)
+        if len(returned_results) > 1:
+            raise RuntimeError('multiple lambda invocations of the same workflow with the same input '
+                               'must return the same values, this was not the case')
+        for result in returned_results:
+            return result
+        return None
+
+    @property
+    def is_live(self):
+        for execution in self._subtask_executions:
+            if execution.is_live:
+                return True
+        return False
+
+    @property
+    def is_complete(self):
+        for execution in self._subtask_executions:
+            if execution.is_completed:
+                return True
+        return False
+
+    def add_execution(self, subtask_execution: SubtaskExecution):
+        self._subtask_executions.append(subtask_execution)
+
+    def set_operation_failure(self, event: Event):
+        self._operation_failure = event
+
+
+class WorkflowHistory:
+    def __init__(self, flow_type: str, task_token: str, flow_id: str, run_id: str, lambda_role: str, input_str: str,
+                 events: [Event], subtask_operations: [SubtaskOperation], lambda_operations: [LambdaOperation]):
+        self._flow_type = flow_type
+        self._flow_id = flow_id
+        self._run_id = run_id
+        self._lambda_role = lambda_role
+        self._input_str = input_str
+        self._task_token = task_token
+        self._events = events
+        self._lambda_operations = lambda_operations
+        self._subtask_operations = subtask_operations
 
     @classmethod
-    def strain_from_events(cls, events: [Event], fn_name_filter=None):
-        lambda_event_groups = {}
-        time_sorted = sorted(events, key=lambda x: x.event_id)
-        for event in time_sorted:
-            if event.event_type == 'LambdaFunctionScheduled':
-                fn_name = event.event_attributes.get('name', None)
-                lambda_id = event.event_attributes['id']
-                pointer = time_sorted.index(event)
-                if fn_name_filter:
-                    if fn_name and fn_name != fn_name_filter:
-                        continue
-                if lambda_id not in lambda_event_groups:
-                    lambda_event_groups[lambda_id] = LambdaEventSet(lambda_id, fn_name)
-                lambda_event_groups[lambda_id].add_lambda_event(event)
-                while pointer:
-                    pointer += 1
-                    next_event = time_sorted[pointer]
-                    if 'Lambda' not in next_event.event_type:
-                        break
-                    lambda_event_groups[lambda_id].add_lambda_event(next_event)
-        return cls(list(lambda_event_groups.values()))
+    def parse_from_poll(cls, poll_response):
+        flow_type = poll_response['workflowType']['name']
+        task_token = poll_response['taskToken']
+        execution_info = poll_response['workflowExecution']
+        flow_id = execution_info['workflowId']
+        run_id = execution_info['runId']
+        raw_events = poll_response['events']
+        events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
+        lambda_operations = cls._generate_lambda_operations(events)
+        subtask_operations = cls._generate_subtask_operations(events)
+        input_str, lambda_role = cls._generate_workflow_starter_data(events)
+        cls_args = {
+            'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id, 'run_id': run_id,
+            'input_str': input_str, 'lambda_role': lambda_role, 'events': events,
+            'subtask_operations': subtask_operations, 'lambda_operations': lambda_operations
+        }
+        return cls(**cls_args)
+
+    @classmethod
+    def _generate_lambda_operations(cls, events: [Event]):
+        lambda_operations = {}
+        lambda_executions = {}
+        lambda_events = []
+        for event in events:
+            if event.event_type in _lambda_steps['all']:
+                if event.event_type == _lambda_steps['operation_first']:
+                    fn_name = event.event_attributes.get('name')
+                    flow_id = event.event_attributes['id']
+                    run_id = event.event_id
+                    task_args = event.event_attributes['input']
+                    lambda_operation = LambdaOperation(fn_name, flow_id, run_id, task_args)
+                    lambda_operations[fn_name] = lambda_operation
+                    continue
+                if event.event_type == _lambda_steps['execution_first']:
+                    operation_event_id = event.event_attributes['scheduledEventId']
+                    lambda_execution = LambdaExecution(operation_event_id, [event])
+                    lambda_executions[operation_event_id] = lambda_execution
+                    continue
+                lambda_events.append(event)
+        for event in lambda_events:
+            if event.event_type == 'ScheduleLambdaFunctionFailed':
+                fn_name = event.event_attributes['name']
+                lambda_operations[fn_name].set_operation_failure(event)
+                continue
+            execution_id = event.event_attributes['scheduledEventId']
+            lambda_executions[execution_id].add_event(event)
+        for execution_id, lambda_execution in lambda_executions.items():
+            matched = False
+            for lambda_operation in lambda_operations.values():
+                if execution_id == lambda_operation.run_id:
+                    lambda_operation.add_execution(lambda_execution)
+                    matched = True
+                    continue
+            if not matched:
+                raise RuntimeError('could not find appropriate lambda operation for '
+                                   'lambda execution: %s' % lambda_execution)
+        return lambda_operations
+
+    @classmethod
+    def _generate_subtask_operations(cls, events: [Event]):
+        subtask_operations = {}
+        subtask_executions = {}
+        subtask_events = {}
+        for event in events:
+            if event.event_type in _subtask_steps['all']:
+                try:
+                    flow_id = event.event_attributes['workflowId']
+                except KeyError:
+                    flow_id = event.event_attributes['workflowExecution']['workflowId']
+                task_name = event.event_attributes['workflowType']['name']
+                if flow_id not in subtask_events:
+                    subtask_events[flow_id] = []
+                if event.event_type == _subtask_steps['operation_first']:
+                    task_args = event.event_attributes['input']
+                    subtask_operation = SubtaskOperation(flow_id, task_name, task_args)
+                    subtask_operations[flow_id] = subtask_operation
+                    continue
+                if event.event_type == _subtask_steps['execution_first']:
+                    run_id = event.event_attributes['workflowExecution']['runId']
+                    subtask_execution = SubtaskExecution(flow_id, run_id, task_name, [event])
+                    subtask_executions[run_id] = subtask_execution
+                    continue
+                subtask_events[flow_id].append(event)
+        for flow_id, event_set in subtask_events.items():
+            for event in event_set:
+                if event.event_type == 'StartChildWorkflowExecutionFailed':
+                    subtask_operations[flow_id].set_operation_failure(event)
+                    continue
+                run_id = event.event_attributes['workflowExecution']['runId']
+                subtask_executions[run_id].add_event(event)
+        for run_id, subtask_execution in subtask_executions.items():
+            matched = False
+            execution_flow_id = subtask_execution.flow_id
+            for subtask_operation in subtask_operations.values():
+                if execution_flow_id == subtask_operation.flow_id:
+                    subtask_operation.add_execution(subtask_execution)
+                    matched = True
+                    continue
+            if not matched:
+                raise RuntimeError('could not find appropriate subtask operation for '
+                                   'subtask execution: %s' % subtask_execution)
+        return subtask_operations
+
+    @classmethod
+    def _generate_workflow_starter_data(cls, events: [Event]):
+        for event in events:
+            if event.event_type == _starting_step:
+                return event.event_attributes['input'], event.event_attributes['lambdaRole']
+
+    @property
+    def flow_type(self):
+        return self._flow_type
+
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    @property
+    def task_token(self):
+        return self._task_token
+
+    @property
+    def flow_input(self):
+        return self._input_str
+
+    @property
+    def lambda_role(self):
+        return self._lambda_role
+
+    def get_lambda_operation(self, fn_name):
+        try:
+            return self._lambda_operations[fn_name]
+        except KeyError:
+            return None
+
+    def get_subtask_operation(self, task_name):
+        try:
+            return self._subtask_operations[task_name]
+        except KeyError:
+            return None
+
+    def add_events(self, events: [Event]):
+        self._events.add_events(events)
 
 
 'WorkflowExecutionStarted'

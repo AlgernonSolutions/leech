@@ -88,6 +88,7 @@ def propagate(event, context):
 @lambda_logged
 def creep(event, context):
     logging.info(f'starting a creep call with event: {event}')
+    event = json.loads(event, cls=AlgDecoder)
     event.update({'context': context})
     run_data = event['run_data']
     propagation_id = run_data['propagation_id']
