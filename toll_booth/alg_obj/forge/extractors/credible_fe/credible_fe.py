@@ -45,7 +45,7 @@ class CredibleFrontEndDriver:
         'by_emp_id': 'number'
     }
 
-    def __init__(self, id_source, credentials=None, session=None):
+    def __init__(self, id_source, credentials=None, session=None, cookie=None):
         if not session:
             session = requests.session()
         if not credentials:
@@ -53,13 +53,15 @@ class CredibleFrontEndDriver:
         self._id_source = id_source
         self._session = session
         self._credentials = credentials
+        self._cookie = cookie
 
     def __enter__(self):
         session = requests.Session()
-        cookie = self._get_cbh_cookie(session)
-        if not cookie:
-            raise CredibleFrontEndLoginException
-        self._cookie = cookie
+        if not self._cookie:
+            cookie = self._get_cbh_cookie(session)
+            if not cookie:
+                raise CredibleFrontEndLoginException
+            self._cookie = cookie
         self._session = session
         return self
 

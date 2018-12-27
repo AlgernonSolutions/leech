@@ -15,9 +15,7 @@ from toll_booth.alg_obj.forge.comms.queues import ForgeQueue
 from toll_booth.alg_obj.forge.comms.stage_manager import StageManager
 from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
-from toll_booth.alg_obj.forge.extractors.credible_fe.cache import CachedEmployeeIds
 from toll_booth.alg_obj.forge.extractors.credible_fe.mule_team import CredibleMuleTeam
-
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, VertexRegulator
 from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
 from toll_booth.alg_obj.serializers import AlgEncoder

@@ -1,7 +1,8 @@
+from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
-class ChangeType:
+class ChangeType(AlgObject):
     def __init__(self, category_id, category, action_id, action, id_type, id_name, has_details, is_static):
         self._category_id = category_id
         self._category = category
@@ -16,6 +17,13 @@ class ChangeType:
     def get_from_change_identifier(cls, change_identifier):
         change_identifier = IdentifierStem.from_raw(change_identifier)
         return cls(**change_identifier.paired_identifiers)
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['category_id'], json_dict['category'], json_dict['action_id'], json_dict['action'],
+            json_dict['id_type'], json_dict['id_name'], json_dict['has_details'], json_dict['is_static']
+        )
 
     @property
     def category_id(self):
@@ -61,7 +69,7 @@ class ChangeType:
         return self._action
 
 
-class ChangeTypeCategory:
+class ChangeTypeCategory(AlgObject):
     def __init__(self, category_id, category, change_types=None):
         if not change_types:
             change_types = {}
@@ -86,6 +94,10 @@ class ChangeTypeCategory:
             driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
         results = driver.get_changelog_types(category=change_name)
         return cls.get_from_change_identifiers(results)
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['category_id'], json_dict['category'], json_dict.get('change_types', None))
 
     @property
     def category_id(self):
@@ -120,7 +132,7 @@ class ChangeTypeCategory:
         return self._category
 
 
-class ChangeTypes:
+class ChangeTypes(AlgObject):
     def __init__(self, change_types=None):
         if not change_types:
             change_types = {}
@@ -141,6 +153,10 @@ class ChangeTypes:
                 change_type = ChangeType(**paired_identifiers)
                 change_types[change_type.action_id] = change_type
         return cls(change_types)
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict.get('change_types', None))
 
     @property
     def categories(self):

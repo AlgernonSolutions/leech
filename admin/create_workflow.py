@@ -1,17 +1,19 @@
 import boto3
 
 
-def register_workflow(domain_name, flow_name, version, description, child_policy=None):
+def register_workflow(domain_name, flow_name, version, description, child_policy=None, task_list=None):
     client = boto3.client('swf')
+    if not task_list:
+        task_list = flow_name
     register_args = {
         'domain': domain_name,
         'name': flow_name,
         'version': str(version),
         'description': description,
-        'defaultTaskStartToCloseTimeout': '120',
-        'defaultExecutionStartToCloseTimeout': '120',
+        'defaultTaskStartToCloseTimeout': '240',
+        'defaultExecutionStartToCloseTimeout': '240',
         'defaultTaskList': {
-            'name': flow_name
+            'name': task_list
         },
         'defaultLambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
     }
@@ -22,4 +24,4 @@ def register_workflow(domain_name, flow_name, version, description, child_policy
 
 
 if __name__ == '__main__':
-    register_workflow('Leech', 'creep', '1', 'populates change types for a given vertex type', 'TERMINATE')
+    register_workflow('Leech', 'pull_change_types', '1', 'retrieves the current list of remote change types for Credible', 'TERMINATE', 'Leech')

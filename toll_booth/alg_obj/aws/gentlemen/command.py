@@ -3,6 +3,7 @@ import boto3
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, ScheduleLambda, StartSubtask, \
     CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.events import WorkflowHistory
+from toll_booth.alg_tasks.rivers import fungi_flows
 
 
 class General:
@@ -39,20 +40,20 @@ class General:
         )
         for page in response_iterator:
             if not workflow_history:
-                workflow_history = WorkflowHistory.parse_from_poll(page)
+                workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
                 continue
             workflow_history.add_events(page['events'])
         return workflow_history
 
     def _make_decisions(self, work_history: WorkflowHistory):
+        flow_modules = [fungi_flows]
         if work_history:
             flow_type = work_history.flow_type
-            if flow_type == 'CredibleFeLeech':
-                return self._command_fungi(work_history)
-            if flow_type == 'propagate':
-                return self._run_lambda('leech-propagate', work_history)
-            if flow_type == 'creep':
-                return self._run_lambda('leech-creep', work_history)
+            for flow_module in flow_modules:
+                flow = getattr(flow_module, flow_type, None)
+                if flow:
+                    return flow(work_history)
+            raise NotImplementedError('could not find a registered flow for type: %s' % flow_type)
 
     def _command_fungi(self, work_history):
         made_decisions = MadeDecisions(work_history.task_token)

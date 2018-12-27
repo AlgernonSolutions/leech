@@ -52,12 +52,14 @@ class ScheduleLambda(Decision):
 
 class StartSubtask(Decision):
     def __init__(self, parent_id, subtask_type, task_args, lambda_role, **kwargs):
+        workflow_name_base = kwargs.get('name_base', subtask_type)
+        workflow_id = f'{workflow_name_base}-{parent_id}'
         subtask_attributes = {
             'workflowType': {
                 'name': subtask_type,
                 'version': kwargs.get('version', '1')
             },
-            'workflowId': f'{subtask_type}-{parent_id}',
+            'workflowId': workflow_id,
             'input': task_args,
             'taskList': {'name': kwargs.get('task_list_name', 'Leech')},
             'lambdaRole': lambda_role
@@ -87,6 +89,8 @@ class CompleteWork(Decision):
         complete_work_attributes = {
             'result': results
         }
+        if not results:
+            complete_work_attributes = {}
         attributes_name = 'completeWorkflowExecutionDecisionAttributes'
         super().__init__('CompleteWorkflowExecution', complete_work_attributes, attributes_name)
 
@@ -111,6 +115,17 @@ class RecordMarker(Decision):
     @property
     def details(self):
         return self.__getitem__('details')
+
+
+class ContinueAsNew(Decision):
+    def __init__(self, task_args, lambda_role, **kwargs):
+        continuation_attributes = {
+            'lambdaRole': lambda_role,
+            'input': task_args,
+            'taskList': {'name': kwargs.get('task_list_name', 'Leech')}
+        }
+        attributes_name = 'continueAsNewWorkflowExecutionDecisionAttributes'
+        super().__init__('ContinueAsNewWorkflowExecution', continuation_attributes, attributes_name)
 
 
 class MadeDecisions:

@@ -1,3 +1,8 @@
+import json
+from json import JSONDecodeError
+
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
+
 _lambda_steps = {
     'operation_first': 'LambdaFunctionScheduled',
     'execution_first': 'LambdaFunctionStarted',
@@ -97,6 +102,30 @@ class Event:
 'LambdaFunctionTimedOut'
 'StartLambdaFunctionFailed'
 'ScheduleLambdaFunctionFailed'
+
+
+class Marker:
+    def __init__(self, marker_type: str, marker_details: dict):
+        self._marker_type = marker_type
+        self._marker_details = marker_details
+
+    @classmethod
+    def parse_from_event(cls, event: Event):
+        event_attributes = event.event_attributes
+        marker_type = event_attributes['markerName']
+        try:
+            marker_details = json.loads(event_attributes['details'], cls=AlgDecoder)
+        except JSONDecodeError:
+            marker_details = event_attributes['details']
+        return cls(marker_type, marker_details)
+
+    @property
+    def marker_type(self):
+        return self._marker_type
+
+    @property
+    def marker_details(self):
+        return self._marker_details
 
 
 class LambdaExecution:
@@ -301,8 +330,10 @@ class SubtaskOperation:
 
 
 class WorkflowHistory:
-    def __init__(self, flow_type: str, task_token: str, flow_id: str, run_id: str, lambda_role: str, input_str: str,
-                 events: [Event], subtask_operations: [SubtaskOperation], lambda_operations: [LambdaOperation]):
+    def __init__(self, domain_name: str, flow_type: str, task_token: str, flow_id: str, run_id: str, lambda_role: str, input_str: str,
+                 events: [Event], subtask_operations: [SubtaskOperation], lambda_operations: [LambdaOperation],
+                 markers: {str: Marker}):
+        self._domain_name = domain_name
         self._flow_type = flow_type
         self._flow_id = flow_id
         self._run_id = run_id
@@ -312,9 +343,10 @@ class WorkflowHistory:
         self._events = events
         self._lambda_operations = lambda_operations
         self._subtask_operations = subtask_operations
+        self._markers = markers
 
     @classmethod
-    def parse_from_poll(cls, poll_response):
+    def parse_from_poll(cls, domain_name, poll_response):
         flow_type = poll_response['workflowType']['name']
         task_token = poll_response['taskToken']
         execution_info = poll_response['workflowExecution']
@@ -324,11 +356,12 @@ class WorkflowHistory:
         events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
         lambda_operations = cls._generate_lambda_operations(events)
         subtask_operations = cls._generate_subtask_operations(events)
+        markers = cls._generate_markers(events)
         input_str, lambda_role = cls._generate_workflow_starter_data(events)
         cls_args = {
-            'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id, 'run_id': run_id,
+            'domain_name': domain_name, 'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id, 'run_id': run_id,
             'input_str': input_str, 'lambda_role': lambda_role, 'events': events,
-            'subtask_operations': subtask_operations, 'lambda_operations': lambda_operations
+            'subtask_operations': subtask_operations, 'lambda_operations': lambda_operations, 'markers': markers
         }
         return cls(**cls_args)
 
@@ -423,6 +456,22 @@ class WorkflowHistory:
             if event.event_type == _starting_step:
                 return event.event_attributes['input'], event.event_attributes['lambdaRole']
 
+    @classmethod
+    def _generate_markers(cls, events: [Event]):
+        markers = {}
+        for event in events:
+            if event.event_type == 'MarkerRecorded':
+                marker = Marker.parse_from_event(event)
+                marker_type = marker.marker_type
+                if marker_type not in markers:
+                    markers[marker_type] = []
+                markers[marker_type].append(marker)
+        return markers
+
+    @property
+    def domain_name(self):
+        return self._domain_name
+
     @property
     def flow_type(self):
         return self._flow_type
@@ -430,6 +479,10 @@ class WorkflowHistory:
     @property
     def flow_id(self):
         return self._flow_id
+
+    @property
+    def run_id(self):
+        return self._run_id
 
     @property
     def task_token(self):
@@ -442,6 +495,18 @@ class WorkflowHistory:
     @property
     def lambda_role(self):
         return self._lambda_role
+
+    @property
+    def subtask_operations(self):
+        return self._subtask_operations
+
+    @property
+    def lambda_operations(self):
+        return self._lambda_operations
+
+    @property
+    def markers(self):
+        return self._markers
 
     def get_lambda_operation(self, fn_name):
         try:
@@ -456,7 +521,7 @@ class WorkflowHistory:
             return None
 
     def add_events(self, events: [Event]):
-        self._events.add_events(events)
+        self._events.append(events)
 
 
 'WorkflowExecutionStarted'

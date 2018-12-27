@@ -16,6 +16,9 @@ class AlgEncoder(json.JSONEncoder):
         if isinstance(obj, frozenset):
             list_value = [x for x in obj]
             return {'_alg_class': 'frozenset', 'value': list_value}
+        if isinstance(obj, set):
+            list_value = [x for x in obj]
+            return {'_alg_class': 'set', 'value': list_value}
         if isinstance(obj, tuple):
             return {'_alg_class': 'tuple', 'value': obj}
         if isinstance(obj, datetime):
@@ -43,6 +46,8 @@ class AlgDecoder(json.JSONDecoder):
         obj_value = obj['value']
         if alg_class == 'frozenset':
             return frozenset(x for x in obj_value)
+        if alg_class == 'set':
+            return set(x for x in obj_value)
         if alg_class == 'tuple':
             return tuple(x for x in obj_value)
         if alg_class == 'datetime':
