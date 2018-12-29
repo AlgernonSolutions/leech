@@ -9,6 +9,7 @@ import requests
 from requests import cookies
 from retrying import retry
 
+from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.squirrels.squirrel import Opossum
 from toll_booth.alg_obj.forge.extractors.credible_fe.credible_csv_parser import CredibleCsvParser
 from toll_booth.alg_obj.forge.extractors.credible_fe.cache import CachedEmployeeIds
@@ -24,8 +25,109 @@ _url_stems = {
 }
 
 
+def _login_required(function):
+    def wrapper(*args, **kwargs):
+        driver = args[0]
+        driver.credentials.refresh_if_stale(session=driver.session)
+        return function(*args, **kwargs)
+
+    return wrapper
+
+
 class CredibleFrontEndLoginException(Exception):
     pass
+
+
+class CredibleLoginCredentials(AlgObject):
+    def __init__(self, domain_name, cookie_value, time_generated):
+        self._domain_name = domain_name
+        self._cookie_value = cookie_value
+        self._time_generated = time_generated
+
+    @property
+    def domain_name(self):
+        return self._domain_name
+
+    @property
+    def cookie_value(self):
+        return self._cookie_value
+
+    @property
+    def time_generated(self):
+        return self._time_generated
+
+    @property
+    def as_request_cookie_jar(self):
+        cookie_jar = requests.cookies.RequestsCookieJar()
+        cookie_args = {
+            'name': 'cbh',
+            'value': self._cookie_value,
+            'domain': '.crediblebh.com'
+        }
+        credible_cookie = requests.cookies.create_cookie(**cookie_args)
+        cookie_jar.set_cookie(credible_cookie)
+        return cookie_jar
+
+    @classmethod
+    def retrieve(cls, domain_name, session=None, username=None, password=None):
+        time_generated = datetime.datetime.now()
+        if not session:
+            session = requests.Session()
+        if not username or not password:
+            credentials = Opossum.get_untrustworthy_credentials(domain_name)
+            username = credentials['username']
+            password = credentials['password']
+        attempts = 0
+        while attempts < 3:
+            try:
+                jar = cookies.RequestsCookieJar()
+                api_url = "https://login-api.crediblebh.com/api/Authenticate/CheckLogin"
+                index_url = "https://ww7.crediblebh.com/index.aspx"
+                first_payload = {'UserName': username,
+                                 'Password': password,
+                                 'DomainName': domain_name}
+                headers = {'DomainName': domain_name}
+                post = session.post(api_url, json=first_payload, headers=headers)
+                response_json = post.json()
+                session_cookie = response_json['SessionCookie']
+                jar.set('SessionId', session_cookie, domain='.crediblebh.com', path='/')
+                second_payload = {'SessionId': session_cookie}
+                second_post = session.post(index_url, data=second_payload, cookies=jar)
+                history = second_post.history
+                cbh_response = history[0]
+                cbh_cookies = cbh_response.cookies
+                session.cookies = cbh_cookies
+                cookie_values = getattr(cbh_cookies, '_cookies')
+                credible_value = cookie_values['.crediblebh.com']['/']['cbh'].value
+                return cls(domain_name, credible_value, time_generated)
+            except KeyError or ConnectionError:
+                attempts += 1
+        raise CredibleFrontEndLoginException()
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['domain_name'], json_dict['cookie_value'], json_dict['time_generated'])
+
+    def is_stale(self, lifetime_minutes=30):
+        cookie_age = (datetime.datetime.now() - self._time_generated).seconds
+        return cookie_age >= (lifetime_minutes * 60)
+
+    def refresh_if_stale(self, lifetime_minutes=30, **kwargs):
+        if self.is_stale(lifetime_minutes):
+            self.refresh(**kwargs)
+
+    def refresh(self, session=None, username=None, password=None):
+        new_credentials = self.retrieve(self._domain_name, session, username, password)
+        self._cookie_value = new_credentials.cookie_value
+
+    def destroy(self, session=None):
+        if not session:
+            session = requests.Session()
+        logout_url = 'https://ww7.crediblebh.com/secure/logout.aspx'
+        session.get(
+            logout_url,
+            cookies=self.as_request_cookie_jar
+        )
 
 
 class CredibleFrontEndDriver:
@@ -45,32 +147,40 @@ class CredibleFrontEndDriver:
         'by_emp_id': 'number'
     }
 
-    def __init__(self, id_source, credentials=None, session=None, cookie=None):
+    def __init__(self, id_source, session=None, credentials=None):
         if not session:
-            session = requests.session()
+            session = requests.Session()
         if not credentials:
-            credentials = Opossum.get_untrustworthy_credentials(id_source)
+            credentials = CredibleLoginCredentials.retrieve(id_source, session=session)
         self._id_source = id_source
+        session.cookies = credentials.as_request_cookie_jar
         self._session = session
         self._credentials = credentials
-        self._cookie = cookie
 
     def __enter__(self):
         session = requests.Session()
-        if not self._cookie:
-            cookie = self._get_cbh_cookie(session)
-            if not cookie:
-                raise CredibleFrontEndLoginException
-            self._cookie = cookie
+        if not self._credentials:
+            credentials = CredibleLoginCredentials.retrieve(self._id_source, session=session)
+            self._credentials = credentials
+        session.cookies = self._credentials.as_request_cookie_jar
         self._session = session
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._logout(self._cookie, self._session)
+        self._credentials.destroy(self._session)
         if exc_type:
             raise exc_val
         return True
 
+    @property
+    def credentials(self):
+        return self._credentials
+
+    @property
+    def session(self):
+        return self._session
+
+    @_login_required
     def get_clients_max_min(self):
         with self:
             data = {
@@ -124,7 +234,7 @@ class CredibleFrontEndDriver:
             }
             url = "https://www.crediblebh.com/client/list_clients_adv.asp"
             response = self._session.post(url=url, data=data)
-            credible_html = response.content
+            credible_html = response.text
             regex = r"(<a href='/client/my_cw_clients.asp\?client_id=)(\d+)"
             matches = re.finditer(regex, credible_html, re.MULTILINE)
             all_ids = []
@@ -160,6 +270,8 @@ class CredibleFrontEndDriver:
             raise RuntimeError(
                 'could not find employee with last_name: %s, first_initial: %s' % (last_name, first_initial))
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
     def get_monitor_extraction(self, **kwargs):
         mapping = kwargs['mapping']
         id_type = kwargs['id_type']
@@ -210,6 +322,7 @@ class CredibleFrontEndDriver:
                 values.append(entry)
         return values
 
+    @_login_required
     def get_global_hipaa_log(self, id_type, category_id, start_date, end_date):
         id_types = {
             'Employees': 'employee',
@@ -303,6 +416,7 @@ class CredibleFrontEndDriver:
         return changelog_data, page_number
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
     def retrieve_changelog_page(self, url, **kwargs):
         page_number = kwargs.get('page_number', 1)
         data = {
@@ -318,6 +432,7 @@ class CredibleFrontEndDriver:
         return response.text
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
     def retrieve_change_detail_page(self, url, changelog_id):
         response = self._session.get(url, params={'changelog_id': changelog_id})
         if response.status_code != 200:
@@ -325,6 +440,7 @@ class CredibleFrontEndDriver:
         return response.text
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
     def retrieve_emp_id_search(self, url, last_name, first_initial):
         data = {
             'submitform': 'true',
@@ -480,6 +596,7 @@ class CredibleFrontEndDriver:
         return change_details, page_number
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
     def __get_change_details(self, changelog_id):
         changes = []
         url = _base_stem + _url_stems['ChangeDetail']
@@ -495,32 +612,6 @@ class CredibleFrontEndDriver:
             })
         return changes
 
-    def _get_cbh_cookie(self, session):
-        attempts = 0
-        while attempts < 3:
-            try:
-                jar = cookies.RequestsCookieJar()
-                api_url = "https://login-api.crediblebh.com/api/Authenticate/CheckLogin"
-                index_url = "https://ww7.crediblebh.com/index.aspx"
-                first_payload = {'UserName': self._credentials['username'],
-                                 'Password': self._credentials['password'],
-                                 'DomainName': self._credentials['domain_name']}
-                headers = {'DomainName': self._credentials['domain_name']}
-                post = session.post(api_url, json=first_payload, headers=headers)
-                response_json = post.json()
-                session_cookie = response_json['SessionCookie']
-                jar.set('SessionId', session_cookie, domain='.crediblebh.com', path='/')
-                second_payload = {'SessionId': session_cookie}
-                second_post = session.post(index_url, data=second_payload, cookies=jar)
-                history = second_post.history
-                cbh_response = history[0]
-                cbh_cookies = cbh_response.cookies
-                session.cookies = cbh_cookies
-                return cbh_cookies
-            except KeyError or ConnectionError:
-                attempts += 1
-        return 0
-
     @classmethod
     def _format_datetime_id_value(cls, id_value):
         credible_format = '%m/%d/%Y'
@@ -534,11 +625,3 @@ class CredibleFrontEndDriver:
         if datetime_value is None:
             datetime_value = datetime.datetime.now() - datetime.timedelta(days=3650)
         return datetime_value.strftime(credible_format)
-
-    @classmethod
-    def _logout(cls, cookie_jar, session):
-        logout_url = 'https://ww7.crediblebh.com/secure/logout.aspx'
-        session.get(
-            logout_url,
-            cookies=cookie_jar
-        )

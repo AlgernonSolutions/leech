@@ -453,7 +453,7 @@ class LeechDriver:
     _id_value_index = os.getenv('ID_VALUE_INDEX', 'id_values')
     _field_value_index = os.getenv('FIELD_VALUE_INDEX', 'field_values')
     _links_index = os.getenv('LINKS_INDEX', 'links')
-    _credible_change_index = os.getenv('CREDIBLE_CHANGES', 'credible_change_stems')
+    _credible_change_index = os.getenv('CREDIBLE_CHANGES', 'creep_index')
     _creep_id_value_index = os.getenv('CREEP_ID_VALUES', 'creep_index')
 
     def __init__(self, **kwargs):

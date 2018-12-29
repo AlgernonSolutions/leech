@@ -131,6 +131,15 @@ class ChangeTypeCategory(AlgObject):
     def __str__(self):
         return self._category
 
+    def __getitem__(self, item):
+        return self._change_types[item]
+
+    def values(self):
+        return self._change_types.values()
+
+    def items(self):
+        return self._change_types.items()
+
 
 class ChangeTypes(AlgObject):
     def __init__(self, change_types=None):
@@ -156,7 +165,7 @@ class ChangeTypes(AlgObject):
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(json_dict.get('change_types', None))
+        return cls(json_dict['change_types'])
 
     @property
     def categories(self):

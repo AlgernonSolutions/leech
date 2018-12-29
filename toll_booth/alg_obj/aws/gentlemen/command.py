@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
+
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, ScheduleLambda, StartSubtask, \
-    CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.events import WorkflowHistory
-from toll_booth.alg_tasks.rivers import fungi_flows
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, ScheduleLambda, CompleteWork
+from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
+from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action, command_fungi, work_remote_id, \
+    work_remote_id_change_type
 
 
 class General:
@@ -17,20 +19,54 @@ class General:
         work_history = self._poll_for_decision()
         self._make_decisions(work_history)
 
-    def execute(self):
-        self._poll_for_activity()
-
-    def _poll_for_activity(self):
-        response = self._client.poll_for_activity_task(
+    def _retrieve_run_work_history(self, flow_type, flow_id, run_id):
+        workflow_histories = []
+        history = None
+        paginator = self._client.get_paginator('get_workflow_execution_history')
+        response_iterator = paginator.paginate(
             domain=self._domain_name,
-            taskList={
-                'name': 'Leech'
+            execution={
+                'workflowId': flow_id,
+                'runId': run_id
             }
         )
-        print(response)
+        history_kwargs = {
+            'flow_type': flow_type,
+            'task_token': 'x',
+            'flow_id': flow_id,
+            'run_id': run_id
+        }
+        for page in response_iterator:
+            workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page, **history_kwargs)
+            workflow_histories.append(workflow_history)
+        for workflow_history in workflow_histories:
+            if history is None:
+                history = workflow_history
+                continue
+            history.merge_history(workflow_history)
+        return history
+
+    def _retrieve_past_runs(self, flow_id):
+        previous_runs = []
+        paginator = self._client.get_paginator('list_closed_workflow_executions')
+        one_day_ago = datetime.utcnow() - (timedelta(days=1))
+        response_iterator = paginator.paginate(
+            domain=self._domain_name,
+            executionFilter={
+                'workflowId': flow_id
+            },
+            startTimeFilter={
+                'oldestDate': one_day_ago
+            }
+        )
+        for page in response_iterator:
+            for entry in page['executionInfos']:
+                previous_runs.append(entry['execution']['runId'])
+        return previous_runs
 
     def _poll_for_decision(self):
-        workflow_history = None
+        history = None
+        workflow_histories = []
         paginator = self._client.get_paginator('poll_for_decision_task')
         response_iterator = paginator.paginate(
             domain=self._domain_name,
@@ -39,14 +75,23 @@ class General:
             }
         )
         for page in response_iterator:
-            if not workflow_history:
-                workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
+            workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
+            workflow_histories.append(workflow_history)
+        for workflow_history in workflow_histories:
+            if history is None:
+                history = workflow_history
                 continue
-            workflow_history.add_events(page['events'])
-        return workflow_history
+            history.merge_history(workflow_history)
+        past_runs = self._retrieve_past_runs(history.flow_id)
+        for run_id in past_runs:
+            run_history = self._retrieve_run_work_history(history.flow_type, history.flow_id, run_id)
+            history.merge_history(run_history)
+        return history
 
     def _make_decisions(self, work_history: WorkflowHistory):
-        flow_modules = [fungi_flows]
+        flow_modules = [
+            command_fungi, work_remote_id, work_remote_id_change_type, work_remote_id_change_action
+        ]
         if work_history:
             flow_type = work_history.flow_type
             for flow_module in flow_modules:
@@ -54,31 +99,6 @@ class General:
                 if flow:
                     return flow(work_history)
             raise NotImplementedError('could not find a registered flow for type: %s' % flow_type)
-
-    def _command_fungi(self, work_history):
-        made_decisions = MadeDecisions(work_history.task_token)
-        flow_input = work_history.flow_input
-        lambda_role = work_history.lambda_role
-        execution_id = work_history.flow_id
-        propagate_operation = work_history.get_subtask_operation(f'propagate-{execution_id}')
-        creep_operation = work_history.get_subtask_operation(f'creep-{execution_id}')
-        if propagate_operation is None or (not propagate_operation.is_complete and not propagate_operation.is_live):
-            made_decisions.add_decision(StartSubtask(
-                execution_id, 'propagate', flow_input, version='3',
-                task_list_name='propagate', lambda_role=lambda_role
-            ))
-            self._client.respond_decision_task_completed(**made_decisions.for_commit)
-            return
-        propagation_results = propagate_operation.results
-        if creep_operation is None or (not creep_operation.is_complete and not creep_operation.is_live):
-            if propagation_results:
-                made_decisions.add_decision(StartSubtask(
-                    execution_id, 'creep', propagation_results, version='1',
-                    task_list_name='creep', lambda_role=lambda_role
-                ))
-                self._client.respond_decision_task_completed(**made_decisions.for_commit)
-                return
-        self._client.respond_decision_task_completed(**made_decisions.for_commit)
 
     def _run_lambda(self, fn_name: str, work_history: WorkflowHistory):
         made_decisions = MadeDecisions(work_history.task_token)

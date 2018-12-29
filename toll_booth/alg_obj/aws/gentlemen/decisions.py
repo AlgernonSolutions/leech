@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from toll_booth.alg_obj.aws.gentlemen.events.subtasks import SubtaskOperation
 from toll_booth.alg_obj.serializers import AlgEncoder
 
 
@@ -67,6 +68,18 @@ class StartSubtask(Decision):
         attributes_name = 'startChildWorkflowExecutionDecisionAttributes'
         super().__init__('StartChildWorkflowExecution', subtask_attributes, attributes_name)
 
+    @classmethod
+    def for_retry(cls, failed_operation: SubtaskOperation):
+        retry_args = {
+            'parent_id': failed_operation.flow_id,
+            'subtask_type': failed_operation.task_name,
+            'task_args': failed_operation.task_args,
+            'lambda_role': failed_operation.lambda_role,
+            'task_list_name': failed_operation.task_list_name,
+            'version': failed_operation.task_version
+        }
+        return cls(**retry_args)
+
     @property
     def workflow_type(self):
         return self.__getitem__('workflowType')
@@ -82,6 +95,32 @@ class StartSubtask(Decision):
     @property
     def task_list(self):
         return self.__getitem__('taskList')
+
+
+class StartActivity(Decision):
+    def __init__(self, activity_id, activity_name, input_string, **kwargs):
+        activity_attributes = {
+            'activityType': {
+                'name': activity_name,
+                'version': kwargs.get('version', '1')
+            },
+            'taskList': {'name': kwargs.get('task_list_name', 'Leech')},
+            'activityId': activity_id,
+            'input': input_string
+        }
+        attributes_name = 'scheduleActivityTaskDecisionAttributes'
+        super().__init__('ScheduleActivityTask', activity_attributes, attributes_name)
+
+    @classmethod
+    def for_retry(cls, activity):
+        activity_retry_args = {
+            'activity_id': activity.activity_id,
+            'activity_name': activity.activity_name,
+            'input_string': activity.input_string,
+            'version': activity.activity_version,
+            'task_list_name': activity.task_list_name
+        }
+        return cls(**activity_retry_args)
 
 
 class CompleteWork(Decision):

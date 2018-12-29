@@ -2,7 +2,7 @@ import json
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, CompleteWork
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions
 from toll_booth.alg_obj.serializers import AlgDecoder
 
 
@@ -18,8 +18,9 @@ def workflow(production_fn):
             'flow_input': work_history.flow_input,
             'decisions': made_decisions,
             'work_history': work_history,
-            'sub_tasks': work_history.subtask_operations,
-            'markers': work_history.markers,
+            'sub_tasks': work_history.subtask_history,
+            'markers': work_history.marker_history,
+            'activities': work_history.activity_history,
             'lambda_role': work_history.lambda_role,
             'execution_id': work_history.flow_id
         }
