@@ -32,3 +32,30 @@ class Task:
         activity_version = activity_data['version']
         input_string = poll_response['input']
         return cls(task_token, activity_id, flow_id, run_id, activity_name, activity_version, input_string)
+
+
+class OperationName:
+    def __init__(self, fn_name, execution_id, specifiers=None):
+        if not specifiers:
+            specifiers = []
+        self._fn_name = fn_name
+        self._execution_id = execution_id
+        self._specifiers = specifiers
+
+    @property
+    def name(self):
+        return f'{self._fn_name}{self.specifiers}-{self._execution_id}'
+
+    @property
+    def base_stem(self):
+        return f'{self._fn_name}{self.specifiers}'
+
+    @property
+    def specifiers(self):
+        if not self._specifiers:
+            return
+        content = '-'.join(self._specifiers)
+        return f'{"-"}{content}'
+
+    def __str__(self):
+        return self.name

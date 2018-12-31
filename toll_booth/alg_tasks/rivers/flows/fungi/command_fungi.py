@@ -7,9 +7,10 @@
 
 import json
 
+from toll_booth.alg_obj.aws.gentlemen.tasks import OperationName
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 from toll_booth.alg_tasks.rivers.rocks import workflow
-from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, RecordMarker
+from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, RecordMarker, StartSubtask, CompleteWork
 
 
 @workflow
@@ -113,9 +114,31 @@ def get_change_types(flow_input, names, decisions, activities, **kwargs):
         decisions.append(StartActivity.for_retry(activity))
 
 
-def work_remote_ids(execution_id, input_kwargs, activities, names, decisions, **kwargs):
+def work_remote_ids(execution_id, sub_tasks, input_kwargs, activities, names, decisions, **kwargs):
     get_remote_ids_operation = activities[names['remote']]
     remote_id_values = json.loads(get_remote_ids_operation.results, cls=AlgDecoder)
+    operation_names = []
+    working = False
     for remote_id_value in remote_id_values:
-        pass
-
+        input_kwargs['id_value'] = remote_id_value
+        flow_input = json.dumps(input_kwargs, cls=AlgEncoder)
+        operation_name = OperationName('work_remote_id', execution_id, [remote_id_value])
+        operation_names.append(operation_name)
+        if str(operation_name) not in sub_tasks:
+            decisions.append(StartSubtask(
+                execution_id, 'work_remote_id', flow_input, version='1',
+                task_list_name='Leech', lambda_role=kwargs.get('lambda_role'), name_base=operation_name.base_stem
+            ))
+            working = True
+        if working:
+            return
+    for operation_name in operation_names:
+        operation = sub_tasks[operation_name]
+        if operation.is_failed:
+            fail_count = sub_tasks.get_operation_failed_count(operation.flow_id)
+            if fail_count >= 3:
+                raise RuntimeError('failure in an subtask: %s' % operation_name)
+            decisions.append(StartSubtask.for_retry(operation))
+        if not operation.is_complete:
+            return
+    decisions.append(CompleteWork())

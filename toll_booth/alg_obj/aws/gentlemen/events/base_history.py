@@ -62,6 +62,10 @@ class History:
     def get_by_name(self, name):
         return [x for x in self.operations if x.name == name]
 
+    def __contains__(self, item):
+        operations = getattr(self, '_operations')
+        return item in operations
+
 
 class Operation:
     @property
