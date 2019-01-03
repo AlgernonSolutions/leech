@@ -1,3 +1,7 @@
+from toll_booth.alg_tasks.rivers.rocks import task
+
+
+@task('get_local_max_change_type_value')
 def get_local_max_change_type_value(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
     from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException
@@ -16,6 +20,7 @@ def get_local_max_change_type_value(**kwargs):
     return local_max_value
 
 
+@task('pull_change_types')
 def pull_change_types(**kwargs):
     from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
     from toll_booth.alg_obj.aws.snakes.snakes import StoredData
@@ -25,41 +30,63 @@ def pull_change_types(**kwargs):
     return stored_data
 
 
+@task('unlink_old_ids')
 def unlink_old_ids(**kwargs):
-    _set_changed_ids(change_type='unlink', **kwargs)
+    names = kwargs['names']
+    remote_id_values = kwargs[names['remote']]
+    local_id_values = kwargs[names['local']]
+    local_linked_values = local_id_values['linked']
+    unlinked_id_values = local_linked_values - remote_id_values
+    _set_changed_ids(change_type='unlink', id_values=unlinked_id_values, **kwargs)
 
 
+@task('link_new_ids')
 def link_new_ids(**kwargs):
-    _set_changed_ids(change_type='link', **kwargs)
+    names = kwargs['names']
+    remote_id_values = kwargs[names['remote']]
+    local_id_values = kwargs[names['local']]
+    local_linked_values = local_id_values['linked']
+    newly_linked_id_values = remote_id_values - local_linked_values
+    _set_changed_ids(change_type='link', id_values=newly_linked_id_values, **kwargs)
 
 
+@task('put_new_ids')
 def put_new_ids(**kwargs):
-    _set_changed_ids(change_type='new', **kwargs)
+    names = kwargs['names']
+    remote_id_values = kwargs[names['remote']]
+    local_id_values = kwargs[names['local']]
+    new_id_values = remote_id_values - local_id_values['all']
+    _set_changed_ids(change_type='new', id_values=new_id_values, **kwargs)
 
 
+@task('get_local_ids')
 def get_local_ids(**kwargs):
     from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
     from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    driving_identifier_stem = kwargs['driving_identifier_stem']
+    fn_kwargs = kwargs['start']
+    driving_identifier_stem = fn_kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
     driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
-    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
+    leech_driver = LeechDriver(table_name=fn_kwargs.get('table_name', 'VdGraphObjects'))
     local_id_values = leech_driver.get_local_id_values(driving_identifier_stem, vertex_regulator=driving_vertex_regulator)
     return local_id_values
 
 
+@task('get_remote_ids')
 def get_remote_ids(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
-    remote_id_extractor = _build_remote_id_extractor(**kwargs)
+    fn_kwargs = kwargs['start']
+    remote_id_extractor = _build_remote_id_extractor(**fn_kwargs)
     with CredibleFrontEndDriver(remote_id_extractor['id_source']) as driver:
         remote_ids = driver.get_monitor_extraction(**remote_id_extractor)
         results = set(remote_ids)
         return results
 
 
+@task('work_remote_id_change_type')
 def work_remote_id_change_type(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -92,6 +119,7 @@ def work_remote_id_change_type(**kwargs):
         return stored_data
 
 
+@task('get_enrichment_for_change_action')
 def get_enrichment_for_change_action(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe.mule_team import CredibleMuleTeam
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -119,6 +147,7 @@ def get_enrichment_for_change_action(**kwargs):
     return enriched_data
 
 
+@task('generate_remote_id_change_data')
 def generate_remote_id_change_data(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 

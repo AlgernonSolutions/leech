@@ -7,6 +7,7 @@
 
 import json
 
+from toll_booth.alg_obj.aws.gentlemen.boats import ActivitySignature, group, chain
 from toll_booth.alg_obj.aws.gentlemen.tasks import OperationName
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 from toll_booth.alg_tasks.rivers.rocks import workflow
@@ -16,7 +17,7 @@ from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, RecordMark
 @workflow
 def command_fungi(markers, **kwargs):
     execution_id = kwargs['execution_id']
-    kwargs['names'] = {
+    names = {
         'local': f'get_local_ids-{execution_id}',
         'remote': f'get_remote_ids-{execution_id}',
         'put': f'put_new_ids-{execution_id}',
@@ -24,12 +25,19 @@ def command_fungi(markers, **kwargs):
         'unlink': f'unlink_old_ids-{execution_id}',
         'change_types': f'pull_change_types-{execution_id}'
     }
-    if 'get_ids' not in markers:
-        return get_ids(**kwargs)
-    if 'manage_ids' not in markers:
-        return manage_ids(**kwargs)
-    if 'change_types' not in markers:
-        return get_change_types(**kwargs)
+    kwargs['names'] = names
+    get_local_ids = ActivitySignature.from_work_history(names['local'], 'get_local_ids', **kwargs)
+    get_remote_ids = ActivitySignature.from_work_history(names['remote'], 'get_remote_ids', **kwargs)
+    put_new_ids = ActivitySignature.from_work_history(names['put'], 'put_new_ids', **kwargs)
+    link_new_ids = ActivitySignature.from_work_history(names['link'], 'link_new_ids', **kwargs)
+    unlink_old_ids = ActivitySignature.from_work_history(names['unlink'], 'unlink_old_ids', **kwargs)
+    get_ids_group = group(get_local_ids, get_remote_ids)
+    link_group = group(link_new_ids, unlink_old_ids)
+    get_change_type = ActivitySignature.from_work_history(names['change_types'], 'pull_change_types', **kwargs)
+    great_chain = chain(get_ids_group, put_new_ids, link_group, get_change_type)
+    chain_results = great_chain(**kwargs)
+    if chain_results is None:
+        return
     work_remote_ids(**kwargs)
 
 

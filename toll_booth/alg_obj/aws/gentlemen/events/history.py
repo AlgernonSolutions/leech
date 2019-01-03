@@ -1,3 +1,4 @@
+from toll_booth.alg_obj.aws.gentlemen.events import lambdas, subtasks, activities
 from toll_booth.alg_obj.aws.gentlemen.events.activities import ActivityHistory
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.gentlemen.events.lambdas import LambdaHistory
@@ -37,9 +38,9 @@ class WorkflowHistory:
             run_id = execution_info['runId']
         raw_events = poll_response['events']
         events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
-        lambda_history = LambdaHistory.generate_from_events(events)
-        subtask_history = SubtaskHistory.generate_from_events(events)
-        activity_history = ActivityHistory.generate_from_events(events)
+        lambda_history = LambdaHistory.generate_from_events(events, lambdas.steps)
+        subtask_history = SubtaskHistory.generate_from_events(events, subtasks.steps)
+        activity_history = ActivityHistory.generate_from_events(events, activities.steps)
         marker_history = MarkerHistory.generate_from_events(events)
         input_str, lambda_role = cls._generate_workflow_starter_data(events)
         cls_args = {

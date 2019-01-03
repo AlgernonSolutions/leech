@@ -112,3 +112,30 @@ class ExplosionDecoder(json.JSONDecoder):
                 return list(obj['L'])
             return obj
         return obj
+
+
+class TaskDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    @staticmethod
+    def object_hook(obj):
+        if '_alg_class' not in obj:
+            return obj
+        alg_class = obj['_alg_class']
+        obj_value = obj['value']
+        if 'S' in obj:
+            return str(obj['S'])
+        if 'M' in obj:
+            return obj['M']
+        if 'BOOL' in obj:
+            return bool(obj['BOOL'])
+        if 'NULL' in obj:
+            return None
+        if 'N' in obj:
+            return Decimal(obj['N'])
+        if 'L' in obj:
+            return list(obj['L'])
+        return obj
+
+

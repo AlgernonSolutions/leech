@@ -1,9 +1,12 @@
 import json
+from json import JSONDecodeError
 
 import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.aws.gentlemen.tasks import Versions
+from toll_booth.alg_obj.aws.snakes.snakes import StoredData
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder, TaskDecoder
 
 
 def workflow(production_fn):
@@ -13,6 +16,7 @@ def workflow(production_fn):
         flow_input = work_history.flow_input
         input_kwargs = json.loads(flow_input, cls=AlgDecoder)
         made_decisions = []
+        versions = Versions.retrieve()
         context_kwargs = {
             'input_kwargs': input_kwargs,
             'flow_input': work_history.flow_input,
@@ -22,7 +26,8 @@ def workflow(production_fn):
             'markers': work_history.marker_history,
             'activities': work_history.activity_history,
             'lambda_role': work_history.lambda_role,
-            'execution_id': work_history.flow_id
+            'execution_id': work_history.flow_id,
+            'versions': versions
         }
         results = production_fn(**context_kwargs)
         decisions = MadeDecisions(work_history.task_token)
@@ -38,3 +43,20 @@ def workflow(production_fn):
             )
         return results
     return wrapper
+
+
+def task(task_name):
+    def task_wrapper(production_fn):
+        def wrapper(**kwargs):
+            formatted_data = {}
+            names = kwargs['names']
+            del(kwargs['names'])
+            strung_kwargs = json.dumps(kwargs, cls=AlgEncoder)
+            formatted_kwargs = json.loads(strung_kwargs, cls=TaskDecoder)
+            results = production_fn(**formatted_kwargs)
+            if results is None:
+                return results
+            stored_results = StoredData.from_object(task_name, results, full_unpack=False)
+            return stored_results
+        return wrapper
+    return task_wrapper

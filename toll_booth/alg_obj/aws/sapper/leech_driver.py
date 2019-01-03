@@ -991,7 +991,7 @@ class LeechDriver:
         try:
             return results['Items'][0]['is_unlink'] is False
         except IndexError:
-            raise MissingObjectException()
+            return False
 
     def mark_fruiting_complete(self, propagation_id, fruited_id_value, fruited_category):
         self._table.update_item(

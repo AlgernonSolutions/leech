@@ -1,7 +1,7 @@
 from toll_booth.alg_obj.aws.gentlemen.events.base_history import History, Operation, Execution
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 
-_steps = {
+steps = {
     'operation_first': 'StartChildWorkflowExecutionInitiated',
     'execution_first': 'ChildWorkflowExecutionStarted',
     'all': [
@@ -31,62 +31,54 @@ _steps = {
 
 
 class SubtaskExecution(Execution):
-    def __init__(self, flow_id: str, run_id: str, task_name: str, events: [Event]):
-        self._flow_id = flow_id
+    def __init__(self, execution_id: str, run_id: str, events: [Event]):
+        super().__init__(execution_id, events, steps)
         self._run_id = run_id
-        self._task_name = task_name
-        self._events = events
 
     @classmethod
     def generate_from_start_event(cls, event: Event):
         cls_args = {
-            'flow_id': event.event_attributes['workflowExecution']['workflowId'],
+            'execution_id': event.event_attributes['workflowExecution']['workflowId'],
             'run_id': event.event_attributes['workflowExecution']['runId'],
-            'task_name': event.event_attributes['workflowType']['name'],
             'events': [event]
         }
         return cls(**cls_args)
 
     @property
-    def flow_id(self):
-        return self._flow_id
+    def run_id(self):
+        return self._run_id
 
 
 class SubtaskOperation(Operation):
-    def __init__(self, flow_id: str, task_name: str, task_version: str, task_args: str, lambda_role: str, task_list_name: str,  subtask_executions: [SubtaskExecution]):
-        self._flow_id = flow_id
-        self._name = task_name
-        self._task_version = task_version
-        self._task_args = task_args
-        self._executions = subtask_executions
-        self._lambda_role = lambda_role
+    def __init__(self, operation_id: str, task_name: str, task_version: str, task_args: str, lambda_role: str, task_list_name: str,  events: [Event]):
+        super().__init__(operation_id, task_name, task_version, task_args, events, steps)
         self._task_list_name = task_list_name
-        self._operation_failure = None
+        self._lambda_role = lambda_role
 
     @classmethod
     def generate_from_schedule_event(cls, event: Event):
         cls_args = {
-            'flow_id': event.event_attributes['workflowId'],
+            'operation_id': event.event_attributes['workflowId'],
             'task_name': event.event_attributes['workflowType']['name'],
             'task_version': event.event_attributes['workflowType']['version'],
             'task_args': event.event_attributes['input'],
             'lambda_role': event.event_attributes['lambdaRole'],
             'task_list_name': event.event_attributes['taskList']['name'],
-            'subtask_executions': [event]
+            'events': [event]
         }
         return cls(**cls_args)
 
     @property
     def task_name(self):
-        return self._name
+        return self._operation_name
 
     @property
     def task_version(self):
-        return self._task_version
+        return self._operation_version
 
     @property
     def task_args(self):
-        return self._task_args
+        return self._operation_input
 
     @property
     def lambda_role(self):
@@ -102,35 +94,23 @@ class SubtaskOperation(Operation):
 
 
 class SubtaskHistory(History):
-    def __init__(self, operations: [SubtaskOperation] = None):
-        if not operations:
-            operations = []
-        self._operations = operations
-
-    def get_operation_failed_count(self, flow_id, fail_reason=None):
-        failed_count = 0
-        operations = self.get_by_id(flow_id)
-        for operation in operations:
-            for execution in operation.executions:
-                if execution.is_failed:
-                    if fail_reason:
-                        if execution.fail_reason != fail_reason:
-                            continue
-                        failed_count += 1
-        return failed_count
+    def __init__(self, provided_steps=None, operations: [SubtaskOperation] = None):
+        if not provided_steps:
+            provided_steps = steps
+        super().__init__(provided_steps, operations)
 
     def _add_operation_event(self, event: Event):
-        if event.event_attributes['id'] in self.flow_ids:
+        if event.event_attributes['workflowId'] in self.operation_ids:
             return
         subtask_operation = SubtaskOperation.generate_from_schedule_event(event)
         self._operations.append(subtask_operation)
         return
 
     def _add_execution_event(self, event: Event):
-        run_id = event.event_attributes['scheduledEventId']
+        operation_run_id = event.event_attributes['initiatedEventId']
         subtask_execution = SubtaskExecution.generate_from_start_event(event)
         for operation in self._operations:
-            if run_id == operation.run_id:
+            if operation_run_id == operation.run_id:
                 if event.event_id in operation.event_ids:
                     return
                 operation.add_execution(subtask_execution)
@@ -147,13 +127,14 @@ class SubtaskHistory(History):
         raise RuntimeError('attempted to add a failure event to a non-existent subtask operation')
 
     def _add_general_event(self, event: Event):
-        run_id = event.event_attributes['scheduledEventId']
+        execution_run_id = event.event_attributes['startedEventId']
+        operation_run_id = event.event_attributes['initiatedEventId']
         for operation in self._operations:
-            for execution in operation.lambda_executions:
-                if run_id == execution.run_id:
-                    if event.event_id in execution.event_ids:
-                        return
-                execution.add_event(event)
+            if operation_run_id == operation.run_id:
+                for execution in operation.lambda_executions:
+                    if execution_run_id == execution.run_id:
+                        if event.event_id in execution.event_ids:
+                            return
+                    execution.add_event(event)
                 return
-            raise RuntimeError('could not find appropriate subtask execution for '
-                               'event: %s' % event)
+        raise RuntimeError('could not find appropriate subtask execution for event: %s' % event)

@@ -196,7 +196,7 @@ class ChangeTypes(AlgObject):
         return list(self._change_types.values())
 
     def __getitem__(self, item):
-        return self._change_types[item]
+        return self._change_types.get(item)
 
     def values(self):
         return self._change_types.values()
