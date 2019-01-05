@@ -1,12 +1,20 @@
+import json
+
+from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.snakes.snakes import StoredData
+from toll_booth.alg_obj.serializers import AlgDecoder
+
+
 class Task:
-    def __init__(self, task_token, activity_id, flow_id, run_id, activity_name, activity_version, input_string):
+    def __init__(self, task_token, activity_id, flow_id, run_id, activity_name, activity_version, task_args):
         self._task_token = task_token
         self._activity_id = activity_id
         self._flow_id = flow_id
         self._run_id = run_id
         self._activity_name = activity_name
         self._activity_version = activity_version
-        self._input_string = input_string
+        self._task_args = task_args
 
     @property
     def task_token(self):
@@ -17,8 +25,20 @@ class Task:
         return self._activity_name
 
     @property
-    def input_string(self):
-        return self._input_string
+    def activity_version(self):
+        return self._activity_version
+
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    @property
+    def run_id(self):
+        return self._run_id
+
+    @property
+    def task_args(self):
+        return self._task_args
 
     @classmethod
     def parse_from_poll(cls, poll_response):
@@ -30,8 +50,8 @@ class Task:
         activity_data = poll_response['activityType']
         activity_name = activity_data['name']
         activity_version = activity_data['version']
-        input_string = poll_response['input']
-        return cls(task_token, activity_id, flow_id, run_id, activity_name, activity_version, input_string)
+        task_args = json.loads(poll_response['input'], cls=AlgDecoder)
+        return cls(task_token, activity_id, flow_id, run_id, activity_name, activity_version, task_args)
 
 
 class OperationName:
@@ -114,3 +134,50 @@ class Versions:
                 if version > results[activity_name]:
                     results[activity_name] = version
         return results
+
+
+class TaskArguments(AlgObject):
+    def __init__(self, arguments: {str: {str: StoredData}}):
+        self._arguments = arguments
+
+    @property
+    def arguments(self):
+        return self._arguments
+
+    @property
+    def for_task(self):
+        task_args = {}
+        for operation_name, operation_arguments in self._arguments.items():
+            if operation_arguments is None:
+                task_args[operation_name] = None
+                continue
+            operation_task_args = {}
+            try:
+                operation_arguments = operation_arguments.data_string
+            except AttributeError:
+                pass
+            for argument_name, arguments in operation_arguments.items():
+                operation_task_args[argument_name] = arguments
+            task_args[operation_name] = operation_task_args
+        return task_args
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['_arguments'])
+
+    @classmethod
+    def for_starting_data(cls, starting_data):
+        stored_arguments = StoredData.from_object('start', starting_data, full_unpack=False)
+        return cls({'start': stored_arguments})
+
+    @classmethod
+    def from_schedule_event(cls, event: Event):
+        event_input = json.loads(event.event_attributes['input'], cls=AlgDecoder)
+        return cls(event_input)
+
+    def add_arguments(self, arguments):
+        for operation_name, operation_args in arguments.items():
+            if operation_name not in self._arguments:
+                self._arguments[operation_name] = operation_args
+                continue
+            self._arguments[operation_name].update(operation_args)

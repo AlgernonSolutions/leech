@@ -3,6 +3,7 @@
 """
 
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
 
 
 class History:
@@ -108,12 +109,12 @@ class History:
 
 
 class Operation:
-    def __init__(self, operation_id: str, run_ids: [str], operation_name: str, operation_version: str, operation_input: str, events, steps):
+    def __init__(self, operation_id: str, run_ids: [str], operation_name: str, operation_version: str, task_args: TaskArguments, events, steps):
         self._operation_id = operation_id
         self._run_ids = run_ids
         self._operation_name = operation_name
         self._operation_version = operation_version
-        self._operation_input = operation_input
+        self._task_args = task_args
         self._events = events
         self._executions = []
         self._steps = steps
@@ -130,6 +131,10 @@ class Operation:
     @property
     def operation_name(self):
         return self._operation_name
+
+    @property
+    def task_args(self):
+        return self._task_args
 
     @property
     def executions(self):

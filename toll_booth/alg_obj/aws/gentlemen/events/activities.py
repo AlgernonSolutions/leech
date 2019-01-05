@@ -5,6 +5,7 @@
 
 from toll_booth.alg_obj.aws.gentlemen.events.base_history import Execution, Operation, History
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
 
 steps = {
     'execution_first': 'ActivityTaskStarted',
@@ -52,18 +53,19 @@ class ActivityExecution(Execution):
 
 
 class ActivityOperation(Operation):
-    def __init__(self, operation_id: str, run_ids: str, activity_name: str, activity_version: str, task_args: str,
+    def __init__(self, operation_id: str, run_ids: str, activity_name: str, activity_version: str, task_args: TaskArguments,
                  events):
         super().__init__(operation_id, run_ids, activity_name, activity_version, task_args, events, steps)
 
     @classmethod
     def generate_from_schedule_event(cls, event: Event):
+        task_args = TaskArguments.from_schedule_event(event)
         cls_args = {
             'run_ids': [event.event_id],
             'operation_id': event.event_attributes['activityId'],
             'activity_name': event.event_attributes['activityType']['name'],
             'activity_version': event.event_attributes['activityType']['version'],
-            'task_args': event.event_attributes['input'],
+            'task_args': task_args,
             'events': [event]
         }
         return cls(**cls_args)
@@ -75,10 +77,6 @@ class ActivityOperation(Operation):
     @property
     def activity_version(self):
         return self._operation_version
-
-    @property
-    def task_args(self):
-        return self._operation_input
 
     @property
     def activity_executions(self):

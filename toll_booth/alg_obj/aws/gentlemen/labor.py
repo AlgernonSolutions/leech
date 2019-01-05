@@ -35,7 +35,9 @@ class Laborer:
             task_results = self._run_task(task)
             self._close_task(task, task_results)
         except Exception as e:
-            self._fail_task(task, e)
+            import traceback
+            trace = traceback.format_exc()
+            self._fail_task(task, e, trace)
         self._fire_alarm = True
 
     def _beat(self, task_token):
@@ -61,8 +63,7 @@ class Laborer:
         for task_module in task_modules:
             task_fn = getattr(task_module, task_name, None)
             if task_fn:
-                input_kwargs = json.loads(task.input_string, cls=AlgDecoder)
-                results = task_fn(**input_kwargs)
+                results = task_fn(**task.task_args.for_task)
                 return results
         raise NotImplementedError('could not find a registered task for type: %s' % task_name)
 
@@ -73,10 +74,15 @@ class Laborer:
             result=result_string
         )
 
-    def _fail_task(self, task: Task, exception: Exception):
-        failure_details = json.dumps(exception.args)
+    def _fail_task(self, task: Task, exception: Exception, trace):
+        failure_reason = json.dumps(exception.args)
+        failure_details = json.dumps({
+            'task_name': task.activity_name,
+            'task_version': task.activity_version,
+            'trace': trace
+        })
         self._client.respond_activity_task_failed(
             taskToken=task.task_token,
-            reason=str(exception),
+            reason=failure_reason,
             details=failure_details
         )

@@ -57,14 +57,6 @@ class ChangeType(AlgObject):
     def is_static(self):
         return self._is_static
 
-    @property
-    def change_target(self):
-        static_types = self._statics.get(str(self._category), {})
-        for static_name, statics in static_types.items():
-            if str(self._action) in statics:
-                return self._base_objects[static_name]
-        return 'dynamic'
-
     def __str__(self):
         return self._action
 

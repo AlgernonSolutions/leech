@@ -1,5 +1,6 @@
 from toll_booth.alg_obj.aws.gentlemen.events.base_history import History, Operation, Execution
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
 
 steps = {
     'operation_first': 'StartChildWorkflowExecutionInitiated',
@@ -50,18 +51,20 @@ class SubtaskExecution(Execution):
 
 
 class SubtaskOperation(Operation):
-    def __init__(self, operation_id: str, task_name: str, task_version: str, task_args: str, lambda_role: str, task_list_name: str,  events: [Event]):
-        super().__init__(operation_id, task_name, task_version, task_args, events, steps)
+    def __init__(self, operation_id: str, run_ids: [str], str, task_name: str, task_version: str, task_args: TaskArguments, lambda_role: str, task_list_name: str,  events: [Event]):
+        super().__init__(operation_id, run_ids, task_name, task_version, task_args, events, steps)
         self._task_list_name = task_list_name
         self._lambda_role = lambda_role
 
     @classmethod
     def generate_from_schedule_event(cls, event: Event):
+        task_args = TaskArguments.from_schedule_event(event)
         cls_args = {
             'operation_id': event.event_attributes['workflowId'],
+            'run_ids': [event.event_id],
             'task_name': event.event_attributes['workflowType']['name'],
             'task_version': event.event_attributes['workflowType']['version'],
-            'task_args': event.event_attributes['input'],
+            'task_args': task_args,
             'lambda_role': event.event_attributes['lambdaRole'],
             'task_list_name': event.event_attributes['taskList']['name'],
             'events': [event]
@@ -75,10 +78,6 @@ class SubtaskOperation(Operation):
     @property
     def task_version(self):
         return self._operation_version
-
-    @property
-    def task_args(self):
-        return self._operation_input
 
     @property
     def lambda_role(self):

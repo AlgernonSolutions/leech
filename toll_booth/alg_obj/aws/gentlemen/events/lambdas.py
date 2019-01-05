@@ -1,5 +1,6 @@
 from toll_booth.alg_obj.aws.gentlemen.events.base_history import History, Operation, Execution
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
 
 steps = {
     'operation_first': 'LambdaFunctionScheduled',
@@ -36,16 +37,17 @@ class LambdaExecution(Execution):
 
 
 class LambdaOperation(Operation):
-    def __init__(self, operation_id: str, run_ids: str, fn_name: str, task_args: str, events: [Event]):
+    def __init__(self, operation_id: str, run_ids: str, fn_name: str, task_args: TaskArguments, events: [Event]):
         super().__init__(operation_id, run_ids, fn_name, '1', task_args, events, steps)
 
     @classmethod
     def generate_from_schedule_event(cls, event: Event):
+        task_args = TaskArguments.from_schedule_event(event)
         operation_args = {
             'fn_name': event.event_attributes['name'],
             'operation_id': event.event_attributes['id'],
             'run_ids': [event.event_id],
-            'task_args': event.event_attributes['input'],
+            'task_args': task_args,
             'events': [event]
         }
         return cls(**operation_args)

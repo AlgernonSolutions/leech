@@ -2,7 +2,7 @@ import json
 import uuid
 
 from toll_booth.alg_obj.aws.gentlemen.events.subtasks import SubtaskOperation
-from toll_booth.alg_obj.serializers import AlgEncoder
+from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class Decision:
@@ -71,7 +71,7 @@ class StartSubtask(Decision):
     @classmethod
     def for_retry(cls, failed_operation: SubtaskOperation):
         retry_args = {
-            'parent_id': failed_operation.flow_id,
+            'parent_id': failed_operation.operation_id,
             'subtask_type': failed_operation.task_name,
             'task_args': failed_operation.task_args,
             'lambda_role': failed_operation.lambda_role,
@@ -156,6 +156,34 @@ class RecordMarker(Decision):
         return self.__getitem__('details')
 
 
+class StartTimer(Decision):
+    def __init__(self, timer_name, duration_seconds, details=None):
+        from datetime import datetime
+        timestamp = str(datetime.utcnow().timestamp())
+        details = json.dumps(details, cls=AlgEncoder)
+        timer_attributes = {
+            'timerId': f'{timer_name}!{timestamp}',
+            'control': details,
+            'startToFireTimeout': str(duration_seconds)
+            }
+        attributes_name = 'startTimerDecisionAttributes'
+        super().__init__('StartTimer', timer_attributes, attributes_name)
+        self._timer_name = timer_name
+        self._duration_seconds = duration_seconds
+
+    @property
+    def timer_id(self):
+        return self.__getitem__('timerId')
+
+    @property
+    def details(self):
+        return json.loads(self.__getitem__('controls'), cls=AlgDecoder)
+
+    @property
+    def duration_seconds(self):
+        return self._duration_seconds
+
+
 class ContinueAsNew(Decision):
     def __init__(self, task_args, lambda_role, **kwargs):
         continuation_attributes = {
@@ -186,18 +214,3 @@ class MadeDecisions:
 
     def add_decision(self, decision: Decision):
         self._decisions.append(decision)
-
-
-'ScheduleActivityTask'
-'RequestCancelActivityTask'
-'CompleteWorkflowExecution'
-'FailWorkflowExecution'
-'CancelWorkflowExecution'
-'ContinueAsNewWorkflowExecution'
-'RecordMarker'
-'StartTimer'
-'CancelTimer'
-'SignalExternalWorkflowExecution'
-'RequestCancelExternalWorkflowExecution'
-'StartChildWorkflowExecution'
-'ScheduleLambdaFunction'

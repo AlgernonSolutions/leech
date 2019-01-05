@@ -78,6 +78,9 @@ class StoredData(AlgObject):
     def store(self):
         if self.check:
             raise RuntimeError('can not overwrite stored data')
+        self._overwrite_store()
+
+    def _overwrite_store(self):
         resource = boto3.resource('s3')
         body = {'data_string': self._data_string, 'full_unpack': self._full_unpack}
         body_string = json.dumps(body, cls=AlgEncoder)
