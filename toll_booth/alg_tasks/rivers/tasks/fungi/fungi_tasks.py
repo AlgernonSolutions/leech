@@ -148,18 +148,16 @@ def build_mapping(**kwargs):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    task_args = kwargs['task_args']
-    source_args = task_args['source']
+    source_args = kwargs['start']
     driving_identifier_stem = IdentifierStem.from_raw(source_args['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
     schema_entry = SchemaVertexEntry.get(driving_identifier_stem.object_type)
-    for extractor in schema_entry.extract.values():
-        extraction_properties = extractor.extraction_properties
-        mapping = extraction_properties['mapping']
-        id_source_mapping = mapping.get(id_source, mapping['default'])
-        object_mapping = id_source_mapping[driving_identifier_stem.get('id_type')]
-        return {'mapping': object_mapping}
-    return {'mapping': {}}
+    fungal_extractor = schema_entry.extract['CredibleFrontEndExtractor']
+    extraction_properties = fungal_extractor.extraction_properties
+    mapping = extraction_properties['mapping']
+    id_source_mapping = mapping.get(id_source, mapping['default'])
+    object_mapping = id_source_mapping[driving_identifier_stem.get('id_type')]
+    return {'mapping': object_mapping}
 
 
 @task('generate_remote_id_change_data')

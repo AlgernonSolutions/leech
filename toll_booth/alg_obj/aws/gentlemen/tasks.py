@@ -177,7 +177,8 @@ class TaskArguments(AlgObject):
 
     def add_arguments(self, arguments):
         for operation_name, operation_args in arguments.items():
-            if operation_name not in self._arguments:
-                self._arguments[operation_name] = operation_args
-                continue
-            self._arguments[operation_name].update(operation_args)
+            self._arguments[operation_name] = operation_args
+
+    def add_argument_value(self, operation_name, arguments):
+        stored_arguments = StoredData.from_object(operation_name, arguments, full_unpack=False)
+        self._arguments[operation_name] = stored_arguments

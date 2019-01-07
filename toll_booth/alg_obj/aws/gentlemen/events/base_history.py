@@ -92,6 +92,17 @@ class History:
                     failed_count += 1
         return failed_count
 
+    def get_result(self, operation_name):
+        operation = self[operation_name]
+        return operation.results
+
+    def get_result_value(self, operation_name):
+        import json
+        from toll_booth.alg_obj.serializers import AlgDecoder
+        results = self.get_result(operation_name)
+        operation_results = json.loads(results, cls=AlgDecoder)
+        return operation_results.data_string
+
     def __contains__(self, item):
         return item in self._operations
 

@@ -53,19 +53,13 @@ def _build_chain(names, **kwargs):
 
 
 def build_group(execution_id, task_args, activities, names, **kwargs):
-    get_remote_ids_operation = activities[names['remote']]
-    get_changelog_operation = activities[names['change_types']]
-    mapping_operation = activities[names['map']]
-    remote_id_values = json.loads(get_remote_ids_operation.results, cls=AlgDecoder)
-    changelog_types = json.loads(get_changelog_operation.results, cls=AlgDecoder)
-    mapping = json.loads(mapping_operation.results, cls=AlgDecoder)
+    subtask_name = 'work_remote_id'
+    remote_id_values = activities.get_result_value(names['remote'])
     work_remote_ids_signatures = []
     for remote_id_value in remote_id_values['remote_id_values']:
         subtask_identifier = f'work_remote_id-{remote_id_value}-{execution_id}'
-        task_args.add_arguments({'source': changelog_types})
-        task_args.add_arguments({'source': mapping})
-        task_args.add_arguments({'source': {'id_value': remote_id_value, 'changelog_types': changelog_types}})
-        work_remote_id_signature = Signature.for_subtask(subtask_identifier, 'work_remote_id', **kwargs)
+        task_args.add_argument_value(subtask_name, {'id_value': remote_id_value})
+        work_remote_id_signature = Signature.for_subtask(subtask_identifier, subtask_name, **kwargs)
         work_remote_ids_signatures.append(work_remote_id_signature)
     tuple_signatures = tuple(work_remote_ids_signatures)
     return group(*tuple_signatures)

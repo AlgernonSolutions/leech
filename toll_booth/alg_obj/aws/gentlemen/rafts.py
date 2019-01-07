@@ -115,11 +115,9 @@ class Signature:
         task_args.add_arguments({self._fn_name: self._fn_kwargs})
         flow_input = json.dumps(task_args, cls=AlgEncoder)
         activity_args = (self._fn_identifier, self._fn_name, flow_input)
-        start_activity = StartActivity(*activity_args, version=self.fn_version, **kwargs)
-        start_subtask = StartSubtask(*activity_args, self.fn_version, lambda_role=kwargs.get('lambda_role'))
         if not self._is_activity:
-            return start_subtask
-        return start_activity
+            return StartSubtask(*activity_args, version=self.fn_version, lambda_role=kwargs.get('lambda_role'))
+        return StartActivity(*activity_args, version=self.fn_version, **kwargs)
 
     @property
     def fn_name(self):
@@ -219,10 +217,13 @@ class Group:
     def __call__(self, *args, **kwargs):
         results = {}
         group_started = True
+        progress = 0
         for signature in self._signatures:
             if not signature.is_started:
                 signature(**kwargs)
                 group_started = False
+            progress += 1
+            logging.debug(f'arbitrated a signature within a group call, progress: {progress}/{len(self._signatures)}')
         if not group_started:
             return
         for signature in self._signatures:

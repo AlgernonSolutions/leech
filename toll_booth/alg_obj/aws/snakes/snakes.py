@@ -10,16 +10,20 @@ from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class StoredData(AlgObject):
-    def __init__(self, data_name, data_string, bucket_name=None, timestamp=None, full_unpack=False):
+    def __init__(self, data_name, data_string, bucket_name=None, folder_name=None, timestamp=None, full_unpack=False, is_stored=None):
         if not bucket_name:
-            bucket_name = os.getenv('SNAKE_BUCKET', 'algernonsolutions-snakes')
+            bucket_name = os.getenv('LEECH_BUCKET', 'the-leech')
+        if not folder_name:
+            folder_name = os.getenv('CACHE_FOLDER', 'cache')
         if not timestamp:
             timestamp = str(datetime.utcnow().timestamp())
         self._data_name = data_name
         self._data_string = data_string
         self._bucket_name = bucket_name
+        self._folder_name = folder_name
         self._timestamp = timestamp
         self._full_unpack = full_unpack
+        self._is_stored = is_stored
 
     @property
     def to_json(self):
@@ -29,6 +33,8 @@ class StoredData(AlgObject):
 
     @property
     def check(self):
+        if self._is_stored is True:
+            return True
         resource = boto3.resource('s3')
         object_resource = resource.Object(self._bucket_name, self.data_key)
         try:
@@ -43,7 +49,7 @@ class StoredData(AlgObject):
 
     @property
     def data_key(self):
-        return f'{self._data_name}!{self._timestamp}'
+        return f'{self._folder_name}/{self._data_name}!{self._timestamp}.json'
 
     @property
     def data_string(self):
@@ -57,11 +63,24 @@ class StoredData(AlgObject):
     def retrieve(cls, pointer):
         pointer_parts = pointer.split('#')
         key_parts = pointer_parts[1].split('!')
+        folder_data_name = key_parts[0].split('/')
+        folder_name = folder_data_name[0]
+        data_name = folder_data_name[1]
+        timestamp = key_parts[1].replace('.json', '')
         resource = boto3.resource('s3')
         stored_object = resource.Object(pointer_parts[0], pointer_parts[1]).get()
         string_body = stored_object['Body'].read()
         body = json.loads(string_body, cls=AlgDecoder)
-        return cls(key_parts[0], body['data_string'], pointer_parts[0], key_parts[1], body['full_unpack'])
+        cls_args = {
+            'data_name': data_name,
+            'data_string': body['data_string'],
+            'bucket_name': pointer_parts[0],
+            'folder_name': folder_name,
+            'timestamp': timestamp,
+            'full_unpack': body['full_unpack'],
+            'is_stored': True
+        }
+        return cls(**cls_args)
 
     @classmethod
     def parse_json(cls, json_dict):
@@ -85,4 +104,5 @@ class StoredData(AlgObject):
         body = {'data_string': self._data_string, 'full_unpack': self._full_unpack}
         body_string = json.dumps(body, cls=AlgEncoder)
         resource.Object(self._bucket_name, self.data_key).put(Body=body_string)
+        self._is_stored = True
         return self.pointer

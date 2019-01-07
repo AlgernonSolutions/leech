@@ -2,7 +2,6 @@ import json
 import logging
 import os
 
-import boto3
 from jsonref import JsonRef
 from jsonschema import validate
 
@@ -14,12 +13,11 @@ def refresh():
     logging.info('going to refresh the remote schema files')
     admin_file_name = os.path.dirname(__file__)
     top_level = os.path.dirname(admin_file_name)
-    s3 = boto3.resource('s3')
-    schema_path = (top_level, 'tests', 'units', 'test_data', 'schemas', 'schema.json')
-    master_schema_path = (top_level, 'tests', 'units', 'test_data', 'schemas', 'master_schema.json')
-    s3.Bucket('algernonsolutions-test').upload_file(os.path.join(*schema_path), 'config/schema.json')
-    s3.Bucket('algernonsolutions-test').upload_file(os.path.join(*master_schema_path), 'config/master_schema.json')
-    Schema.post('algernonsolutions-test')
+    schema_path = ('tests', 'units', 'test_data', 'schemas', 'schema.json')
+    master_schema_path = ('tests', 'units', 'test_data', 'schemas', 'master_schema.json')
+    schema_file_path = os.path.join(top_level, *schema_path)
+    validation_file_path = os.path.join(top_level, *master_schema_path)
+    Schema.post(schema_file_path, validation_file_path)
     logging.info('completed the update of the remote schema files')
 
 
