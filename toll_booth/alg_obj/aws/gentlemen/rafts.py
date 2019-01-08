@@ -6,12 +6,16 @@ from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, StartTimer
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
+class ConcurrencyExceededException(Exception):
+    def __init__(self, identifier):
+        self._message = f'unable to start signature: {identifier} as max_concurrency reached'
+
+
 class Signature:
-    def __init__(self, name, version, identifier, signature_kwargs, **kwargs):
+    def __init__(self, name, version, identifier, **kwargs):
         self._fn_name = name
         self._fn_version = version
         self._fn_identifier = identifier
-        self._fn_kwargs = signature_kwargs
         self._is_activity = kwargs['is_activity']
         self._is_started = kwargs['is_started']
         self._is_complete = kwargs['is_complete']
@@ -19,60 +23,48 @@ class Signature:
         self._fail_count = kwargs['fail_count']
         self._back_off_status = kwargs['back_off_status']
         self._results = kwargs['results']
+        self._config = kwargs['config']
 
     @classmethod
-    def for_activity(cls, fn_identifier, fn_name, fn_kwargs=None, **kwargs):
+    def _build(cls, identifier, name, is_activity, **kwargs):
+        operations = kwargs['activities']
+        version_attribute = 'task_versions'
+        config_attribute = 'task'
+        if is_activity is False:
+            version_attribute = 'workflow_versions'
+            config_attribute = 'workflow'
+            operations = kwargs['sub_tasks']
+        timers = kwargs['timers']
+        versions = kwargs['versions']
+        config = kwargs['configs'][(config_attribute, name)]
+        version = getattr(versions, version_attribute)[name]
+        cls_args = (name, version, identifier)
+        cls_kwargs = {
+            'is_activity': is_activity, 'is_started': False, 'is_complete': False, 'config': config,
+            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None
+        }
+        if identifier not in operations.operation_ids:
+            return cls(*cls_args, **cls_kwargs)
+        operation = operations[identifier]
+        results = operation.results
+        fail_count = operations.get_operation_failed_count(identifier)
+        cls_kwargs.update({
+            'is_started': True, 'is_complete': operation.is_complete,
+            'is_failed': operation.is_failed, 'fail_count': fail_count,
+            'back_off_status': timers.fn_back_off_status(identifier),
+            'results': results
+        })
+        return cls(*cls_args, **cls_kwargs)
+
+    @classmethod
+    def for_activity(cls, fn_identifier, fn_name, **kwargs):
         is_activity = True
-        if not fn_kwargs:
-            fn_kwargs = {}
-        activities = kwargs['activities']
-        timers = kwargs['timers']
-        versions = kwargs['versions']
-        fn_version = versions.task_versions[fn_name]
-        cls_args = (fn_name, fn_version, fn_identifier, fn_kwargs)
-        cls_kwargs = {
-            'is_activity': is_activity, 'is_started': False, 'is_complete': False,
-            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None
-        }
-        if fn_identifier not in activities.operation_ids:
-            return cls(*cls_args, **cls_kwargs)
-        activity_operation = activities[fn_identifier]
-        results = activity_operation.results
-        fail_count = activities.get_operation_failed_count(fn_identifier)
-        cls_kwargs.update({
-            'is_started': True, 'is_complete': activity_operation.is_complete,
-            'is_failed': activity_operation.is_failed, 'fail_count': fail_count,
-            'back_off_status': timers.fn_back_off_status(fn_identifier),
-            'results': results
-        })
-        return cls(*cls_args, **cls_kwargs)
+        return cls._build(fn_identifier, fn_name, is_activity, **kwargs)
 
     @classmethod
-    def for_subtask(cls, subtask_identifier, subtask_name, subtask_kwargs=None, **kwargs):
+    def for_subtask(cls, subtask_identifier, subtask_name, **kwargs):
         is_activity = False
-        if not subtask_kwargs:
-            subtask_kwargs = {}
-        sub_tasks = kwargs['sub_tasks']
-        timers = kwargs['timers']
-        versions = kwargs['versions']
-        subtask_version = versions.workflow_versions[subtask_name]
-        cls_args = (subtask_name, subtask_version, subtask_identifier, subtask_kwargs)
-        cls_kwargs = {
-            'is_activity': is_activity, 'is_started': False, 'is_complete': False,
-            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None
-        }
-        if subtask_identifier not in sub_tasks.operation_ids:
-            return cls(*cls_args, **cls_kwargs)
-        subtask_operation = sub_tasks[subtask_identifier]
-        results = subtask_operation.results
-        fail_count = sub_tasks.get_operation_failed_count(subtask_identifier)
-        cls_kwargs.update({
-            'is_started': True, 'is_complete': subtask_operation.is_complete,
-            'is_failed': subtask_operation.is_failed, 'fail_count': fail_count,
-            'back_off_status': timers.fn_back_off_status(subtask_identifier),
-            'results': results
-        })
-        return cls(*cls_args, **cls_kwargs)
+        return cls._build(subtask_identifier, subtask_name, is_activity, **kwargs)
 
     def __call__(self, *args, **kwargs):
         if self._back_off_status is True:
@@ -99,7 +91,6 @@ class Signature:
         details = {
             'fn_identifier': self._fn_identifier,
             'fn_name': self._fn_name,
-            'fn_kwargs': self._fn_kwargs,
             'fail_count': self._fail_count
         }
         start_timer = StartTimer('error_back_off', back_off, details)
@@ -107,17 +98,31 @@ class Signature:
 
     def _start(self, **kwargs):
         decisions = kwargs['decisions']
+        self._check_concurrency(**kwargs)
         start_operation = self._build_start(**kwargs)
         decisions.append(start_operation)
 
     def _build_start(self, **kwargs):
         task_args = kwargs['task_args']
-        task_args.add_arguments({self._fn_name: self._fn_kwargs})
         flow_input = json.dumps(task_args, cls=AlgEncoder)
         activity_args = (self._fn_identifier, self._fn_name, flow_input)
         if not self._is_activity:
-            return StartSubtask(*activity_args, version=self.fn_version, lambda_role=kwargs.get('lambda_role'))
+            return StartSubtask(*activity_args, version=self.fn_version, **kwargs)
         return StartActivity(*activity_args, version=self.fn_version, **kwargs)
+
+    def _check_concurrency(self, **kwargs):
+        decisions = kwargs['decisions']
+        operations = kwargs['activities']
+        operation_type = 'ScheduleActivityTask'
+        if not self._is_activity:
+            operations = kwargs['sub_tasks']
+            operation_type = 'StartChildWorkflowExecution'
+        pending_run = [x for x in decisions if x.decision_type == operation_type]
+        current_concurrency = len([x for x in operations if x.is_live and x.operation_name == self._fn_name])
+        pending_concurrency = len([x for x in pending_run if x.type_name == self._fn_name])
+        target_concurrency = self._config['concurrency']
+        if (current_concurrency + pending_concurrency) > target_concurrency:
+            raise ConcurrencyExceededException(self._fn_identifier)
 
     @property
     def fn_name(self):
@@ -170,7 +175,7 @@ class Chain:
                 return
             results = signature.results
             chain_results = results
-            kwargs['task_args'].add_arguments(results)
+            kwargs['task_args'].add_argument_values(results)
         return chain_results
 
 
@@ -217,13 +222,14 @@ class Group:
     def __call__(self, *args, **kwargs):
         results = {}
         group_started = True
-        progress = 0
         for signature in self._signatures:
             if not signature.is_started:
-                signature(**kwargs)
+                try:
+                    signature(**kwargs)
+                except ConcurrencyExceededException:
+                    logging.warning(f'reached maximum concurrency running group, will retry as tasks finish')
+                    return
                 group_started = False
-            progress += 1
-            logging.debug(f'arbitrated a signature within a group call, progress: {progress}/{len(self._signatures)}')
         if not group_started:
             return
         for signature in self._signatures:
@@ -236,9 +242,9 @@ class Group:
         return results
 
 
-def chain(*args, **kwargs):
+def chain(*args):
     return Chain(args)
 
 
-def group(*args, **kwargs):
+def group(*args):
     return Group(args)

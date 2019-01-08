@@ -1,5 +1,7 @@
 import json
 
+from jsonschema import validate
+
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
@@ -148,17 +150,15 @@ class TaskArguments(AlgObject):
     def for_task(self):
         task_args = {}
         for operation_name, operation_arguments in self._arguments.items():
-            if operation_arguments is None:
-                task_args[operation_name] = None
-                continue
-            operation_task_args = {}
             try:
                 operation_arguments = operation_arguments.data_string
             except AttributeError:
                 pass
+            if operation_arguments is None:
+                task_args[operation_name] = None
+                continue
             for argument_name, arguments in operation_arguments.items():
-                operation_task_args[argument_name] = arguments
-            task_args[operation_name] = operation_task_args
+                task_args[argument_name] = arguments
         return task_args
 
     @classmethod
@@ -167,6 +167,8 @@ class TaskArguments(AlgObject):
 
     @classmethod
     def for_starting_data(cls, starting_data):
+        if isinstance(starting_data, TaskArguments):
+            return starting_data
         stored_arguments = StoredData.from_object('start', starting_data, full_unpack=False)
         return cls({'start': stored_arguments})
 
@@ -175,10 +177,121 @@ class TaskArguments(AlgObject):
         event_input = json.loads(event.event_attributes['input'], cls=AlgDecoder)
         return cls(event_input)
 
-    def add_arguments(self, arguments):
-        for operation_name, operation_args in arguments.items():
-            self._arguments[operation_name] = operation_args
-
     def add_argument_value(self, operation_name, arguments):
         stored_arguments = StoredData.from_object(operation_name, arguments, full_unpack=False)
         self._arguments[operation_name] = stored_arguments
+
+    def add_argument_values(self, group_arguments):
+        for operation_name, arguments in group_arguments.items():
+            self.add_argument_value(operation_name, arguments)
+
+    def __getitem__(self, item):
+        return self._arguments[item]
+
+
+class LeechConfigEntry(AlgObject):
+    def __init__(self, config_items=None):
+        if not config_items:
+            config_items = {}
+        self._config_items = config_items
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return json_dict['config_items']
+
+    def add_config_item(self, config_name, config_value):
+        self._config_items[config_name] = config_value
+
+    @property
+    def config_items(self):
+        return self._config_items
+
+    def __iter__(self):
+        return iter(self._config_items)
+
+    def __getitem__(self, item):
+        return self._config_items[item]
+
+    def get(self, item, default=None):
+        try:
+            self._config_items[item]
+        except KeyError:
+            return default
+
+
+class LeechConfig(AlgObject):
+    def __init__(self, workflow_configs=None, task_configs=None):
+        if not workflow_configs:
+            workflow_configs = {}
+        if not task_configs:
+            task_configs = {}
+        self._workflow_configs = workflow_configs
+        self._task_configs = task_configs
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return json_dict['workflow_configs']
+
+    @classmethod
+    def get(cls, **kwargs):
+        from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
+        folder_name = kwargs.get('CONFIG_FOLDER', 'configs')
+        config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
+        snek = SchemaSnek(folder_name=folder_name, **kwargs)
+        current_config = snek.get_schema(config_file_name)
+        return cls._build_config(current_config)
+
+    @classmethod
+    def post(cls, config_file_path, validation_file_path, **kwargs):
+        from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
+        folder_name = kwargs.get('CONFIG_FOLDER', 'configs')
+        config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
+        validation_file_name = kwargs.get('MASTER_CONFIG_FILE', 'master_config.json')
+        snek = SchemaSnek(folder_name=folder_name, **kwargs)
+        with open(config_file_path) as config_file, open(validation_file_path) as validation_file:
+            working_config = json.load(config_file)
+            master_config = json.load(validation_file)
+            validate(working_config, master_config)
+            snek.put_schema(config_file_path, config_file_name)
+            snek.put_schema(validation_file_path, validation_file_name)
+            return cls._build_config(working_config)
+
+    @classmethod
+    def _build_config(cls, json_dict):
+        cls_kwargs = {'workflow_configs': {}, 'task_configs': {}}
+        for entry in json_dict['workflows']:
+            config_entry = LeechConfigEntry()
+            workflow_name = entry['workflow_name']
+            for config_name, config_item in entry['workflow_config'].items():
+                config_entry.add_config_item(config_name, config_item)
+            cls_kwargs['workflow_configs'][workflow_name] = config_entry
+        for entry in json_dict['tasks']:
+            config_entry = LeechConfigEntry()
+            task_name = entry['task_name']
+            for config_name, config_item in entry['task_config'].items():
+                config_entry.add_config_item(config_name, config_item)
+            cls_kwargs['task_configs'][task_name] = config_entry
+        return cls(**cls_kwargs)
+
+    @property
+    def workflow_configs(self):
+        return self._workflow_configs
+
+    @property
+    def task_configs(self):
+        return self._task_configs
+
+    def __getitem__(self, item):
+        item_type = item[0]
+        item_name = item[1]
+        if item_type == 'task':
+            return self._task_configs[item_name]
+        if item_type == 'workflow':
+            return self._workflow_configs[item_name]
+        raise KeyError(item)
+
+    def get_task_config(self, task_name):
+        return self._task_configs[task_name]
+
+    def get_workflow_config(self, workflow_name):
+        return self._workflow_configs[workflow_name]

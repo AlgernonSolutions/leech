@@ -48,6 +48,14 @@ class MarkerHistory:
     def markers(self):
         return self._markers
 
+    @property
+    def names(self):
+        names = {}
+        name_markers = self.get_markers_by_type('names')
+        for marker in name_markers:
+            names.update(marker.marker_details)
+        return names
+
     def add_marker(self, marker: Marker):
         self._markers.append(marker)
 

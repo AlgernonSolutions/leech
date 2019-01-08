@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 
@@ -10,7 +11,8 @@ from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class StoredData(AlgObject):
-    def __init__(self, data_name, data_string, bucket_name=None, folder_name=None, timestamp=None, full_unpack=False, is_stored=None):
+    def __init__(self, data_name, data_string, bucket_name=None, folder_name=None, timestamp=None, full_unpack=False,
+                 is_stored=None):
         if not bucket_name:
             bucket_name = os.getenv('LEECH_BUCKET', 'the-leech')
         if not folder_name:
@@ -92,6 +94,10 @@ class StoredData(AlgObject):
 
     @classmethod
     def from_object(cls, data_name, alg_object, full_unpack=False):
+        if isinstance(alg_object, StoredData):
+            logging.debug(f'tried to store a StoredData object within another stored data object, that was naughty, '
+                          f'you will go to jail now. jk, we just bypassed the upload and handed the original back: {alg_object}')
+            return alg_object
         return cls(data_name, alg_object, full_unpack=full_unpack)
 
     def store(self):

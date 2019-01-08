@@ -52,16 +52,14 @@ class ScheduleLambda(Decision):
 
 
 class StartSubtask(Decision):
-    def __init__(self, parent_id, subtask_type, task_args, lambda_role, **kwargs):
-        workflow_name_base = kwargs.get('name_base', subtask_type)
-        workflow_id = f'{workflow_name_base}-{parent_id}'
+    def __init__(self, subtask_identifier, subtask_type, flow_input, lambda_role, **kwargs):
         subtask_attributes = {
             'workflowType': {
                 'name': subtask_type,
-                'version': kwargs.get('version', '1')
+                'version': kwargs['version']
             },
-            'workflowId': workflow_id,
-            'input': task_args,
+            'workflowId': subtask_identifier,
+            'input': flow_input,
             'taskList': {'name': kwargs.get('task_list_name', 'Leech')},
             'lambdaRole': lambda_role
         }
@@ -83,6 +81,10 @@ class StartSubtask(Decision):
     @property
     def workflow_type(self):
         return self.__getitem__('workflowType')
+
+    @property
+    def type_name(self):
+        return self.workflow_type['name']
 
     @property
     def workflow_id(self):
@@ -122,6 +124,14 @@ class StartActivity(Decision):
         }
         return cls(**activity_retry_args)
 
+    @property
+    def activity_type(self):
+        return self.__getitem__('activityType')
+
+    @property
+    def type_name(self):
+        return self.activity_type['name']
+
 
 class CompleteWork(Decision):
     def __init__(self, results=None):
@@ -146,6 +156,11 @@ class RecordMarker(Decision):
         }
         attributes_name = 'recordMarkerDecisionAttributes'
         super().__init__('RecordMarker', marker_attributes, attributes_name)
+
+    @classmethod
+    def for_names(cls, names):
+        name_string = json.dumps(names, cls=AlgEncoder)
+        return cls('names', name_string)
 
     @property
     def marker_name(self):

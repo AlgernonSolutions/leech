@@ -51,7 +51,7 @@ class SubtaskExecution(Execution):
 
 
 class SubtaskOperation(Operation):
-    def __init__(self, operation_id: str, run_ids: [str], str, task_name: str, task_version: str, task_args: TaskArguments, lambda_role: str, task_list_name: str,  events: [Event]):
+    def __init__(self, operation_id: str, run_ids: [str], task_name: str, task_version: str, task_args: TaskArguments, lambda_role: str, task_list_name: str,  events: [Event]):
         super().__init__(operation_id, run_ids, task_name, task_version, task_args, events, steps)
         self._task_list_name = task_list_name
         self._lambda_role = lambda_role
@@ -109,7 +109,7 @@ class SubtaskHistory(History):
         operation_run_id = event.event_attributes['initiatedEventId']
         subtask_execution = SubtaskExecution.generate_from_start_event(event)
         for operation in self._operations:
-            if operation_run_id == operation.run_id:
+            if operation_run_id in operation.run_ids:
                 if event.event_id in operation.event_ids:
                     return
                 operation.add_execution(subtask_execution)
@@ -118,9 +118,9 @@ class SubtaskHistory(History):
                                'subtask execution: %s' % subtask_execution)
 
     def _add_failure_event(self, event: Event):
-        flow_id = event.event_attributes['workflowExecution']['workflowId']
+        operation_id = event.event_attributes['workflowId']
         for operation in self._operations:
-            if operation.flow_id == flow_id:
+            if operation.operation_id == operation_id:
                 operation.set_operation_failure(event)
                 return
         raise RuntimeError('attempted to add a failure event to a non-existent subtask operation')
@@ -129,9 +129,9 @@ class SubtaskHistory(History):
         execution_run_id = event.event_attributes['startedEventId']
         operation_run_id = event.event_attributes['initiatedEventId']
         for operation in self._operations:
-            if operation_run_id == operation.run_id:
+            if operation_run_id == operation.operation_id:
                 for execution in operation.lambda_executions:
-                    if execution_run_id == execution.run_id:
+                    if execution_run_id == execution.execution_id:
                         if event.event_id in execution.event_ids:
                             return
                     execution.add_event(event)

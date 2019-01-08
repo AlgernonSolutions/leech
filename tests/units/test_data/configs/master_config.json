@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConfigSchema",
+  "description": "a configuration file for the Algernon Leech",
+  "type": "object",
+  "properties": {
+    "workflows": {
+      "description": "a array of work flow configurations",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/work_flow"
+      },
+      "uniqueItems": true,
+      "additionalItems": false
+    },
+    "tasks": {
+      "description": "a array of task configurations",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/task"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "work_flow": {
+      "description": "the configuration fields for a Leech workflow operated under the AWS SWF system",
+      "type": "object",
+      "properties": {
+        "workflow_name": {
+          "type": "string"
+        },
+        "workflow_config": {
+          "type": "object",
+          "properties": {
+            "concurrency": {
+              "type": "number",
+              "minimum": 1
+            },
+            "task_list": {
+              "type": "string"
+            }
+          },
+          "required": ["concurrency"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["workflow_name", "workflow_config"],
+      "additionalProperties": false
+    },
+    "task": {
+      "description": "the configuration fields for the tasks which make up a Leech workflow",
+      "type": "object",
+      "properties": {
+        "task_name": {
+          "type": "string"
+        },
+        "task_config": {
+          "type": "object",
+          "properties": {
+            "concurrency": {
+              "type": "number",
+              "minimum": 1
+            },
+            "task_list": {
+              "type": "string"
+            }
+          },
+          "required": ["concurrency"],
+          "additionalItems": false
+        }
+      },
+      "required": ["task_name", "task_config"]
+    }
+  }
+}

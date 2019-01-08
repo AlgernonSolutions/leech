@@ -43,6 +43,8 @@ class WorkflowHistory:
         if not run_id:
             run_id = execution_info['runId']
         raw_events = poll_response['events']
+        if not raw_events:
+            raise RuntimeError(f'no events were returned from a poll for work history')
         events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
         lambda_history = LambdaHistory.generate_from_events(events, lambdas.steps)
         subtask_history = SubtaskHistory.generate_from_events(events, subtasks.steps)
@@ -62,7 +64,7 @@ class WorkflowHistory:
     def _generate_workflow_starter_data(cls, events: [Event]):
         for event in events:
             if event.event_type == _starting_step:
-                input_string = event.event_attributes['input']
+                input_string = event.event_attributes.get('input', '{}')
                 task_args = TaskArguments.for_starting_data(json.loads(input_string, cls=AlgDecoder))
                 return task_args, event.event_attributes['lambdaRole']
 

@@ -5,7 +5,7 @@ from time import sleep
 import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Task
-from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
+from toll_booth.alg_obj.serializers import AlgEncoder
 from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
 
 

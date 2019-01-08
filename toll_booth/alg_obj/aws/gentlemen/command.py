@@ -1,8 +1,12 @@
+import json
+
 import boto3
+from retrying import retry
 
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action, command_fungi, work_remote_id, \
     work_remote_id_change_type
+from toll_booth.alg_tasks.rivers.flows import fungus
 
 
 class General:
@@ -14,8 +18,14 @@ class General:
 
     def command(self):
         work_history = self._poll_for_decision()
-        self._make_decisions(work_history)
+        try:
+            self._make_decisions(work_history)
+        except Exception as e:
+            import traceback
+            trace = traceback.format_exc()
+            self._fail_task(work_history, e, trace)
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _poll_for_decision(self):
         history = None
         workflow_histories = []
@@ -38,7 +48,7 @@ class General:
 
     def _make_decisions(self, work_history: WorkflowHistory):
         flow_modules = [
-            command_fungi, work_remote_id, work_remote_id_change_type, work_remote_id_change_action
+            command_fungi, work_remote_id, work_remote_id_change_type, work_remote_id_change_action, fungus
         ]
         if work_history:
             flow_type = work_history.flow_type
@@ -47,3 +57,18 @@ class General:
                 if flow:
                     return flow(work_history)
             raise NotImplementedError('could not find a registered flow for type: %s' % flow_type)
+
+    def _fail_task(self, work_history, exception, trace):
+        failure_reason = json.dumps(exception.args)
+        failure_details = json.dumps({
+            'workflow_name': work_history.flow_type,
+            'trace': trace
+        })
+        self._client.terminate_workflow_execution(
+            domain=work_history.domain_name,
+            workflowId=work_history.flow_id,
+            runId=work_history.run_id,
+            reason=failure_reason,
+            details=failure_details,
+            childPolicy='TERMINATE'
+        )

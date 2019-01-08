@@ -24,14 +24,14 @@ def get_local_max_change_type_value(**kwargs):
 def pull_change_types(**kwargs):
     from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 
-    change_types = ChangeTypes.get(**kwargs['start'])
+    change_types = ChangeTypes.get(**kwargs)
     return {'changelog_types': change_types}
 
 
 @task('unlink_old_ids')
 def unlink_old_ids(**kwargs):
-    remote_id_values = kwargs['get_remote_ids']['remote_id_values']
-    local_id_values = kwargs['get_local_ids']['local_id_values']
+    remote_id_values = kwargs['remote_id_values']
+    local_id_values = kwargs['local_id_values']
     local_linked_values = local_id_values['linked']
     unlinked_id_values = local_linked_values - remote_id_values
     _set_changed_ids(change_type='unlink', id_values=unlinked_id_values, **kwargs)
@@ -39,8 +39,8 @@ def unlink_old_ids(**kwargs):
 
 @task('link_new_ids')
 def link_new_ids(**kwargs):
-    remote_id_values = kwargs['get_remote_ids']['remote_id_values']
-    local_id_values = kwargs['get_local_ids']['local_id_values']
+    remote_id_values = kwargs['remote_id_values']
+    local_id_values = kwargs['local_id_values']
     local_linked_values = local_id_values['linked']
     newly_linked_id_values = remote_id_values - local_linked_values
     _set_changed_ids(change_type='link', id_values=newly_linked_id_values, **kwargs)
@@ -48,8 +48,8 @@ def link_new_ids(**kwargs):
 
 @task('put_new_ids')
 def put_new_ids(**kwargs):
-    remote_id_values = kwargs['get_remote_ids']['remote_id_values']
-    local_id_values = kwargs['get_local_ids']['local_id_values']
+    remote_id_values = kwargs['remote_id_values']
+    local_id_values = kwargs['local_id_values']
     new_id_values = remote_id_values - local_id_values['all']
     _set_changed_ids(change_type='new', id_values=new_id_values, **kwargs)
 
@@ -60,11 +60,10 @@ def get_local_ids(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    fn_kwargs = kwargs['start']
-    driving_identifier_stem = fn_kwargs['driving_identifier_stem']
+    driving_identifier_stem = kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
     driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
-    leech_driver = LeechDriver(table_name=fn_kwargs.get('table_name', 'VdGraphObjects'))
+    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
     local_id_values = leech_driver.get_local_id_values(driving_identifier_stem, vertex_regulator=driving_vertex_regulator)
     return {'local_id_values': local_id_values}
 
@@ -73,8 +72,7 @@ def get_local_ids(**kwargs):
 def get_remote_ids(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
-    fn_kwargs = kwargs['start']
-    remote_id_extractor = _build_remote_id_extractor(**fn_kwargs)
+    remote_id_extractor = _build_remote_id_extractor(**kwargs)
     with CredibleFrontEndDriver(remote_id_extractor['id_source']) as driver:
         remote_ids = driver.get_monitor_extraction(**remote_id_extractor)
         results = set(remote_ids)
@@ -86,18 +84,16 @@ def work_remote_id_change_type(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    task_args = kwargs['task_args']
-    source_args = task_args['source']
-    driving_identifier_stem = IdentifierStem.from_raw(source_args['driving_identifier_stem'])
-    identifier_stem = IdentifierStem.from_raw(source_args['identifier_stem'])
-    changelog_types = source_args['changelog_types']
-    change_category = changelog_types.categories[source_args['category_id']]
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+    identifier_stem = IdentifierStem.from_raw(kwargs['identifier_stem'])
+    changelog_types = kwargs['changelog_types']
+    change_category = changelog_types.categories[kwargs['category_id']]
     with CredibleFrontEndDriver(driving_identifier_stem.get('id_source')) as driver:
         extraction_args = {
             'driving_id_type': driving_identifier_stem.get('id_type'),
             'driving_id_name': driving_identifier_stem.get('id_name'),
-            'driving_id_value': source_args['id_value'],
-            'local_max_value':  source_args['local_max_value'],
+            'driving_id_value': kwargs['id_value'],
+            'local_max_value':  kwargs['local_max_value'],
             'category_id': change_category.category_id,
             'driving_identifier_stem': driving_identifier_stem,
             'identifier_stem': identifier_stem,
@@ -118,11 +114,10 @@ def get_enrichment_for_change_action(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe.mule_team import CredibleMuleTeam
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    source_args = kwargs['source']
-    driving_identifier_stem = IdentifierStem.from_raw(source_args['driving_identifier_stem'])
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
-    change_category = source_args['change_category']
-    action_id = source_args['action_id']
+    change_category = kwargs['change_category']
+    action_id = kwargs['action_id']
     change_action = change_category[action_id]
     if change_action.is_static and change_action.has_details is False:
         empty_data = {'change_detail': {}, 'emp_ids': {}}
@@ -131,8 +126,8 @@ def get_enrichment_for_change_action(**kwargs):
     enrichment_args = {
         'driving_id_type': driving_identifier_stem.get('id_type'),
         'driving_id_name': driving_identifier_stem.get('id_name'),
-        'driving_id_value': source_args['id_value'],
-        'local_max_value': source_args['local_max_value'],
+        'driving_id_value': kwargs['id_value'],
+        'local_max_value': kwargs['local_max_value'],
         'category_id': change_category.category_id,
         'action_id': int(action_id),
         'get_details': change_action.has_details is True,
@@ -148,8 +143,7 @@ def build_mapping(**kwargs):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    source_args = kwargs['start']
-    driving_identifier_stem = IdentifierStem.from_raw(source_args['driving_identifier_stem'])
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
     schema_entry = SchemaVertexEntry.get(driving_identifier_stem.object_type)
     fungal_extractor = schema_entry.extract['CredibleFrontEndExtractor']
@@ -164,16 +158,13 @@ def build_mapping(**kwargs):
 def generate_remote_id_change_data(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    task_args = kwargs['task_args']
-    source_args = task_args['source']
-    mapping = source_args['mapping']
-    driving_identifier_stem = IdentifierStem.from_raw(source_args['driving_identifier_stem'])
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     remote_change = kwargs['remote_change']
     change_category = kwargs['change_category']
     change_type = kwargs['change_type']
     enriched_data = kwargs['enriched_data']
     change_date_utc = remote_change['UTCDate']
-    extracted_data = _build_change_log_extracted_data(remote_change, mapping)
+    extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
     id_source = driving_identifier_stem.get('id_source')
     source_data = {
         'change_date_utc': extracted_data['change_date_utc'],
@@ -290,10 +281,9 @@ def _set_changed_ids(change_type, **kwargs):
     from botocore.exceptions import ClientError
 
     id_values = kwargs['id_values']
-    start_args = kwargs['start']
-    driving_identifier_stem = IdentifierStem.from_raw(start_args['driving_identifier_stem'])
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
-    leech_driver = LeechDriver(table_name=start_args.get('table_name', 'VdGraphObjects'))
+    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
     for id_value in id_values:
         object_data = driving_identifier_stem.for_extractor
         object_data['id_value'] = id_value

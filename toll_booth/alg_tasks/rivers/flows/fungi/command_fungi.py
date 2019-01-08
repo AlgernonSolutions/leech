@@ -5,15 +5,12 @@
     so we instead access them through an object we can get unique identifiers for, creating a two step process
 """
 
-import json
-
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, chain
-from toll_booth.alg_obj.serializers import AlgDecoder
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@workflow
+@workflow('command_fungi')
 def command_fungi(**kwargs):
     execution_id = kwargs['execution_id']
     names = {
@@ -25,13 +22,13 @@ def command_fungi(**kwargs):
         'change_types': f'pull_change_types-{execution_id}',
         'map': f'build_mapping-{execution_id}'
     }
-    kwargs['names'] = names
+    kwargs['names'].update(names)
     decisions = kwargs['decisions']
     great_chain = _build_chain(**kwargs)
     chain_results = great_chain(**kwargs)
     if chain_results is None:
         return
-    great_group = build_group(**kwargs)
+    great_group = _build_group(**kwargs)
     group_results = great_group(**kwargs)
     if group_results is None:
         return
@@ -52,12 +49,13 @@ def _build_chain(names, **kwargs):
     return great_chain
 
 
-def build_group(execution_id, task_args, activities, names, **kwargs):
+def _build_group(execution_id, task_args, names, **kwargs):
     subtask_name = 'work_remote_id'
+    activities = kwargs['activities']
     remote_id_values = activities.get_result_value(names['remote'])
     work_remote_ids_signatures = []
     for remote_id_value in remote_id_values['remote_id_values']:
-        subtask_identifier = f'work_remote_id-{remote_id_value}-{execution_id}'
+        subtask_identifier = f'work_id-{remote_id_value}-{execution_id}'
         task_args.add_argument_value(subtask_name, {'id_value': remote_id_value})
         work_remote_id_signature = Signature.for_subtask(subtask_identifier, subtask_name, **kwargs)
         work_remote_ids_signatures.append(work_remote_id_signature)

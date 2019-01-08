@@ -1,0 +1,100 @@
+{
+  "workflows": [
+    {
+      "workflow_name": "command_fungi",
+      "workflow_config": {
+        "concurrency": 100,
+        "task_list": "Leech"
+      }
+    },
+    {
+      "workflow_name": "work_remote_id",
+      "workflow_config": {
+        "concurrency": 100,
+        "task_list": "Leech"
+      }
+    },
+    {
+      "workflow_name": "work_remote_id_change_action",
+      "workflow_config": {
+        "concurrency": 100,
+        "task_list": "Leech"
+      }
+    },
+    {
+      "workflow_name": "work_remote_id_change_type",
+      "workflow_config": {
+        "concurrency": 100,
+        "task_list": "Leech"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_name": "get_local_max_change_type_value",
+      "task_config": {
+        "concurrency": 100
+      }
+    },
+    {
+      "task_name": "pull_change_types",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "unlink_old_ids",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "link_new_ids",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "put_new_ids",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "get_local_ids",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "get_remote_ids",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "work_remote_id_change_type",
+      "task_config": {
+        "concurrency": 100
+      }
+    },
+    {
+      "task_name": "get_enrichment_for_change_action",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "build_mapping",
+      "task_config": {
+        "concurrency": 1
+      }
+    },
+    {
+      "task_name": "generate_remote_id_change_data",
+      "task_config": {
+        "concurrency": 100
+      }
+    }
+  ]
+}

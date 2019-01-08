@@ -1,8 +1,5 @@
-import json
-
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, chain
-from toll_booth.alg_obj.serializers import AlgDecoder
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 """
@@ -11,7 +8,7 @@ from toll_booth.alg_tasks.rivers.rocks import workflow
 """
 
 
-@workflow
+@workflow('work_remote_id_change_type')
 def work_remote_id_change_type(**kwargs):
     decisions = kwargs['decisions']
     execution_id = kwargs['execution_id']
@@ -54,26 +51,19 @@ def _build_work_signature(**kwargs):
 
 
 def _build_group(**kwargs):
+    subtask_name = 'work_remote_id_change_action'
     signatures = []
     execution_id = kwargs['execution_id']
     task_args = kwargs['task_args']
-    activities = kwargs['activities']
-    names = kwargs['names']
     source_kwargs = task_args['source']
     category_id = source_kwargs['category_id']
     id_value = source_kwargs['id_value']
     changelog_types = source_kwargs['changelog_types']
-    local_max_operation = activities[names['local_max']]
-    work_operation = activities[names['work']]
-    max_local_value = json.loads(local_max_operation.results, cls=AlgDecoder)
-    remote_changes = json.loads(work_operation.results, cls=AlgDecoder)
     change_category = changelog_types.categories[category_id]
     for action_id, change_action in change_category.change_types.items():
-        task_args.add_arguments({'source': max_local_value})
-        task_args.add_arguments({'source': remote_changes})
-        task_args.add_arguments({'source': {'action_id': action_id}})
+        task_args.add_argument_value(subtask_name, {'action_id': action_id})
         subtask_identifier = f'work_remote_id_change_action-{change_action}-{change_category}-{id_value}-{execution_id}'
-        change_type_signature = Signature.for_subtask(subtask_identifier, 'work_remote_id_change_action', **kwargs)
+        change_type_signature = Signature.for_subtask(subtask_identifier, subtask_name, **kwargs)
         signatures.append(change_type_signature)
     tuple_signatures = tuple(signatures)
     return group(*tuple_signatures)

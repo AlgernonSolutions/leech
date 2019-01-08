@@ -112,6 +112,9 @@ class History:
                 return operation
         raise AttributeError('operation named: %s is not present in this history' % item)
 
+    def __iter__(self):
+        return iter(self._operations)
+
     def get(self, item, default=None):
         try:
             return self[item]
