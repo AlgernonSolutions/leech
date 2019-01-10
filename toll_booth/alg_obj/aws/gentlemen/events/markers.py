@@ -56,6 +56,14 @@ class MarkerHistory:
             names.update(marker.marker_details)
         return names
 
+    @property
+    def checkpoints(self):
+        checkpoints = {}
+        check_markers = self.get_markers_by_type('checkpoint')
+        for marker in check_markers:
+            checkpoints.update(marker.marker_details)
+        return checkpoints
+
     def add_marker(self, marker: Marker):
         self._markers.append(marker)
 

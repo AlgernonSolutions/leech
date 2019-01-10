@@ -3,7 +3,9 @@ import json
 import boto3
 from retrying import retry
 
+from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
+from toll_booth.alg_obj.aws.gentlemen.events.markers import MarkerHistory
 from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action, command_fungi, work_remote_id, \
     work_remote_id_change_type
 from toll_booth.alg_tasks.rivers.flows import fungus
@@ -20,10 +22,54 @@ class General:
         work_history = self._poll_for_decision()
         try:
             self._make_decisions(work_history)
+            print(f'completed decision making on task_list: {self._task_list} for flow_id: {work_history.flow_id}')
         except Exception as e:
             import traceback
             trace = traceback.format_exc()
             self._fail_task(work_history, e, trace)
+
+    def _get_markers(self, flow_id, run_id):
+        marker_histories = []
+        history = None
+        paginator = self._client.get_paginator('get_workflow_execution_history')
+        response_iterator = paginator.paginate(
+            domain=self._domain_name,
+            execution={
+                'workflowId': flow_id,
+                'runId': run_id
+            }
+        )
+        for page in response_iterator:
+            events = [Event.parse_from_decision_poll_event(x) for x in page['events']]
+            marker_history = MarkerHistory.generate_from_events(events)
+            marker_histories.append(marker_history)
+        for marker_history in marker_histories:
+            if history is None:
+                history = marker_history
+                continue
+            history.merge_history(marker_history)
+        return history
+
+    def _get_past_runs(self, flow_id):
+        from datetime import datetime, timedelta
+        one_day_ago = datetime.utcnow() - timedelta(days=2)
+        workflow_histories = []
+        paginator = self._client.get_paginator('list_closed_workflow_executions')
+        response_iterator = paginator.paginate(
+            domain=self._domain_name,
+            executionFilter={
+                'workflowId': flow_id
+            },
+            closeTimeFilter={
+                'oldestDate': one_day_ago,
+            }
+        )
+        for page in response_iterator:
+            for entry in page['executionInfos']:
+                run_id = entry['execution']['runId']
+                flow_history = self._get_markers(flow_id, run_id)
+                workflow_histories.append(flow_history)
+        return workflow_histories
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _poll_for_decision(self):
@@ -36,6 +82,7 @@ class General:
                 'name': self._task_list
             }
         )
+
         for page in response_iterator:
             workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
             workflow_histories.append(workflow_history)
@@ -44,6 +91,9 @@ class General:
                 history = workflow_history
                 continue
             history.merge_history(workflow_history)
+        markers = self._get_past_runs(history.flow_id)
+        for marker_history in markers:
+            history.marker_history.merge_history(marker_history)
         return history
 
     def _make_decisions(self, work_history: WorkflowHistory):

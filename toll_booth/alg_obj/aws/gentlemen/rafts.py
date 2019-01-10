@@ -2,7 +2,7 @@ import json
 import logging
 import random
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, StartTimer, StartSubtask
+from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, StartTimer, StartSubtask, RecordMarker
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
@@ -12,10 +12,11 @@ class ConcurrencyExceededException(Exception):
 
 
 class Signature:
-    def __init__(self, name, version, identifier, **kwargs):
+    def __init__(self, name, version, identifier, task_args, **kwargs):
         self._fn_name = name
         self._fn_version = version
         self._fn_identifier = identifier
+        self._task_args = task_args
         self._is_activity = kwargs['is_activity']
         self._is_started = kwargs['is_started']
         self._is_complete = kwargs['is_complete']
@@ -26,7 +27,7 @@ class Signature:
         self._config = kwargs['config']
 
     @classmethod
-    def _build(cls, identifier, name, is_activity, **kwargs):
+    def _build(cls, identifier, name, task_args, is_activity, **kwargs):
         operations = kwargs['activities']
         version_attribute = 'task_versions'
         config_attribute = 'task'
@@ -38,11 +39,17 @@ class Signature:
         versions = kwargs['versions']
         config = kwargs['configs'][(config_attribute, name)]
         version = getattr(versions, version_attribute)[name]
-        cls_args = (name, version, identifier)
+        checkpoint = cls._check_for_checkpoint(identifier, **kwargs)
+        cls_args = (name, version, identifier, task_args)
         cls_kwargs = {
             'is_activity': is_activity, 'is_started': False, 'is_complete': False, 'config': config,
-            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None
+            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None,
         }
+        if checkpoint:
+            cls_kwargs.update({
+                'is_complete': True, 'results': checkpoint, 'is_started': True
+            })
+            return cls(*cls_args, **cls_kwargs)
         if identifier not in operations.operation_ids:
             return cls(*cls_args, **cls_kwargs)
         operation = operations[identifier]
@@ -57,19 +64,28 @@ class Signature:
         return cls(*cls_args, **cls_kwargs)
 
     @classmethod
-    def for_activity(cls, fn_identifier, fn_name, **kwargs):
+    def for_activity(cls, fn_identifier, fn_name, task_args, **kwargs):
         is_activity = True
-        return cls._build(fn_identifier, fn_name, is_activity, **kwargs)
+        return cls._build(fn_identifier, fn_name, task_args, is_activity, **kwargs)
 
     @classmethod
-    def for_subtask(cls, subtask_identifier, subtask_name, **kwargs):
+    def for_subtask(cls, subtask_identifier, subtask_name, task_args, **kwargs):
         is_activity = False
-        return cls._build(subtask_identifier, subtask_name, is_activity, **kwargs)
+        return cls._build(subtask_identifier, subtask_name, task_args, is_activity, **kwargs)
+
+    @classmethod
+    def _check_for_checkpoint(cls, identifier, **kwargs):
+        markers = kwargs['markers']
+        checkpoints = markers.checkpoints
+        if identifier in checkpoints:
+            return checkpoints[identifier]
+        return None
 
     def __call__(self, *args, **kwargs):
         if self._back_off_status is True:
             return
         if self._is_complete:
+            self._set_checkpoint(**kwargs)
             return self._results
         if self._is_failed:
             back_off_count = self._back_off_status
@@ -103,8 +119,7 @@ class Signature:
         decisions.append(start_operation)
 
     def _build_start(self, **kwargs):
-        task_args = kwargs['task_args']
-        flow_input = json.dumps(task_args, cls=AlgEncoder)
+        flow_input = json.dumps(self._task_args, cls=AlgEncoder)
         activity_args = (self._fn_identifier, self._fn_name, flow_input)
         if not self._is_activity:
             return StartSubtask(*activity_args, version=self.fn_version, **kwargs)
@@ -123,6 +138,14 @@ class Signature:
         target_concurrency = self._config['concurrency']
         if (current_concurrency + pending_concurrency) > target_concurrency:
             raise ConcurrencyExceededException(self._fn_identifier)
+
+    def _set_checkpoint(self, **kwargs):
+        markers = kwargs['markers']
+        checkpoints = markers.checkpoints
+        if self._fn_identifier not in checkpoints and self._is_complete:
+            kwargs['decisions'].append(
+                RecordMarker.for_checkpoint(self._fn_identifier, self._results)
+            )
 
     @property
     def fn_name(self):
@@ -152,8 +175,8 @@ class Signature:
     def is_complete(self):
         return self._is_complete
 
-    @property
-    def results(self):
+    def get_results(self, **kwargs):
+        self._set_checkpoint(**kwargs)
         results = json.loads(self._results, cls=AlgDecoder)
         return {self._fn_name: results}
 
@@ -173,7 +196,7 @@ class Chain:
                 return
             if not signature.is_complete and not signature.is_failed:
                 return
-            results = signature.results
+            results = signature.get_results(**kwargs)
             chain_results = results
             kwargs['task_args'].add_argument_values(results)
         return chain_results
@@ -212,16 +235,16 @@ class Group:
                 return False
         return True
 
-    @property
-    def results(self):
+    def get_results(self, **kwargs):
         results = {}
         for signature in self._signatures:
-            results.update(signature.results)
+            results.update(signature.get_results(**kwargs))
         return results
 
     def __call__(self, *args, **kwargs):
         results = {}
         group_started = True
+        group_finished = True
         for signature in self._signatures:
             if not signature.is_started:
                 try:
@@ -235,10 +258,14 @@ class Group:
         for signature in self._signatures:
             if signature.is_failed:
                 signature(**kwargs)
-                return
+                group_finished = False
+                continue
             if not signature.is_complete and not signature.is_failed:
-                return
-            results.update(signature.results)
+                group_finished = False
+                continue
+            results.update(signature.get_results(**kwargs))
+        if not group_finished:
+            return
         return results
 
 

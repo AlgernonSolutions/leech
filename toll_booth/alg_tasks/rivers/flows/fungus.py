@@ -3,7 +3,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import Signature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@workflow('fungi')
+@workflow('fungus')
 def fungus(execution_id, **kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 

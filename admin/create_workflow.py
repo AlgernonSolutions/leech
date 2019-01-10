@@ -31,16 +31,16 @@ if __name__ == '__main__':
         'execution_to_close_time': one_hour
     }
     flows = [
-        (('Leech', 'leech', '3', 'master level workflow for all typical leech operations', 'TERMINATE', 'Leech'), long_run_kwargs),
-        (('Leech', 'fungus', '1', 'master level workflow for all fungal leech operations', 'TERMINATE', 'Leech'), long_run_kwargs),
-        (('Leech', 'command_fungi', '2', 'orchestrates and runs the entire Credible FE extraction process', 'TERMINATE',
-          'Leech'), {}),
-        (('Leech', 'work_remote_id', '1', 'workflow for driving vertex growth from a single remote_id', 'TERMINATE',
-          'Leech'), {}),
-        (('Leech', 'work_remote_id_change_type', '1', 'workflow for extracting and collecting a change type',
-          'TERMINATE', 'Leech'), {}),
-        (('Leech', 'work_remote_id_change_action', '1', 'workflow for extracting and collecting a change action',
-          'TERMINATE', 'Leech'), {}),
+        (('Leech', 'leech', '4', 'master level workflow for all typical leech operations', 'TERMINATE', 'Leech'), long_run_kwargs),
+        (('Leech', 'fungus', '2', 'master level workflow for all fungal leech operations', 'TERMINATE', 'Leech'), long_run_kwargs),
+        (('Leech', 'command_fungi', '3', 'orchestrates and runs the entire Credible FE extraction process', 'TERMINATE',
+          'Leech'), long_run_kwargs),
+        (('Leech', 'work_remote_id', '2', 'workflow for driving vertex growth from a single remote_id', 'TERMINATE',
+          'Leech'), long_run_kwargs),
+        (('Leech', 'work_remote_id_change_type', '2', 'workflow for extracting and collecting a change type',
+          'TERMINATE', 'Leech'), long_run_kwargs),
+        (('Leech', 'work_remote_id_change_action', '2', 'workflow for extracting and collecting a change action',
+          'TERMINATE', 'Leech'), long_run_kwargs),
     ]
     for flow in flows:
         try:

@@ -1,3 +1,4 @@
+from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
@@ -6,12 +7,15 @@ def get_local_max_change_type_value(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
     from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException
 
-    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
-    driving_id_value = kwargs['driving_id_value']
+    driving_identifier_stem = kwargs['driving_identifier_stem']
+    id_value = kwargs['id_value']
+    category_id = kwargs['category_id']
+    changelog_types = kwargs['changelog_types']
+    driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
     id_source = driving_identifier_stem.get('id_source')
     id_type = driving_identifier_stem.get('id_type')
-    change_category = kwargs['category']
-    change_stem = f'#{id_source}#{id_type}#{driving_id_value}#{change_category}'
+    change_category = changelog_types.categories[category_id]
+    change_stem = f'#{id_source}#{id_type}#{id_value}#{change_category}'
     leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
     try:
         local_max_value = leech_driver.scan_index_value_max(change_stem)
@@ -116,9 +120,10 @@ def get_enrichment_for_change_action(**kwargs):
 
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
-    change_category = kwargs['change_category']
+    changelog_types = kwargs['changelog_types']
+    change_action = changelog_types[kwargs['action_id']]
     action_id = kwargs['action_id']
-    change_action = change_category[action_id]
+    category_id = changelog_types.get_category_id_from_action_id(str(action_id))
     if change_action.is_static and change_action.has_details is False:
         empty_data = {'change_detail': {}, 'emp_ids': {}}
         return {'enriched_data': empty_data}
@@ -128,7 +133,7 @@ def get_enrichment_for_change_action(**kwargs):
         'driving_id_name': driving_identifier_stem.get('id_name'),
         'driving_id_value': kwargs['id_value'],
         'local_max_value': kwargs['local_max_value'],
-        'category_id': change_category.category_id,
+        'category_id': category_id,
         'action_id': int(action_id),
         'get_details': change_action.has_details is True,
         'get_emp_ids': change_action.is_static is False,

@@ -14,7 +14,7 @@ _starting_step = 'WorkflowExecutionStarted'
 
 
 class WorkflowHistory:
-    def __init__(self, domain_name: str, flow_type: str, task_token: str, flow_id: str, run_id: str, lambda_role: str,
+    def __init__(self, domain_name, flow_type, task_token, flow_id, run_id, lambda_role, parent_flow_id, parent_run_id,
                  task_args: TaskArguments, events: [Event], subtask_history: SubtaskHistory, lambda_history: LambdaHistory,
                  activity_history: ActivityHistory, marker_history: MarkerHistory, timer_history: TimerHistory):
         self._domain_name = domain_name
@@ -22,6 +22,8 @@ class WorkflowHistory:
         self._flow_id = flow_id
         self._run_id = run_id
         self._lambda_role = lambda_role
+        self._parent_flow_id = parent_flow_id
+        self._parent_run_id = parent_run_id
         self._task_args = task_args
         self._task_token = task_token
         self._events = events
@@ -51,22 +53,26 @@ class WorkflowHistory:
         activity_history = ActivityHistory.generate_from_events(events, activities.steps)
         marker_history = MarkerHistory.generate_from_events(events)
         timer_history = TimerHistory.generate_from_events(events)
-        task_args, lambda_role = cls._generate_workflow_starter_data(events)
+        task_args, lambda_role, parent_flow_id, parent_run_id = cls._generate_workflow_starter_data(flow_type, events)
         cls_args = {
             'domain_name': domain_name, 'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id,
-            'run_id': run_id, 'task_args': task_args, 'lambda_role': lambda_role, 'events': events,
-            'subtask_history': subtask_history, 'lambda_history': lambda_history, 'activity_history': activity_history,
+            'run_id': run_id, 'parent_flow_id': parent_flow_id, 'parent_run_id': parent_run_id, 'task_args': task_args,
+            'lambda_role': lambda_role, 'events': events, 'subtask_history': subtask_history,
+            'lambda_history': lambda_history, 'activity_history': activity_history,
             'marker_history': marker_history, 'timer_history': timer_history
         }
         return cls(**cls_args)
 
     @classmethod
-    def _generate_workflow_starter_data(cls, events: [Event]):
+    def _generate_workflow_starter_data(cls, operation_name, events: [Event]):
         for event in events:
             if event.event_type == _starting_step:
                 input_string = event.event_attributes.get('input', '{}')
-                task_args = TaskArguments.for_starting_data(json.loads(input_string, cls=AlgDecoder))
-                return task_args, event.event_attributes['lambdaRole']
+                task_args = TaskArguments.for_starting_data(operation_name, json.loads(input_string, cls=AlgDecoder))
+                parent_data = event.event_attributes.get('parentWorkflowExecution', {})
+                parent_flow_id = parent_data.get('workflowId', None)
+                parent_run_id = parent_data.get('runId', None)
+                return task_args, event.event_attributes['lambdaRole'], parent_flow_id, parent_run_id
 
     @property
     def domain_name(self):
@@ -87,6 +93,18 @@ class WorkflowHistory:
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def has_parent(self):
+        return self._parent_flow_id is not None
+
+    @property
+    def parent_flow_id(self):
+        return self._parent_flow_id
+
+    @property
+    def parent_run_id(self):
+        return self._parent_run_id
 
     @property
     def task_token(self):
@@ -127,3 +145,22 @@ class WorkflowHistory:
         self._activity_history.merge_history(work_history.activity_history)
         self._marker_history.merge_history(work_history.marker_history)
         self._timer_history.merge_history(work_history.timer_history)
+
+    def get_result(self, identifier):
+        try:
+            results = self._activity_history.get_result_value(identifier)
+        except AttributeError:
+            try:
+                results = self._subtask_history.get_result_value(identifier)
+            except AttributeError:
+                results = self._get_marker_result(identifier)
+        if results is None:
+            return results
+        try:
+            return json.loads(results, cls=AlgDecoder).data_string
+        except TypeError:
+            return results
+
+    def _get_marker_result(self, name):
+        checkpoints = self._marker_history.checkpoints
+        return checkpoints[name]

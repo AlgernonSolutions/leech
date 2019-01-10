@@ -51,7 +51,7 @@ class SubtaskExecution(Execution):
 
 
 class SubtaskOperation(Operation):
-    def __init__(self, operation_id: str, run_ids: [str], task_name: str, task_version: str, task_args: TaskArguments, lambda_role: str, task_list_name: str,  events: [Event]):
+    def __init__(self, operation_id, run_ids, task_name, task_version, task_args: TaskArguments, lambda_role, task_list_name, events: [Event]):
         super().__init__(operation_id, run_ids, task_name, task_version, task_args, events, steps)
         self._task_list_name = task_list_name
         self._lambda_role = lambda_role
@@ -67,7 +67,7 @@ class SubtaskOperation(Operation):
             'task_args': task_args,
             'lambda_role': event.event_attributes['lambdaRole'],
             'task_list_name': event.event_attributes['taskList']['name'],
-            'events': [event]
+            'events': [event],
         }
         return cls(**cls_args)
 
@@ -129,8 +129,8 @@ class SubtaskHistory(History):
         execution_run_id = event.event_attributes['startedEventId']
         operation_run_id = event.event_attributes['initiatedEventId']
         for operation in self._operations:
-            if operation_run_id == operation.operation_id:
-                for execution in operation.lambda_executions:
+            if operation_run_id in operation.run_ids:
+                for execution in operation.executions:
                     if execution_run_id == execution.execution_id:
                         if event.event_id in execution.event_ids:
                             return

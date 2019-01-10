@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.events.subtasks import SubtaskOperation
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
@@ -60,7 +61,7 @@ class StartSubtask(Decision):
             },
             'workflowId': subtask_identifier,
             'input': flow_input,
-            'taskList': {'name': kwargs.get('task_list_name', 'Leech')},
+            'taskList': {'name': subtask_type},
             'lambdaRole': lambda_role
         }
         attributes_name = 'startChildWorkflowExecutionDecisionAttributes'
@@ -148,6 +149,24 @@ class CompleteWork(Decision):
         return self.__getitem__('result')
 
 
+class SignalExternalFlow(Decision):
+    def __init__(self, flow_id, run_id, signal_name, signal_payload=None):
+        signal_attributes = {
+            'workflowId': flow_id,
+            'runId': run_id,
+            'signalName': signal_name
+        }
+        if signal_payload:
+            signal_string = json.dumps(signal_payload, cls=AlgEncoder)
+            signal_attributes['input'] = signal_string
+        attributes_name = 'signalExternalWorkflowExecutionDecisionAttributes'
+        super().__init__('SignalExternalWorkflowExecution', signal_attributes, attributes_name)
+
+    @classmethod
+    def for_subtask_completed(cls, work_history: WorkflowHistory):
+        return cls(work_history.parent_flow_id, work_history.parent_run_id, 'subtask_completed')
+
+
 class RecordMarker(Decision):
     def __init__(self, marker_name, details=None):
         marker_attributes = {
@@ -161,6 +180,12 @@ class RecordMarker(Decision):
     def for_names(cls, names):
         name_string = json.dumps(names, cls=AlgEncoder)
         return cls('names', name_string)
+
+    @classmethod
+    def for_checkpoint(cls, operation_identifier, operation_results):
+        checkpoint_data = {operation_identifier: operation_results}
+        checkpoint_string = json.dumps(checkpoint_data, cls=AlgEncoder)
+        return cls('checkpoint', checkpoint_string)
 
     @property
     def marker_name(self):

@@ -199,6 +199,10 @@ class ChangeTypes(AlgObject):
                 return change_type.action_id
         raise AttributeError
 
+    def get_category_id_from_action_id(self, action_id):
+        change_action = self._change_types[action_id]
+        return change_action.category_id
+
     def get_category_by_name(self, category_name):
         for category_id, category in self.categories.items():
             if category.category == category_name:

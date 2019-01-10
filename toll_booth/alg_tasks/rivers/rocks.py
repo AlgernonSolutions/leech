@@ -1,6 +1,6 @@
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker, CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
@@ -29,7 +29,7 @@ def workflow(workflow_name):
                 'configs': configs,
                 'names': names,
                 'workflow_name': workflow_name,
-                'workflow_args': task_args[workflow_name]
+                'workflow_args': task_args[workflow_name].data_string
             }
             results = production_fn(**context_kwargs)
             decisions = MadeDecisions(work_history.task_token)

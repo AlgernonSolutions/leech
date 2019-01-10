@@ -16,21 +16,16 @@ from toll_booth.alg_tasks.rivers.rocks import workflow
 def work_remote_id_change_action(**kwargs):
     decisions = kwargs['decisions']
     execution_id = kwargs['execution_id']
-    task_args = kwargs['task_args']
-    source_kwargs = task_args['source']
-    category_id = source_kwargs['category_id']
-    id_value = source_kwargs['id_value']
-    changelog_types = source_kwargs['changelog_types']
-    change_category = changelog_types.categories[category_id]
-    action_id = source_kwargs['action_id']
-    change_action = change_category[action_id]
     names = {
-        'enrich': f'get_enrichment_for_change_action-{change_action}-{change_category}-{id_value}-{execution_id}',
-        'change': f'generate_remote_id_change_data-{change_action}-{change_category}-{id_value}-{execution_id}',
+        'enrich': f'enrichment-{execution_id}',
+        'change': f'generate-{execution_id}',
     }
-    kwargs['names'].update(names)
+    kwargs['names'] = names
     enrich_signature = _build_enrich_signature(**kwargs)
     change_data_group = _build_change_data_group(**kwargs)
+    if change_data_group is None:
+        decisions.append(CompleteWork())
+        return
     great_chain = chain(enrich_signature, change_data_group)
     chain_results = great_chain(**kwargs)
     if chain_results is None:
@@ -45,21 +40,21 @@ def _build_enrich_signature(**kwargs):
     return enrich_signature
 
 
-def _build_change_data_group(**kwargs):
+def _build_change_data_group(task_args, **kwargs):
     subtask_name = 'generate_remote_id_change_data'
     signatures = []
     names = kwargs['names']
-    activities = kwargs['activities']
+    workflow_args = kwargs['workflow_args']
     fn_identifier = names['change']
-    task_args = kwargs['task_args']
-    source_args = task_args['source']
-    change_actions = activities.get_result_value(kwargs['names']['change_types'])
-    action_id = source_args['action_id']
-    changelog_types = source_args['changelog_types']
-    change_action = changelog_types[action_id]
-    remote_actions = change_actions[change_action.action_name]
+    change_actions = task_args.get_argument_value('change_actions')
+    changelog_types = task_args.get_argument_value('changelog_types')
+    action_id = workflow_args['action_id']
+    change_action = changelog_types[str(action_id)]
+    remote_actions = change_actions.get(change_action.action, {})
     for remote_change in remote_actions:
-        task_args.add_argument_value({subtask_name: {'remote_change': remote_change}})
-        signature = Signature.for_activity(fn_identifier, subtask_name, **kwargs)
+        new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change)
+        signature = Signature.for_activity(fn_identifier, subtask_name, new_task_args, **kwargs)
         signatures.append(signature)
+    if not signatures:
+        return None
     return signatures

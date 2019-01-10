@@ -5,7 +5,7 @@ from jsonschema import validate
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
 class Task:
@@ -166,24 +166,43 @@ class TaskArguments(AlgObject):
         return cls(json_dict['_arguments'])
 
     @classmethod
-    def for_starting_data(cls, starting_data):
+    def for_starting_data(cls, operation_name, starting_data):
         if isinstance(starting_data, TaskArguments):
             return starting_data
-        stored_arguments = StoredData.from_object('start', starting_data, full_unpack=False)
-        return cls({'start': stored_arguments})
+        stored_arguments = StoredData.from_object(operation_name, starting_data, full_unpack=False)
+        return cls({operation_name: stored_arguments})
 
     @classmethod
     def from_schedule_event(cls, event: Event):
         event_input = json.loads(event.event_attributes['input'], cls=AlgDecoder)
         return cls(event_input)
 
-    def add_argument_value(self, operation_name, arguments):
-        stored_arguments = StoredData.from_object(operation_name, arguments, full_unpack=False)
+    def add_argument_value(self, operation_name, arguments, identifier=None):
+        stored_name = operation_name
+        if identifier:
+            stored_name = f'{operation_name}{identifier}'
+        stored_arguments = StoredData.from_object(stored_name, arguments, full_unpack=False)
         self._arguments[operation_name] = stored_arguments
 
     def add_argument_values(self, group_arguments):
         for operation_name, arguments in group_arguments.items():
             self.add_argument_value(operation_name, arguments)
+
+    def replace_argument_value(self, operation_name, arguments, identifier=None):
+        persisted_task_args = {x: y for x, y in self._arguments.items() if x != operation_name}
+        returned_args = TaskArguments(persisted_task_args)
+        returned_args.add_argument_value(operation_name, arguments, identifier)
+        return returned_args
+
+    def get_argument_value(self, name):
+        for operation_name, operation_arguments in self._arguments.items():
+            argument_values = operation_arguments.data_string
+            if argument_values is None:
+                continue
+            for argument_name, argument_value in argument_values.items():
+                if argument_name == name:
+                    return argument_value
+        raise AttributeError(f'task arguments do not have argument value for key {name}')
 
     def __getitem__(self, item):
         return self._arguments[item]
