@@ -24,7 +24,7 @@ def command_fungi(**kwargs):
         'change_types': f'pull_change_types-{execution_id}',
         'map': f'build_mapping-{execution_id}'
     }
-    kwargs['names'].update(names)
+    kwargs['names'] = names
     decisions = kwargs['decisions']
     great_chain = _build_chain(**kwargs)
     chain_results = great_chain(**kwargs)

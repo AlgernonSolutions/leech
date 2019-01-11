@@ -40,7 +40,7 @@ class RuffianRoost:
             stateMachineArn=machine_arn,
             input=machine_input
         )
-        execution_arn = response['execution_arn']
+        execution_arn = response['executionArn']
         return execution_arn
 
     @classmethod

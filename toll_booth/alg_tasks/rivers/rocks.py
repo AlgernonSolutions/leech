@@ -2,7 +2,7 @@ import json
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker, CompleteWork, StartSubtask
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, CompleteWork, StartSubtask
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
