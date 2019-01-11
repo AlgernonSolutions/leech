@@ -113,8 +113,20 @@ class Ruffian:
                 return True
         return False
 
-    def _notify_task(self, task_payload):
-        pass
+    @staticmethod
+    def _notify_task(task_payload):
+        client = boto3.client('swf')
+        success = task_payload[0]
+        if not success:
+            return client.respond_activity_task_failed(
+                taskToken=task_payload[1],
+                reason=task_payload[2],
+                details=task_payload[3]
+            )
+        client.respond_activity_task_completed(
+            taskToken=task_payload[1],
+            result=task_payload[2]
+        )
 
     def _manage_pending_tasks(self, pending_tasks):
         outstanding_tasks = []
