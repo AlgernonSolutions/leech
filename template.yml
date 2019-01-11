@@ -49,6 +49,41 @@ Resources:
       Timeout: 300
       MemorySize: 448
 
+  decide:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.decide
+      FunctionName: leech-decide
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+
+  labor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.labor
+      FunctionName: leech-labor
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+
+  vpclabor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.labor
+      FunctionName: leech-vpc-labor
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+      VpcConfig:
+        SecurityGroupIds:
+          Ref: LeechVpcSg
+        SubnetIds:
+          Ref: LeechVpcSn
+
   monitor:
     Type: AWS::Serverless::Function
     Properties:

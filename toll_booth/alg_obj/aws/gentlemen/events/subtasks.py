@@ -51,7 +51,8 @@ class SubtaskExecution(Execution):
 
 
 class SubtaskOperation(Operation):
-    def __init__(self, operation_id, run_ids, task_name, task_version, task_args: TaskArguments, lambda_role, task_list_name, events: [Event]):
+    def __init__(self, operation_id, run_ids, task_name, task_version, task_args: TaskArguments, lambda_role,
+                 task_list_name, events: [Event]):
         super().__init__(operation_id, run_ids, task_name, task_version, task_args, events, steps)
         self._task_list_name = task_list_name
         self._lambda_role = lambda_role
@@ -114,8 +115,7 @@ class SubtaskHistory(History):
                     return
                 operation.add_execution(subtask_execution)
                 return
-            raise RuntimeError('could not find appropriate subtask operation for '
-                               'subtask execution: %s' % subtask_execution)
+        raise RuntimeError('could not find appropriate subtask operation for subtask execution: %s' % subtask_execution)
 
     def _add_failure_event(self, event: Event):
         operation_id = event.event_attributes['workflowId']

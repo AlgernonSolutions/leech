@@ -177,7 +177,9 @@ class Signature:
 
     def get_results(self, **kwargs):
         self._set_checkpoint(**kwargs)
-        results = json.loads(self._results, cls=AlgDecoder)
+        results = self._results
+        if results is not None:
+            results = json.loads(self._results, cls=AlgDecoder)
         return {self._fn_name: results}
 
 

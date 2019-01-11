@@ -278,13 +278,14 @@ class LeechConfig(AlgObject):
     @classmethod
     def _build_config(cls, json_dict):
         cls_kwargs = {'workflow_configs': {}, 'task_configs': {}}
-        for entry in json_dict['workflows']:
+        config_body = json_dict['domain']
+        for entry in config_body['workflows']:
             config_entry = LeechConfigEntry()
             workflow_name = entry['workflow_name']
             for config_name, config_item in entry['workflow_config'].items():
                 config_entry.add_config_item(config_name, config_item)
             cls_kwargs['workflow_configs'][workflow_name] = config_entry
-        for entry in json_dict['tasks']:
+        for entry in config_body['tasks']:
             config_entry = LeechConfigEntry()
             task_name = entry['task_name']
             for config_name, config_item in entry['task_config'].items():

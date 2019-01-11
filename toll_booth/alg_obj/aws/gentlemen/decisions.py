@@ -64,6 +64,8 @@ class StartSubtask(Decision):
             'taskList': {'name': subtask_type},
             'lambdaRole': lambda_role
         }
+        if 'control' in kwargs:
+            subtask_attributes['control'] = kwargs['control']
         attributes_name = 'startChildWorkflowExecutionDecisionAttributes'
         super().__init__('StartChildWorkflowExecution', subtask_attributes, attributes_name)
 
@@ -111,6 +113,8 @@ class StartActivity(Decision):
             'activityId': activity_id,
             'input': input_string
         }
+        if 'control' in kwargs:
+            activity_attributes['control'] = json.dumps(kwargs['control'], cls=AlgEncoder)
         attributes_name = 'scheduleActivityTaskDecisionAttributes'
         super().__init__('ScheduleActivityTask', activity_attributes, attributes_name)
 

@@ -1,100 +1,134 @@
 {
-  "workflows": [
+  "domain": {
+    "domain_name": "Leech",
+    "description": "it's the leech",
+    "record_retention": 5,
+    "workflows": [
+    {
+      "workflow_name": "fungus",
+      "workflow_description": "master level workflow for all fungal leech operations",
+      "workflow_config": {
+        "concurrency": 1,
+        "labor_task_lists": [
+          {
+            "list_name": "credible",
+            "number_threads": 1
+          }
+        ]
+      }
+    },
     {
       "workflow_name": "command_fungi",
+      "workflow_description": "orchestrates and runs the entire Credible FE extraction process",
       "workflow_config": {
-        "concurrency": 100,
-        "task_list": "Leech"
+        "concurrency": 1
       }
     },
     {
       "workflow_name": "work_remote_id",
+      "workflow_description": "workflow for driving vertex growth from a single remote_id",
       "workflow_config": {
-        "concurrency": 100,
-        "task_list": "Leech"
+        "concurrency": 1
       }
     },
     {
       "workflow_name": "work_remote_id_change_action",
+      "workflow_description": "workflow for extracting and collecting a change action",
       "workflow_config": {
-        "concurrency": 100,
-        "task_list": "Leech"
+        "concurrency": 1
       }
     },
     {
       "workflow_name": "work_remote_id_change_type",
+      "workflow_description": "workflow for extracting and collecting a change type",
       "workflow_config": {
-        "concurrency": 100,
-        "task_list": "Leech"
+        "concurrency": 1,
+        "time_outs": {
+          "task": 300
+        }
       }
     }
   ],
-  "tasks": [
+    "tasks": [
     {
       "task_name": "get_local_max_change_type_value",
+      "task_description": "retrieves the current maximum value for a given change_type by emp_id",
       "task_config": {
-        "concurrency": 100
+        "concurrency": 1
       }
     },
     {
       "task_name": "pull_change_types",
+      "task_description": "extracts all the currently listed Credible change_types",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "unlink_old_ids",
+      "task_description": "breaks the connection between ext_ids and a data source",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "link_new_ids",
+      "task_description": "creates connection between ext_ids and a data source",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "put_new_ids",
+      "task_description": "adds id objects to the data space",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "get_local_ids",
+      "task_description": "queries id values in the data space",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "get_remote_ids",
+      "task_description": "retrieves all the remote id values for a given vertex driven process",
       "task_config": {
-        "concurrency": 1
+        "concurrency": 1,
+        "task_list": "credible"
       }
     },
     {
       "task_name": "work_remote_id_change_type",
-      "task_config": {
-        "concurrency": 100
-      }
-    },
-    {
-      "task_name": "get_enrichment_for_change_action",
+      "task_description": "extract all the remote entries for a given change type for a given emp_id in Credible",
       "task_config": {
         "concurrency": 1
       }
     },
     {
+      "task_name": "get_enrichment_for_change_action",
+      "task_description": "if by_emp_id or change_details are needed for a given change_type, extract them",
+      "task_config": {
+        "concurrency": 1,
+        "task_list": "credible"
+      }
+    },
+    {
       "task_name": "build_mapping",
+      "task_description": "generates the mapping required to translate variously configured domains to a common standard",
       "task_config": {
         "concurrency": 1
       }
     },
     {
       "task_name": "generate_remote_id_change_data",
+      "task_description": "collects and formats the extracted data into a standard format recognizable by the Leech",
       "task_config": {
-        "concurrency": 100
+        "concurrency": 1
       }
     }
   ]
+  }
 }

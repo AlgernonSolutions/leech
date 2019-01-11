@@ -4,30 +4,58 @@
   "description": "a configuration file for the Algernon Leech",
   "type": "object",
   "properties": {
-    "workflows": {
-      "description": "a array of work flow configurations",
-      "type": "array",
-      "items": {
+    "domain": {
+      "type": "object",
+      "description": "top level organizational unit for a leech domain",
+      "properties": {
+        "domain_name": {
+          "description": "the unique name defined for the domain",
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "summary of the domain purpose"
+        },
+        "record_retention": {
+          "type": "number",
+          "description": "how long, in days, should records of past executions be maintained",
+          "maximum": 90,
+          "minimum": 0
+        },
+        "workflows": {
+          "description": "a array of work flow configurations",
+          "type": "array",
+          "items": {
         "$ref": "#/definitions/work_flow"
       },
-      "uniqueItems": true,
-      "additionalItems": false
-    },
-    "tasks": {
-      "description": "a array of task configurations",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/task"
-      }
+          "uniqueItems": true,
+          "additionalItems": false
+        },
+        "tasks": {
+          "description": "a array of task configurations",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/task"
+          },
+          "uniqueItems": true,
+          "additionalItems": false
+        }
+      },
+      "additionalProperties": false,
+      "required": ["domain_name", "description", "record_retention", "workflows", "tasks"]
     }
   },
   "additionalProperties": false,
+  "required": ["domain"],
   "definitions": {
     "work_flow": {
       "description": "the configuration fields for a Leech workflow operated under the AWS SWF system",
       "type": "object",
       "properties": {
         "workflow_name": {
+          "type": "string"
+        },
+        "workflow_description": {
           "type": "string"
         },
         "workflow_config": {
@@ -37,15 +65,32 @@
               "type": "number",
               "minimum": 1
             },
-            "task_list": {
+            "decision_task_list": {
               "type": "string"
+            },
+            "labor_task_lists": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/labor_task_list"
+              }
+            },
+            "time_outs": {
+              "$ref": "#/definitions/workflow_timeouts"
+            },
+            "lambda_role": {
+              "description": "the default lambda role used to run the workflow",
+              "type": "string"
+            },
+            "child_policy": {
+              "description": "determines how to manage child sub_tasks if the parent sub_task is terminated, defaults to TERMINATE",
+              "enum": ["TERMINATE", "REQUEST_CANCEL", "ABANDON"]
             }
           },
           "required": ["concurrency"],
           "additionalProperties": false
         }
       },
-      "required": ["workflow_name", "workflow_config"],
+      "required": ["workflow_name", "workflow_description", "workflow_config"],
       "additionalProperties": false
     },
     "task": {
@@ -53,6 +98,9 @@
       "type": "object",
       "properties": {
         "task_name": {
+          "type": "string"
+        },
+        "task_description": {
           "type": "string"
         },
         "task_config": {
@@ -64,13 +112,65 @@
             },
             "task_list": {
               "type": "string"
+            },
+            "time_outs": {
+              "$ref": "#/definitions/task_timeouts"
             }
           },
           "required": ["concurrency"],
           "additionalItems": false
         }
       },
-      "required": ["task_name", "task_config"]
+      "required": ["task_name", "task_description", "task_config"]
+    },
+    "labor_task_list": {
+      "description": "specifies the configuration for a given labor task list",
+      "type": "object",
+      "properties": {
+        "list_name": {
+          "type": "string"
+        },
+        "number_threads": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["list_name", "number_threads"]
+    },
+    "workflow_timeouts": {
+      "description": "collection of time out values for a workflow",
+      "properties": {
+        "workflow": {
+          "description": "the time out for the workflow in seconds, if left blank, time out sets to 1 year",
+          "type": "number"
+        },
+        "task": {
+          "description": "the time out for tasks started under the workflow, in seconds, if left blank defaults to 1 year",
+          "type": "number"
+        }
+      }
+    },
+    "task_timeouts": {
+      "description": "collection of time out values applied to a task",
+      "properties": {
+        "running": {
+          "description": "the total duration allowed for the task from the start of work to the end",
+          "type": "number"
+        },
+        "waiting": {
+          "description": "the total amount of time a task can wait in a task list before being worked",
+          "type": "number"
+        },
+        "total": {
+          "description": "the time allowed for task, measured from when it is scheduled to when it completes",
+          "type": "number"
+        },
+        "heartbeat": {
+          "description": "the maximum allowed time between task heartbeats before considering the task down",
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

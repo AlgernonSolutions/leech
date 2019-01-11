@@ -2,7 +2,12 @@ import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker, CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
+from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
+
+
+def _conscript_ruffian(start_subtask_decision):
+    execution_arn = Ruffian.conscript()
 
 
 def workflow(workflow_name):
@@ -13,7 +18,6 @@ def workflow(workflow_name):
             made_decisions = []
             versions = Versions.retrieve()
             configs = LeechConfig.get()
-            names = work_history.marker_history.names
             task_args = work_history.task_args
             context_kwargs = {
                 'task_args': task_args,
@@ -27,23 +31,14 @@ def workflow(workflow_name):
                 'execution_id': work_history.flow_id,
                 'versions': versions,
                 'configs': configs,
-                'names': names,
                 'workflow_name': workflow_name,
                 'workflow_args': task_args[workflow_name].data_string
             }
             results = production_fn(**context_kwargs)
             decisions = MadeDecisions(work_history.task_token)
-            decisions.add_decision(RecordMarker.for_names(context_kwargs['names']))
             for decision in made_decisions:
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
-            if results == 'fire':
-                client.signal_workflow_execution(
-                    domain=work_history.domain_name,
-                    workflowId=work_history.flow_id,
-                    runId=work_history.run_id,
-                    signalName='look_again'
-                )
             return results
         return wrapper
     return workflow_wrapper
