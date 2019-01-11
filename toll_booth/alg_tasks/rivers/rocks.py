@@ -1,13 +1,26 @@
+import json
+
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker, CompleteWork
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, RecordMarker, CompleteWork, StartSubtask
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
-from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
+from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
 
-def _conscript_ruffian(start_subtask_decision):
-    execution_arn = Ruffian.conscript()
+def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
+    workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)
+    labor_task_lists = workflow_config.get('labor_task_lists', [])
+    labor_work_lists = {x['list_name']: x['number_threads'] for x in labor_task_lists}
+    task_list_name = start_subtask_decision.type_name
+    work_lists = {task_list_name: 1}
+    work_lists.update(labor_work_lists)
+    execution_arn = RuffianRoost.conscript_ruffians(task_list_name, work_lists, work_history.domain_name)
+    start_subtask_decision.set_control(json.dumps({'execution_arn': execution_arn}))
+
+
+def _disband_ruffian(work_history, complete_work_decision):
+    pass
 
 
 def workflow(workflow_name):
@@ -37,6 +50,10 @@ def workflow(workflow_name):
             results = production_fn(**context_kwargs)
             decisions = MadeDecisions(work_history.task_token)
             for decision in made_decisions:
+                if isinstance(decision, StartSubtask):
+                    _conscript_ruffian(work_history, decision, configs)
+                if isinstance(decision, CompleteWork):
+                    _disband_ruffian(work_history, decision)
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
             return results

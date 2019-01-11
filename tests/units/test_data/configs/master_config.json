@@ -131,11 +131,16 @@
           "type": "string"
         },
         "number_threads": {
+          "description": "how many workers should be generated to this list",
           "type": "integer",
           "minimum": 1
+        },
+        "is_vpc":{
+          "description": "whether or not the workers launched to this task list need VPC access",
+          "type": "boolean"
         }
       },
-      "required": ["list_name", "number_threads"]
+      "required": ["list_name", "number_threads", "is_vpc"]
     },
     "workflow_timeouts": {
       "description": "collection of time out values for a workflow",

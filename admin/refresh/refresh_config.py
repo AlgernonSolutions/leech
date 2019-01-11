@@ -13,7 +13,8 @@ from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 def refresh():
     logging.info('going to refresh the remote config files')
     admin_file_name = os.path.dirname(__file__)
-    top_level = os.path.dirname(admin_file_name)
+    admin_directory = os.path.dirname(admin_file_name)
+    top_level = os.path.dirname(admin_directory)
     config_path = ('tests', 'units', 'test_data', 'configs', 'config.json')
     master_schema_path = ('tests', 'units', 'test_data', 'configs', 'master_config.json')
     config_file_path = os.path.join(top_level, *config_path)

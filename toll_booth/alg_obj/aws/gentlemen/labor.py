@@ -10,7 +10,7 @@ from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
 
 
 class Laborer:
-    def __init__(self, laborer_name, domain_name='Leech', task_list='Leech'):
+    def __init__(self, domain_name='Leech', task_list='Leech', laborer_name=None):
         self._laborer_name = laborer_name
         self._domain_name = domain_name
         self._task_list = task_list
@@ -30,6 +30,22 @@ class Laborer:
             for thread in self._threads:
                 thread.join()
 
+    def close_task(self, task_token: str, results: str):
+        self._client.respond_activity_task_completed(
+            taskToken=task_token,
+            result=results
+        )
+
+    def poll_for_tasks(self):
+        poll_args = {
+            'domain': self._domain_name,
+            'taskList': {'name': self._task_list}
+        }
+        if self._laborer_name:
+            poll_args['identity'] = self._laborer_name
+        response = self._client.poll_for_activity_task(**poll_args)
+        return response
+
     def _labor(self, task):
         try:
             task_results = self._run_task(task)
@@ -48,13 +64,13 @@ class Laborer:
             sleep(10)
 
     def _poll_for_activities(self):
-        response = self._client.poll_for_activity_task(
-            domain=self._domain_name,
-            taskList={
-                'name': self._task_list
-            },
-            identity=self._laborer_name
-        )
+        poll_args = {
+            'domain': self._domain_name,
+            'taskList': {'name': self._task_list}
+        }
+        if self._laborer_name:
+            poll_args['identity'] = self._laborer_name
+        response = self._client.poll_for_activity_task(**poll_args)
         return Task.parse_from_poll(response)
 
     def _run_task(self, task: Task):

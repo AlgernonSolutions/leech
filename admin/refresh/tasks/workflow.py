@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 
 from admin.refresh.tasks import _compare_properties, _defaults
@@ -92,14 +94,15 @@ def _create_workflow(domain_name, flow_config, version='1'):
         'name': flow_config['workflow_name'],
         'version': str(version),
         'description': flow_config['workflow_description'],
-        'defaultTaskStartToCloseTimeout': str(time_outs.get('task', _defaults['workflow_timeout'])),
-        'defaultExecutionStartToCloseTimeout': str(time_outs.get('workflow', _defaults['workflow_task_timeout'])),
+        'defaultTaskStartToCloseTimeout': str(time_outs.get('task', _defaults['workflow_task_timeout'])),
+        'defaultExecutionStartToCloseTimeout': str(time_outs.get('workflow', _defaults['workflow_timeout'])),
         'defaultLambdaRole': config.get('lambda_role', _defaults['lambda_role']),
         'defaultChildPolicy': config.get('child_policy', _defaults['child_policy'])
     }
     if config.get('decision_task_list', None):
         register_args['defaultTaskList'] = {'name': config['decision_task_list']}
     client.register_workflow_type(**register_args)
+    logging.info(f'created a new workflow for {flow_config["workflow_name"]}, version {version}')
 
 
 def _deprecate_workflow(domain_name, workflow_name, workflow_version):
@@ -111,3 +114,4 @@ def _deprecate_workflow(domain_name, workflow_name, workflow_version):
             'version': workflow_version
         }
     )
+    logging.info(f'deprecated a workflow for {workflow_name}, version {workflow_version}')

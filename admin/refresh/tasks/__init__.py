@@ -1,11 +1,11 @@
 _defaults = {
     'lambda_role': 'arn:aws:iam::803040539655:role/swf-lambda',
-    'workflow_timeout': '0',
-    'workflow_task_timeout': '0',
-    'task_run_timeout': '0',
+    'workflow_timeout': '86400',
+    'workflow_task_timeout': 'NONE',
+    'task_run_timeout': 'NONE',
     'task_heart_timeout': '30',
-    'task_waiting_timeout': '0',
-    'task_total_timeout': '0',
+    'task_waiting_timeout': 'NONE',
+    'task_total_timeout': 'NONE',
     'child_policy': 'TERMINATE'
 }
 

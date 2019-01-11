@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 
 from admin.refresh.tasks import _compare_properties, _defaults
@@ -106,6 +108,7 @@ def _create_activity(domain_name, task_config, version='1'):
     if config.get('task_list', None):
         register_args['defaultTaskList'] = {'name': config['task_list']}
     client.register_activity_type(**register_args)
+    logging.info(f'created a new task for {task_config["task_name"]}, version {version}')
 
 
 def _deprecate_activity(domain_name, activity_name, activity_version):
@@ -117,3 +120,4 @@ def _deprecate_activity(domain_name, activity_name, activity_version):
             'version': activity_version
         }
     )
+    logging.info(f'deprecated a task for {activity_name}, version {activity_version}')

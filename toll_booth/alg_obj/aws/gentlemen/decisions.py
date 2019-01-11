@@ -101,6 +101,13 @@ class StartSubtask(Decision):
     def task_list(self):
         return self.__getitem__('taskList')
 
+    @property
+    def control(self):
+        return self.__getitem__('control')
+
+    def set_control(self, control_string):
+        self._decision_attributes['control'] = control_string
+
 
 class StartActivity(Decision):
     def __init__(self, activity_id, activity_name, input_string, **kwargs):
@@ -136,6 +143,13 @@ class StartActivity(Decision):
     @property
     def type_name(self):
         return self.activity_type['name']
+
+    @property
+    def control(self):
+        return self.__getitem__('control')
+
+    def set_control(self, control_string):
+        self._decision_attributes['control'] = control_string
 
 
 class CompleteWork(Decision):
