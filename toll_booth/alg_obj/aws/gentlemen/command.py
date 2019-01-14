@@ -85,7 +85,7 @@ class General:
         )
 
         for page in response_iterator:
-            logging.debug(f'received a page in the decisions_iterator:" {page}')
+            logging.info(f'received a page in the decisions_iterator:" {page}')
             workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
             workflow_histories.append(workflow_history)
         for workflow_history in workflow_histories:
