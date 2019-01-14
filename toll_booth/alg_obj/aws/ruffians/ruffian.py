@@ -148,6 +148,7 @@ class Ruffian:
     def _work_task_list(self, connection, domain_name, task_list, num_workers):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
 
+        logging.info(f'starting a worker to work task_list: {task_list}')
         pending_tasks = []
         while True:
             laborer = Laborer(domain_name, task_list)
@@ -177,6 +178,7 @@ class Ruffian:
         from toll_booth.alg_obj.serializers import AlgEncoder
 
         task = Task.parse_from_poll(poll_response)
+        logging.info(f'received a task from the queue: {task.activity_name}')
         try:
             results = self._work_task(task)
             result_string = json.dumps(results, cls=AlgEncoder)
@@ -191,6 +193,7 @@ class Ruffian:
                 'trace': trace
             })
             return_payload = (False, task.task_token, failure_reason, failure_details)
+        logging.info(f'done with task: {task.activity_name}, return payload: {return_payload}')
         connection.send(return_payload)
         connection.close()
 
