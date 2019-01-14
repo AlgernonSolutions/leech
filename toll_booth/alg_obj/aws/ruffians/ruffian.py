@@ -154,7 +154,7 @@ class Ruffian:
 
         logging.info(f'starting a worker to work task_list: {task_list}')
         pending_tasks = deque()
-        side_thread = Thread(target=self._manage_pending_tasks, args=pending_tasks)
+        side_thread = Thread(target=self._manage_pending_tasks, kwargs={'pending_tasks': pending_tasks})
         side_thread.start()
         while True:
             laborer = Laborer(domain_name, task_list)
