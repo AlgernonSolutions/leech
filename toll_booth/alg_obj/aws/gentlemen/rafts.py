@@ -39,7 +39,7 @@ class Signature:
         timers = kwargs['timers']
         versions = kwargs['versions']
         config = kwargs['configs'][(config_attribute, name)]
-        task_list = config.get('task_list', identifier)
+        task_list = config.get('task_list', kwargs['default_task_list'])
         version = getattr(versions, version_attribute)[name]
         checkpoint = cls._check_for_checkpoint(identifier, **kwargs)
         cls_args = (name, version, identifier, task_args)
@@ -69,11 +69,13 @@ class Signature:
     @classmethod
     def for_activity(cls, fn_identifier, fn_name, task_args, **kwargs):
         is_activity = True
+        kwargs['default_task_list'] = kwargs['workflow_name']
         return cls._build(fn_identifier, fn_name, task_args, is_activity, **kwargs)
 
     @classmethod
     def for_subtask(cls, subtask_identifier, subtask_name, task_args, **kwargs):
         is_activity = False
+        kwargs['default_task_list'] = subtask_identifier
         return cls._build(subtask_identifier, subtask_name, task_args, is_activity, **kwargs)
 
     @classmethod
