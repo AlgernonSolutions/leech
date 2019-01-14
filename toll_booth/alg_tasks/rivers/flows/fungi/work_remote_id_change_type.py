@@ -1,3 +1,5 @@
+from aws_xray_sdk.core import xray_recorder
+
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, chain
 from toll_booth.alg_tasks.rivers.rocks import workflow
@@ -8,6 +10,7 @@ from toll_booth.alg_tasks.rivers.rocks import workflow
 """
 
 
+@xray_recorder.capture('work_remote_id_change_type')
 @workflow('work_remote_id_change_type')
 def work_remote_id_change_type(**kwargs):
     decisions = kwargs['decisions']
@@ -30,6 +33,7 @@ def work_remote_id_change_type(**kwargs):
     decisions.append(CompleteWork())
 
 
+@xray_recorder.capture('work_remote_id_change_type_build_local_max')
 def _build_local_max_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['local_max']
@@ -37,6 +41,7 @@ def _build_local_max_signature(**kwargs):
     return get_local_max_signature
 
 
+@xray_recorder.capture('work_remote_id_build_work_signature')
 def _build_work_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['work']
@@ -44,6 +49,7 @@ def _build_work_signature(**kwargs):
     return work_signature
 
 
+@xray_recorder.capture('work_remote_id_build_group')
 def _build_group(task_args, **kwargs):
     subtask_name = 'work_remote_id_change_action'
     signatures = []

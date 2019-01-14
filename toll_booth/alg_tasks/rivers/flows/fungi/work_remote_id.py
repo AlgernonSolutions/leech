@@ -1,8 +1,11 @@
+from aws_xray_sdk.core import xray_recorder
+
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
+@xray_recorder.capture('work_remote_id')
 @workflow('work_remote_id')
 def work_remote_id(task_args, **kwargs):
     subtask_name = 'work_remote_id_change_type'
