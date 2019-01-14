@@ -65,18 +65,10 @@ def _get_activity(domain_name, activity_name, activity_version):
     activity_type = activity_info['activityType']
     task_config = response['configuration']
     task_list = task_config.get('defaultTaskList', {})
-    running_timeout = task_config.get('defaultTaskStartToCloseTimeout', None)
-    if running_timeout:
-        running_timeout = int(running_timeout)
-    total_timeout = task_config.get('defaultTaskScheduleToCloseTimeout', None)
-    if total_timeout:
-        total_timeout = int(total_timeout)
-    waiting_timeout = task_config.get('defaultTaskScheduleToStartTimeout', None)
-    if waiting_timeout:
-        waiting_timeout = int(waiting_timeout)
-    heartbeat_timeout = task_config.get('defaultTaskHeartbeatTimeout', None)
-    if heartbeat_timeout:
-        heartbeat_timeout = int(heartbeat_timeout)
+    running_timeout = task_config.get('defaultTaskStartToCloseTimeout', _defaults['task_run_timeout'])
+    total_timeout = task_config.get('defaultTaskScheduleToCloseTimeout', _defaults['task_total_timeout'])
+    waiting_timeout = task_config.get('defaultTaskScheduleToStartTimeout', _defaults['task_waiting_timeout'])
+    heartbeat_timeout = task_config.get('defaultTaskHeartbeatTimeout', _defaults['task_heart_timeout'])
     return {
         'task_name': activity_type['name'],
         'task_description': activity_info.get('description', None),

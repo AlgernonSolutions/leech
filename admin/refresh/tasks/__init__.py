@@ -3,7 +3,7 @@ _defaults = {
     'workflow_timeout': '86400',
     'workflow_task_timeout': 'NONE',
     'task_run_timeout': 'NONE',
-    'task_heart_timeout': '30',
+    'task_heart_timeout': 'NONE',
     'task_waiting_timeout': 'NONE',
     'task_total_timeout': 'NONE',
     'child_policy': 'TERMINATE'

@@ -8,21 +8,21 @@
         "workflow_name": "fungus",
         "workflow_description": "master level workflow for all fungal leech operations",
         "workflow_config": {
-          "concurrency": 1,
-          "labor_task_lists": [
-            {
-              "list_name": "credible",
-              "number_threads": 1,
-              "is_vpc": false
-            }
-          ]
+          "concurrency": 1
         }
       },
       {
         "workflow_name": "command_fungi",
         "workflow_description": "orchestrates and runs the entire Credible FE extraction process",
         "workflow_config": {
-          "concurrency": 1
+          "concurrency": 1,
+           "labor_task_lists": [
+            {
+              "list_name": "credible",
+              "number_threads": 1,
+              "is_vpc": false
+            }
+          ]
         }
       },
       {

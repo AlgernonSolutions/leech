@@ -38,12 +38,8 @@ def _get_workflow(domain_name, workflow_name, workflow_version):
     flow_type = flow_info['workflowType']
     flow_config = response['configuration']
     task_list = flow_config.get('defaultTaskList', {})
-    workflow_timeout = flow_config.get('defaultExecutionStartToCloseTimeout', None)
-    task_timeout = flow_config.get('defaultTaskStartToCloseTimeout', None)
-    if workflow_timeout:
-        workflow_timeout = int(workflow_timeout)
-    if task_timeout:
-        task_timeout = int(task_timeout)
+    workflow_timeout = flow_config.get('defaultExecutionStartToCloseTimeout', _defaults['workflow_timeout'])
+    task_timeout = flow_config.get('defaultTaskStartToCloseTimeout', _defaults['workflow_task_timeout'])
     return {
         'workflow_name': flow_type['name'],
         'workflow_description': flow_info.get('description', None),

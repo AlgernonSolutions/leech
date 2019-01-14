@@ -163,6 +163,7 @@ class Ruffian:
                 logging.info(f'received a response from polling for task_list: {task_list}, {poll_response}')
                 parent_connection, child_connection = Pipe()
                 labor_process = Process(target=self._labor, args=(child_connection, poll_response))
+                labor_process.start()
                 pending_tasks.append({
                     'connection': parent_connection,
                     'process': labor_process,
