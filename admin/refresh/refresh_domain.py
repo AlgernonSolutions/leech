@@ -60,5 +60,5 @@ def _refresh_activities(domain_name, config):
 
 
 if __name__ == '__main__':
-    target_domain_name = 'Leech'
+    target_domain_name = 'TheLeech'
     refresh(target_domain_name)

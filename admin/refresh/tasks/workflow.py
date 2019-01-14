@@ -1,6 +1,7 @@
 import logging
 
 import boto3
+from botocore.exceptions import ClientError
 
 from admin.refresh.tasks import _compare_properties, _defaults
 
@@ -101,7 +102,12 @@ def _create_workflow(domain_name, flow_config, version='1'):
     }
     if config.get('decision_task_list', None):
         register_args['defaultTaskList'] = {'name': config['decision_task_list']}
-    client.register_workflow_type(**register_args)
+    try:
+        client.register_workflow_type(**register_args)
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'TypeAlreadyExists':
+            version = str(int(version) + 1)
+            _create_workflow(domain_name, flow_config, version)
     logging.info(f'created a new workflow for {flow_config["workflow_name"]}, version {version}')
 
 

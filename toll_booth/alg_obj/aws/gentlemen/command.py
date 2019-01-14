@@ -13,7 +13,7 @@ from toll_booth.alg_tasks.rivers.flows import fungus
 
 
 class General:
-    def __init__(self, domain_name='Leech', task_list='Leech'):
+    def __init__(self, domain_name, task_list):
         self._domain_name = domain_name
         self._task_list = task_list
         self._activity_tasks = []

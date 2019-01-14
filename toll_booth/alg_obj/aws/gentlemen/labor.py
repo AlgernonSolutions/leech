@@ -10,7 +10,7 @@ from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
 
 
 class Laborer:
-    def __init__(self, domain_name='Leech', task_list='Leech', laborer_name=None):
+    def __init__(self, domain_name, task_list, laborer_name=None):
         self._laborer_name = laborer_name
         self._domain_name = domain_name
         self._task_list = task_list

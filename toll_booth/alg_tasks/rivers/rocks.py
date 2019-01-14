@@ -43,7 +43,7 @@ def workflow(workflow_name):
             client = boto3.client('swf')
             work_history = args[0]
             made_decisions = []
-            versions = Versions.retrieve()
+            versions = Versions.retrieve(work_history.domain_name)
             configs = LeechConfig.get()
             task_args = work_history.task_args
             context_kwargs = {
