@@ -4,6 +4,7 @@ import os
 import time
 from collections import deque
 from multiprocessing import Pipe, Process
+from queue import Queue
 from threading import Thread
 
 import boto3
@@ -131,40 +132,37 @@ class Ruffian:
             result=task_payload[2]
         )
 
-    def _manage_pending_tasks(self, pending_tasks: deque):
+    def _manage_pending_tasks(self, pending_tasks: Queue):
         while True:
-            completed_tasks = []
-            for pending_task in pending_tasks:
-                if pending_task is None:
-                    return
-                task_connection = pending_task['connection']
-                has_results = task_connection.poll(1)
-                if has_results is False:
-                    # client.record_activity_task_heartbeat(
-                    #   taskToken=pending_task['token']
-                    # )
-                    continue
-                self._notify_task(task_connection.recv())
-                task_connection.close()
-                pending_task['process'].join()
-                completed_tasks.append(pending_task)
-            for completed_task in completed_tasks:
-                pending_tasks.remove(completed_task)
+            pending_task = pending_tasks.get()
+            if pending_task is None:
+                return
+            task_connection = pending_task['connection']
+            has_results = task_connection.poll(1)
+            if has_results is False:
+                # client.record_activity_task_heartbeat(
+                #   taskToken=pending_task['token']
+                # )
+                pending_tasks.put(pending_task)
+            self._notify_task(task_connection.recv())
+            task_connection.close()
+            pending_task['process'].join()
+            pending_tasks.task_done()
 
     def _work_task_list(self, connection, domain_name, task_list, num_workers):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
 
         logging.info(f'starting a worker to work task_list: {task_list}')
-        pending_tasks = deque()
+        pending_tasks = Queue()
         side_thread = Thread(target=self._manage_pending_tasks, kwargs={'pending_tasks': pending_tasks})
         side_thread.start()
         while True:
             laborer = Laborer(domain_name, task_list)
             if self._check_orders(connection):
-                pending_tasks.append(None)
+                pending_tasks.put(None)
                 side_thread.join()
                 return
-            if len(pending_tasks) > num_workers:
+            if pending_tasks.qsize() > num_workers:
                 logging.info(f'number of tasks exceeds allotted concurrency for {task_list}, waiting')
                 continue
             try:
@@ -173,7 +171,7 @@ class Ruffian:
                 parent_connection, child_connection = Pipe()
                 labor_process = Process(target=self._labor, args=(child_connection, poll_response))
                 labor_process.start()
-                pending_tasks.append({
+                pending_tasks.put({
                     'connection': parent_connection,
                     'process': labor_process,
                     'token': poll_response['taskToken']
