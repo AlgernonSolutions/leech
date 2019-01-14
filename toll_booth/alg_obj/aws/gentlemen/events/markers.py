@@ -6,19 +6,24 @@ from toll_booth.alg_obj.serializers import AlgDecoder
 
 
 class Marker:
-    def __init__(self, marker_type: str, marker_details: dict):
+    def __init__(self, run_id, marker_type: str, marker_details: dict):
+        self._run_id = run_id
         self._marker_type = marker_type
         self._marker_details = marker_details
 
     @classmethod
-    def parse_from_event(cls, event: Event):
+    def parse_from_event(cls, run_id, event: Event):
         event_attributes = event.event_attributes
         marker_type = event_attributes['markerName']
         try:
             marker_details = json.loads(event_attributes['details'], cls=AlgDecoder)
         except JSONDecodeError:
             marker_details = event_attributes['details']
-        return cls(marker_type, marker_details)
+        return cls(run_id, marker_type, marker_details)
+
+    @property
+    def run_id(self):
+        return self._run_id
 
     @property
     def marker_type(self):
@@ -36,11 +41,11 @@ class MarkerHistory:
         self._markers = markers
 
     @classmethod
-    def generate_from_events(cls, events):
+    def generate_from_events(cls, run_id, events):
         history = MarkerHistory()
         events = [x for x in events if x.event_type == 'MarkerRecorded']
         for event in events:
-            marker = Marker.parse_from_event(event)
+            marker = Marker.parse_from_event(run_id, event)
             history.add_marker(marker)
         return history
 
@@ -64,21 +69,20 @@ class MarkerHistory:
             checkpoints.update(marker.marker_details)
         return checkpoints
 
-    @property
-    def ruffians(self):
+    def get_ruffians(self, run_id):
         ruffians = {}
         ruffian_markers = self.get_markers_by_type('ruffian')
-        for marker in ruffian_markers:
+        run_ruffians = [x for x in ruffian_markers if x.run_id == run_id]
+        for marker in run_ruffians:
             task_identifier = marker.marker_details['task_identifier']
             if task_identifier not in ruffians:
                 ruffians[task_identifier] = []
             ruffians[task_identifier].append(marker.marker_details)
         return ruffians
 
-    @property
-    def open_ruffian_tasks(self):
+    def get_open_ruffian_tasks(self, run_id):
         idlers = {}
-        ruffians = self.ruffians
+        ruffians = self.get_ruffians(run_id)
         for task_identifier, ruffians in ruffians.items():
             for ruffian in ruffians:
                 if ruffian['is_close'] is True:

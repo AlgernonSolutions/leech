@@ -10,7 +10,7 @@ from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
 def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
     workflow_id = start_subtask_decision.workflow_id
-    open_ruffians = work_history.marker_history.open_ruffian_tasks
+    open_ruffians = work_history.marker_history.get_open_ruffian_tasks(work_history.run_id)
     if workflow_id in open_ruffians:
         return
     workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)

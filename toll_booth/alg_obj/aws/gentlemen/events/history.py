@@ -51,7 +51,7 @@ class WorkflowHistory:
         lambda_history = LambdaHistory.generate_from_events(events, lambdas.steps)
         subtask_history = SubtaskHistory.generate_from_events(events, subtasks.steps)
         activity_history = ActivityHistory.generate_from_events(events, activities.steps)
-        marker_history = MarkerHistory.generate_from_events(events)
+        marker_history = MarkerHistory.generate_from_events(run_id, events)
         timer_history = TimerHistory.generate_from_events(events)
         task_args, lambda_role, parent_flow_id, parent_run_id = cls._generate_workflow_starter_data(flow_type, events)
         cls_args = {
@@ -141,7 +141,7 @@ class WorkflowHistory:
     @property
     def idle_ruffians(self):
         idlers = {}
-        open_ruffians = self.marker_history.open_ruffian_tasks
+        open_ruffians = self.marker_history.get_open_ruffian_tasks(self._run_id)
         subtask_history = self.subtask_history
         for subtask_operation in subtask_history:
             if subtask_operation.operation_id in open_ruffians:
