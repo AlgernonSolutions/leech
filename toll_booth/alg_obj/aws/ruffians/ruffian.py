@@ -132,22 +132,24 @@ class Ruffian:
         )
 
     def _manage_pending_tasks(self, pending_tasks: deque):
-        client = boto3.client('swf')
         while True:
+            completed_tasks = []
             for pending_task in pending_tasks:
                 if pending_task is None:
                     return
                 task_connection = pending_task['connection']
                 has_results = task_connection.poll(1)
                 if has_results is False:
-                    client.record_activity_task_heartbeat(
-                        taskToken=pending_task['token']
-                    )
+                    # client.record_activity_task_heartbeat(
+                    #   taskToken=pending_task['token']
+                    # )
                     continue
                 self._notify_task(task_connection.recv())
                 task_connection.close()
                 pending_task['process'].join()
-                pending_tasks.remove(pending_task)
+                completed_tasks.append(pending_task)
+            for completed_task in completed_tasks:
+                pending_tasks.remove(completed_task)
 
     def _work_task_list(self, connection, domain_name, task_list, num_workers):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
