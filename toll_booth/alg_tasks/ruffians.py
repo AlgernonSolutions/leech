@@ -5,9 +5,7 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
 def rough_work(production_fn):
-    def wrapper(**kwargs):
-        event = kwargs['event']
-        context = kwargs['context']
+    def wrapper(event, context):
         event = json.loads(json.dumps(event, cls=AlgEncoder), cls=AlgDecoder)
         return production_fn(event, context)
     return wrapper
