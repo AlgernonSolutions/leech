@@ -5,10 +5,10 @@ from jsonschema import validate
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
-from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
+from toll_booth.alg_obj.serializers import AlgDecoder
 
 
-class Task(AlgObject):
+class Task:
     def __init__(self, task_token, activity_id, flow_id, run_id, activity_name, activity_version, task_args):
         self._task_token = task_token
         self._activity_id = activity_id

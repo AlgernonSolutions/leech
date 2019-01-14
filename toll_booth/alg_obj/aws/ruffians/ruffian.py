@@ -129,12 +129,16 @@ class Ruffian:
         )
 
     def _manage_pending_tasks(self, pending_tasks):
+        client = boto3.client('swf')
         outstanding_tasks = []
         for pending_task in pending_tasks:
             task_connection = pending_task['connection']
             has_results = task_connection.poll(1)
             if not has_results:
                 outstanding_tasks.append(pending_task)
+                client.record_activity_task_heartbeat(
+                    taskToken=pending_task['token']
+                )
                 continue
             self._notify_task(task_connection.recv())
             task_connection.close()
@@ -156,7 +160,11 @@ class Ruffian:
                 poll_response = laborer.poll_for_tasks()
                 parent_connection, child_connection = Pipe()
                 labor_process = Process(target=self._labor, args=(child_connection, poll_response))
-                pending_tasks.append({'connection': parent_connection, 'process': labor_process})
+                pending_tasks.append({
+                    'connection': parent_connection,
+                    'process': labor_process,
+                    'token': poll_response['taskToken']
+                })
             except ReadTimeoutError:
                 continue
             except Exception as e:
