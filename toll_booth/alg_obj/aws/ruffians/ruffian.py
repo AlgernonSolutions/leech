@@ -162,7 +162,6 @@ class Ruffian:
                 pending_tasks.append(None)
                 side_thread.join()
                 return
-            self._manage_pending_tasks(pending_tasks)
             if len(pending_tasks) > num_workers:
                 logging.info(f'number of tasks exceeds allotted concurrency for {task_list}, waiting')
                 continue
