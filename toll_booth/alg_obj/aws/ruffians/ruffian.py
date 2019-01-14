@@ -2,7 +2,9 @@ import json
 import logging
 import os
 import time
+from collections import deque
 from multiprocessing import Pipe, Process
+from threading import Thread
 
 import boto3
 from botocore.exceptions import ReadTimeoutError
@@ -117,6 +119,7 @@ class Ruffian:
     def _notify_task(task_payload):
         client = boto3.client('swf')
         success = task_payload[0]
+        logging.info(f'going to notify that task is done. payload: {task_payload}')
         if not success:
             return client.respond_activity_task_failed(
                 taskToken=task_payload[1],
@@ -128,33 +131,38 @@ class Ruffian:
             result=task_payload[2]
         )
 
-    def _manage_pending_tasks(self, pending_tasks):
+    def _manage_pending_tasks(self, pending_tasks: deque):
         client = boto3.client('swf')
-        outstanding_tasks = []
-        for pending_task in pending_tasks:
-            task_connection = pending_task['connection']
-            has_results = task_connection.poll(1)
-            if has_results is False:
-                outstanding_tasks.append(pending_task)
-                client.record_activity_task_heartbeat(
-                    taskToken=pending_task['token']
-                )
-                continue
-            self._notify_task(task_connection.recv())
-            task_connection.close()
-            pending_task['process'].join()
-        return outstanding_tasks
+        while True:
+            for pending_task in pending_tasks:
+                if pending_task is None:
+                    return
+                task_connection = pending_task['connection']
+                has_results = task_connection.poll(1)
+                if has_results is False:
+                    client.record_activity_task_heartbeat(
+                        taskToken=pending_task['token']
+                    )
+                    continue
+                self._notify_task(task_connection.recv())
+                task_connection.close()
+                pending_task['process'].join()
+                pending_tasks.remove(pending_task)
 
     def _work_task_list(self, connection, domain_name, task_list, num_workers):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
 
         logging.info(f'starting a worker to work task_list: {task_list}')
-        pending_tasks = []
+        pending_tasks = deque()
+        side_thread = Thread(target=self._manage_pending_tasks, args=pending_tasks)
+        side_thread.start()
         while True:
             laborer = Laborer(domain_name, task_list)
             if self._check_orders(connection):
+                pending_tasks.append(None)
+                side_thread.join()
                 return
-            pending_tasks = self._manage_pending_tasks(pending_tasks)
+            self._manage_pending_tasks(pending_tasks)
             if len(pending_tasks) > num_workers:
                 logging.info(f'number of tasks exceeds allotted concurrency for {task_list}, waiting')
                 continue
