@@ -11,6 +11,13 @@ work_remote_id_change_type = '{"_alg_class": "<class \'toll_booth.alg_obj.aws.ge
                              '"work_remote_id": {"_alg_class": "<class \'toll_booth.alg_obj.aws.snakes.snakes.StoredData\'>", "value": {"pointer": "the-leech#cache/work_remote_id4979!1547161028.025221.json"}}, ' \
                              '"work_remote_id_change_type": {"_alg_class": "<class \'toll_booth.alg_obj.aws.snakes.snakes.StoredData\'>", "value": {"pointer": "the-leech#cache/work_remote_id_change_type8!1547161175.125165.json"}}}}}'
 
+
+command_fungi_args = {"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {
+    "fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>",
+               "value": {"pointer": "the-leech#cache/fungus!1547504618.320344.json"}},
+    "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>",
+                      "value": {"pointer": "the-leech#cache/command_fungi!1547504619.350616.json"}}}}}
+
 {"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {
     "fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>",
                "value": {"pointer": "the-leech#cache/fungus!1547168116.911648.json"}},

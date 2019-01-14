@@ -233,7 +233,7 @@ class LeechConfigEntry(AlgObject):
 
     def get(self, item, default=None):
         try:
-            self._config_items[item]
+            return  self._config_items[item]
         except KeyError:
             return default
 
