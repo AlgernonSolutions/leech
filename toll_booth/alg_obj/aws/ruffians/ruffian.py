@@ -131,12 +131,10 @@ class Ruffian:
     def _manage_pending_tasks(self, pending_tasks):
         client = boto3.client('swf')
         outstanding_tasks = []
-        logging.info(f'checking the status of pending tasks: {pending_tasks}')
         for pending_task in pending_tasks:
             task_connection = pending_task['connection']
             has_results = task_connection.poll(1)
-            logging.info(f'pending task: {pending_task} has results: {has_results}')
-            if not has_results:
+            if has_results is False:
                 outstanding_tasks.append(pending_task)
                 client.record_activity_task_heartbeat(
                     taskToken=pending_task['token']
@@ -145,7 +143,6 @@ class Ruffian:
             self._notify_task(task_connection.recv())
             task_connection.close()
             pending_task['process'].join()
-        logging.info(f'the following tasks are still outstanding: {outstanding_tasks}')
         return outstanding_tasks
 
     def _work_task_list(self, connection, domain_name, task_list, num_workers):
@@ -158,7 +155,7 @@ class Ruffian:
             if self._check_orders(connection):
                 return
             pending_tasks = self._manage_pending_tasks(pending_tasks)
-            if len(pending_tasks) >= num_workers:
+            if len(pending_tasks) > num_workers:
                 logging.info(f'number of tasks exceeds allotted concurrency for {task_list}, waiting')
                 continue
             try:
