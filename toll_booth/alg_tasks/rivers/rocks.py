@@ -15,7 +15,12 @@ def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
         return
     workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)
     labor_task_lists = workflow_config.get('labor_task_lists', [])
-    labor_work_lists = {x['list_name']: x['number_threads'] for x in labor_task_lists}
+    labor_work_lists = {}
+    for entry in labor_task_lists:
+        list_name = entry['list_name']
+        if list_name == 'main':
+            list_name = workflow_id
+        labor_work_lists[list_name] = entry['number_threads']
     work_lists = {workflow_id: 1}
     work_lists.update(labor_work_lists)
     execution_arn = RuffianRoost.conscript_ruffians(workflow_id, work_lists, work_history.domain_name)
