@@ -17,6 +17,7 @@ class Signature:
         self._fn_version = version
         self._fn_identifier = identifier
         self._task_args = task_args
+        self._task_list = kwargs['task_list']
         self._is_activity = kwargs['is_activity']
         self._is_started = kwargs['is_started']
         self._is_complete = kwargs['is_complete']
@@ -38,12 +39,14 @@ class Signature:
         timers = kwargs['timers']
         versions = kwargs['versions']
         config = kwargs['configs'][(config_attribute, name)]
+        task_list = config.get('task_list', identifier)
         version = getattr(versions, version_attribute)[name]
         checkpoint = cls._check_for_checkpoint(identifier, **kwargs)
         cls_args = (name, version, identifier, task_args)
         cls_kwargs = {
-            'is_activity': is_activity, 'is_started': False, 'is_complete': False, 'config': config,
-            'is_failed': False, 'fail_count': 0, 'back_off_status': False, 'results': None,
+            'is_activity': is_activity, 'is_started': False, 'is_complete': False,
+            'config': config, 'is_failed': False, 'fail_count': 0,
+            'back_off_status': False, 'results': None, 'task_list': task_list
         }
         if checkpoint:
             cls_kwargs.update({
@@ -122,8 +125,8 @@ class Signature:
         flow_input = json.dumps(self._task_args, cls=AlgEncoder)
         activity_args = (self._fn_identifier, self._fn_name, flow_input)
         if not self._is_activity:
-            return StartSubtask(*activity_args, version=self.fn_version, **kwargs)
-        return StartActivity(*activity_args, version=self.fn_version, **kwargs)
+            return StartSubtask(*activity_args, version=self.fn_version, task_list=self._task_list, **kwargs)
+        return StartActivity(*activity_args, version=self.fn_version, task_list=self._task_list, **kwargs)
 
     def _check_concurrency(self, **kwargs):
         decisions = kwargs['decisions']

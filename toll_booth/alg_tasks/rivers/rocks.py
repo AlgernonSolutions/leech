@@ -2,7 +2,7 @@ import json
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, CompleteWork, StartSubtask
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, CompleteWork, StartSubtask, RecordMarker
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
@@ -17,10 +17,16 @@ def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
     work_lists.update(labor_work_lists)
     execution_arn = RuffianRoost.conscript_ruffians(task_list_name, work_lists, work_history.domain_name)
     start_subtask_decision.set_control(json.dumps({'execution_arn': execution_arn}))
+    return RecordMarker.for_ruffian(start_subtask_decision.workflow_id, execution_arn)
 
 
-def _disband_ruffian(work_history, complete_work_decision):
-    pass
+def _disband_idle_ruffians(work_history):
+    disband_markers = []
+    idlers = work_history.idle_ruffians
+    for execution_arn, operation_id in idlers.items():
+        RuffianRoost.disband_ruffians(execution_arn)
+        disband_markers.append(RecordMarker.for_ruffian(operation_id, execution_arn, True))
+    return disband_markers
 
 
 def workflow(workflow_name):
@@ -48,12 +54,12 @@ def workflow(workflow_name):
                 'workflow_args': task_args[workflow_name].data_string
             }
             results = production_fn(**context_kwargs)
+            made_decisions.extend(_disband_idle_ruffians(work_history))
             decisions = MadeDecisions(work_history.task_token)
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
-                    _conscript_ruffian(work_history, decision, configs)
-                if isinstance(decision, CompleteWork):
-                    _disband_ruffian(work_history, decision)
+                    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
+                    decisions.add_decision(mark_ruffian)
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
             return results

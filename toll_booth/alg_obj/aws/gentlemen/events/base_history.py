@@ -151,6 +151,13 @@ class Operation:
         return self._task_args
 
     @property
+    def initiating_event(self):
+        for event in self._events:
+            if event.event_type == self._steps['operation_first']:
+                return event
+        raise AttributeError
+
+    @property
     def executions(self):
         return self._executions
 

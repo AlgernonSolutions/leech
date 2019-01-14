@@ -138,6 +138,18 @@ class WorkflowHistory:
     def timer_history(self):
         return self._timer_history
 
+    @property
+    def idle_ruffians(self):
+        idlers = {}
+        open_ruffians = self.marker_history.open_ruffian_tasks
+        subtask_history = self.subtask_history
+        for subtask_operation in subtask_history:
+            if subtask_operation.operation_id in open_ruffians:
+                if subtask_operation.is_complete:
+                    ruffian = open_ruffians[subtask_operation.operation_id]
+                    idlers[ruffian['execution_arn']] = subtask_operation.operation_id
+        return idlers
+
     def merge_history(self, work_history):
         self._events.extend(work_history.events)
         self._subtask_history.merge_history(work_history.subtask_history)

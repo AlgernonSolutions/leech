@@ -61,7 +61,7 @@ class StartSubtask(Decision):
             },
             'workflowId': subtask_identifier,
             'input': flow_input,
-            'taskList': {'name': subtask_type},
+            'taskList': {'name': kwargs.get('task_list', subtask_identifier)},
             'lambdaRole': lambda_role
         }
         if 'control' in kwargs:
@@ -116,7 +116,7 @@ class StartActivity(Decision):
                 'name': activity_name,
                 'version': kwargs.get('version', '1')
             },
-            'taskList': {'name': kwargs.get('task_list_name', 'Leech')},
+            'taskList': {'name': kwargs.get('task_list', 'Leech')},
             'activityId': activity_id,
             'input': input_string
         }
@@ -132,7 +132,7 @@ class StartActivity(Decision):
             'activity_name': activity.activity_name,
             'input_string': activity.input_string,
             'version': activity.activity_version,
-            'task_list_name': activity.task_list_name
+            'task_list': activity.task_list_name
         }
         return cls(**activity_retry_args)
 
@@ -204,6 +204,12 @@ class RecordMarker(Decision):
         checkpoint_data = {operation_identifier: operation_results}
         checkpoint_string = json.dumps(checkpoint_data, cls=AlgEncoder)
         return cls('checkpoint', checkpoint_string)
+
+    @classmethod
+    def for_ruffian(cls, task_identifier, execution_arn, is_close=False):
+        ruffian_data = {'task_identifier': task_identifier, 'execution_arn': execution_arn, 'is_close': is_close}
+        data_string = json.dumps(ruffian_data, cls=AlgEncoder)
+        return cls('ruffian', data_string)
 
     @property
     def marker_name(self):

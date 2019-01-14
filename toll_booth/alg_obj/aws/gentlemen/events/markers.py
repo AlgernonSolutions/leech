@@ -64,6 +64,28 @@ class MarkerHistory:
             checkpoints.update(marker.marker_details)
         return checkpoints
 
+    @property
+    def ruffians(self):
+        ruffians = {}
+        ruffian_markers = self.get_markers_by_type('ruffian')
+        for marker in ruffian_markers:
+            task_identifier = marker.marker_details['task_identifier']
+            if task_identifier not in ruffians:
+                ruffians[task_identifier] = []
+            ruffians[task_identifier].append(marker.marker_details)
+        return ruffians
+
+    @property
+    def open_ruffian_tasks(self):
+        idlers = {}
+        ruffians = self.ruffians
+        for task_identifier, ruffians in ruffians.items():
+            for ruffian in ruffians:
+                if ruffian['is_close'] is True:
+                    continue
+                idlers[task_identifier] = ruffian
+        return idlers
+
     def add_marker(self, marker: Marker):
         self._markers.append(marker)
 
