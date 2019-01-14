@@ -69,7 +69,7 @@ class Signature:
     @classmethod
     def for_activity(cls, fn_identifier, fn_name, task_args, **kwargs):
         is_activity = True
-        kwargs['default_task_list'] = kwargs['workflow_name']
+        kwargs['default_task_list'] = kwargs['work_history'].flow_id
         return cls._build(fn_identifier, fn_name, task_args, is_activity, **kwargs)
 
     @classmethod
