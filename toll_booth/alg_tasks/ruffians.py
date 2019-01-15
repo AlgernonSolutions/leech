@@ -45,6 +45,6 @@ def lambda_labor(event, context):
     for task_module in task_modules:
         task_fn = getattr(task_module, task_name, None)
         if task_fn:
-            results = task_fn(**task_args)
+            results = task_fn(**task_args.for_task)
             return results
     raise NotImplementedError('could not find a registered task for type: %s' % task_name)
