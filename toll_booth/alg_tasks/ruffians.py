@@ -39,7 +39,7 @@ def lambda_labor(event, context):
     logging.info(f'starting a lambda_labor task, event is {event}')
 
     task_name = event['task_name']
-    task_args = json.loads(json.dumps(event['task_args'], cls=AlgEncoder), cls=AlgDecoder)
+    task_args = json.loads(event['task_args'], cls=AlgDecoder)
     logging.info(f'received a call to run a lambda task named {task_name}, the task_args are {task_args}')
     task_modules = [fungi_tasks]
     for task_module in task_modules:
