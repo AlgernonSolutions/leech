@@ -46,5 +46,5 @@ def lambda_labor(event, context):
         task_fn = getattr(task_module, task_name, None)
         if task_fn:
             results = task_fn(**task_args.for_task)
-            return results
+            return json.dumps(results, cls=AlgEncoder)
     raise NotImplementedError('could not find a registered task for type: %s' % task_name)
