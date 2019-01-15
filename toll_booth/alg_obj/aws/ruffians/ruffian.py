@@ -112,7 +112,7 @@ class Ruffian:
 
     def _poll_for_tasks(self):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
-        domain_name = self._work_lists['domain_name']
+        domain_name = self._domain_name
         list_name = self._work_lists['list_name']
         laborer = Laborer(domain_name, list_name)
         poll_response = laborer.poll_for_tasks()
