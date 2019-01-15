@@ -64,5 +64,6 @@ def lambda_labor(task_name, task_args):
         task_fn = getattr(task_module, task_name, None)
         if task_fn:
             results = task_fn(**task_args.for_task)
+            logging.info(f'completed a lambda task named {task_name}, task_args {task_args}, results: {results}')
             return results
     raise NotImplementedError('could not find a registered task for type: %s' % task_name)
