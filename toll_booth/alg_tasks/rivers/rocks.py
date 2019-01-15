@@ -1,8 +1,6 @@
-import json
-
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, CompleteWork, StartSubtask, RecordMarker
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
@@ -15,17 +13,8 @@ def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
         return
     workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)
     labor_task_lists = workflow_config.get('labor_task_lists', [])
-    labor_work_lists = {}
-    for entry in labor_task_lists:
-        list_name = entry['list_name']
-        if list_name == 'main':
-            list_name = workflow_id
-        labor_work_lists[list_name] = entry['number_threads']
-    work_lists = {workflow_id: 1}
-    work_lists.update(labor_work_lists)
-    execution_arn = RuffianRoost.conscript_ruffians(workflow_id, work_lists, work_history.domain_name)
-    start_subtask_decision.set_control(json.dumps({'execution_arn': execution_arn}))
-    return RecordMarker.for_ruffian(workflow_id, execution_arn)
+    execution_arns = RuffianRoost.conscript_ruffians(workflow_id, labor_task_lists, work_history.domain_name)
+    return [RecordMarker.for_ruffian(workflow_id, x) for x in execution_arns]
 
 
 def _disband_idle_ruffians(work_history):
@@ -66,10 +55,11 @@ def workflow(workflow_name):
             made_decisions.extend(_disband_idle_ruffians(work_history))
             decisions = MadeDecisions(work_history.task_token)
             for decision in made_decisions:
-                #if isinstance(decision, StartSubtask):
-                #    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
-                #    if mark_ruffian:
-                #        decisions.add_decision(mark_ruffian)
+                if isinstance(decision, StartSubtask):
+                    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
+                    if mark_ruffian:
+                        for marker in mark_ruffian:
+                            decisions.add_decision(marker)
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
             return results

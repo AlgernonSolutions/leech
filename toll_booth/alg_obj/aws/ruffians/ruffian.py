@@ -1,42 +1,39 @@
 import json
 import logging
 import os
-import time
-from collections import deque
-from multiprocessing import Pipe, Process
 from queue import Queue
 from threading import Thread
 
 import boto3
 from botocore.exceptions import ReadTimeoutError
 
-from toll_booth.alg_obj.aws.gentlemen.tasks import Task
-
-
-class RuffianName:
-    def __init__(self, flow_id, run_id):
-        self._flow_id = flow_id
-        self._run_id = run_id
-
-    @property
-    def name(self):
-        return f'{self._flow_id}-{self._run_id}'
-
-    def __str__(self):
-        return self.name
-
 
 class RuffianRoost:
     @classmethod
-    def conscript_ruffians(cls, decider_list, work_lists, domain_name, is_vpc=False, **kwargs):
+    def conscript_ruffians(cls, decider_list, work_lists, domain_name, **kwargs):
         default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
-        if is_vpc:
-            default_machine_arn = os.getenv('VPC_RUFFIAN_MACHINE', '')
-        machine_arn = kwargs.get('machine_arn', default_machine_arn)
+        default_vpc_machine_arn = os.getenv('VPC_RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:vpc_ruffians')
+        default_deciding_machine_arn = os.getenv('DECIDING_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
+        ruffian_machine_arn = kwargs.get('machine_arn', default_machine_arn)
+        vpc_ruffian_machine_arn = kwargs.get('vpc_machine_arn', default_vpc_machine_arn)
+        deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
         client = boto3.client('stepfunctions')
+        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, client)]
+        for work_list in work_lists:
+            list_machine_arn = ruffian_machine_arn
+            if work_lists.get('is_vpc', False) is True:
+                list_machine_arn = vpc_ruffian_machine_arn
+            execution_arns.append(
+                cls._start_machine(list_machine_arn, work_list, domain_name, client)
+            )
+        return execution_arns
+
+    @classmethod
+    def _start_machine(cls, machine_arn, work_list, domain_name, client=None):
+        if not client:
+            client = boto3.client('stepfunctions')
         machine_input = json.dumps({
-            'decider_list': decider_list,
-            'work_lists': work_lists,
+            'work_list': work_list,
             'domain_name': domain_name
         })
         response = client.start_execution(
@@ -90,131 +87,93 @@ class Ruffian:
                 logging.error(f'error occurred in the decide task for list {self._work_lists}: {e}, trace: {trace}')
 
     def labor(self):
-        for task_list_name, num_workers in self._work_lists.items():
-            parent_connection, child_connection = Pipe()
-            self._connections.append(parent_connection)
-            process_args = (child_connection, self._domain_name, task_list_name, num_workers)
-            task_list_process = Process(target=self._work_task_list, args=process_args)
-            task_list_process.start()
-            self._rackets.append(task_list_process)
+        work_list_name = self._work_lists['list_name']
+        logging.info(f'starting a worker to work task_list: {work_list_name}')
+        threads = []
+        queue = Queue()
+        labor_args = {
+            'list_name': work_list_name,
+            'number_threads': self._work_lists['number_threads'],
+            'queue': queue
+        }
+        labor_components = [self._dispatch_tasks]
+        for component in labor_components:
+            component_thread = Thread(target=component, kwargs=labor_args)
+            component_thread.start()
+            threads.append(component_thread)
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
-            time.sleep(15)
+            poll_results = self._poll_for_tasks()
+            queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
-        for connection in self._connections:
-            connection.send(None)
-        for racket in self._rackets:
-            racket.join()
+        queue.put(None)
+        for thread in threads:
+            thread.join()
 
-    @staticmethod
-    def _check_orders(connection, wait_time=1):
-        has_message = connection.poll(wait_time)
-        if has_message:
-            orders = connection.recv()
-            if orders is None:
-                connection.close()
-                return True
-        return False
-
-    @staticmethod
-    def _notify_task(task_payload):
-        client = boto3.client('swf')
-        success = task_payload[0]
-        logging.info(f'going to notify that task is done. payload: {task_payload}')
-        if not success:
-            return client.respond_activity_task_failed(
-                taskToken=task_payload[1],
-                reason=task_payload[2],
-                details=task_payload[3]
-            )
-        client.respond_activity_task_completed(
-            taskToken=task_payload[1],
-            result=task_payload[2]
-        )
-
-    def _manage_pending_tasks(self, pending_tasks: Queue):
-        while True:
-            pending_task = pending_tasks.get()
-            if pending_task is None:
-                return
-            task_connection = pending_task['connection']
-            has_results = task_connection.poll()
-            if has_results is False:
-                # client.record_activity_task_heartbeat(
-                #   taskToken=pending_task['token']
-                # )
-                pending_tasks.put(pending_task)
-            self._notify_task(task_connection.recv())
-            task_connection.close()
-            pending_task['process'].join()
-            pending_tasks.task_done()
-
-    def _work_task_list(self, connection, domain_name, task_list, num_workers):
+    def _poll_for_tasks(self):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
+        domain_name = self._work_lists['domain_name']
+        list_name = self._work_lists['list_name']
+        laborer = Laborer(domain_name, list_name)
+        poll_response = laborer.poll_for_tasks()
+        logging.info(f'received a response from polling {domain_name} for task_list: {list_name}, {poll_response}')
+        return poll_response
 
-        logging.info(f'starting a worker to work task_list: {task_list}')
-        pending_tasks = Queue()
-        side_thread = Thread(target=self._manage_pending_tasks, kwargs={'pending_tasks': pending_tasks})
-        side_thread.start()
+    def _dispatch_tasks(self, **kwargs):
+        queue = kwargs['queue']
+        number_threads = kwargs['number_threads']
+        pending_tasks = {}
         while True:
-            laborer = Laborer(domain_name, task_list)
-            if self._check_orders(connection):
-                pending_tasks.put(None)
-                side_thread.join()
+            new_task = queue.get()
+            if new_task is None:
                 return
-            if pending_tasks.qsize() > num_workers:
-                logging.info(f'number of tasks exceeds allotted concurrency for {task_list}, waiting')
-                continue
-            try:
-                poll_response = laborer.poll_for_tasks()
-                logging.info(f'received a response from polling for task_list: {task_list}, {poll_response}')
-                parent_connection, child_connection = Pipe()
-                labor_process = Process(target=self._labor, args=(child_connection, poll_response))
-                labor_process.start()
-                pending_tasks.put({
-                    'connection': parent_connection,
-                    'process': labor_process,
-                    'token': poll_response['taskToken']
-                })
-            except ReadTimeoutError:
-                continue
-            except Exception as e:
-                import traceback
-                trace = traceback.format_exc()
-                logging.error(f'error occurred in the labor task for list {task_list}: {e}, trace: {trace}')
+            task_type = new_task['task_type']
+            if task_type == 'new_task':
+                if len(pending_tasks) > number_threads:
+                    queue.put(new_task)
+                    continue
+                poll_response = new_task['poll_response']
+                task_token = poll_response['taskToken']
+                task_args = {
+                    'queue': queue,
+                    'poll_response': poll_response
+                }
+                pending = Thread(target=self._run_task, kwargs=task_args)
+                pending.start()
+                pending_tasks[task_token] = pending
+            if task_type == 'close_task':
+                task_token = new_task['task_token']
+                pending_tasks[task_token].join()
+                del(pending_tasks[task_token])
 
-    def _labor(self, connection, poll_response):
-        import json
-        from toll_booth.alg_obj.serializers import AlgEncoder
+    def _run_task(self, **kwargs):
+        swf_client = boto3.client('swf')
+        task_token = kwargs['poll_response']['taskToken']
+        results = self._fire_task(**kwargs)
+        swf_payload = {'taskToken': task_token}
+        if results['fail'] is True:
+            swf_payload.update({'reason': results['reason'], 'details': results['details']})
+            swf_client.respond_activity_task_failed(**swf_payload)
+        else:
+            swf_payload.update({'result': results['result']})
+            swf_client.respond_activity_task_completed(**swf_payload)
+        kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
-        task = Task.parse_from_poll(poll_response)
-        logging.info(f'received a task from the queue: {task.activity_name}')
-        try:
-            results = self._work_task(task)
-            result_string = json.dumps(results, cls=AlgEncoder)
-            return_payload = (True, task.task_token, result_string)
-        except Exception as e:
-            import traceback
-            failure_reason = json.dumps(e.args)
-            trace = traceback.format_exc()
-            failure_details = json.dumps({
-                'task_name': task.activity_name,
-                'task_version': task.activity_version,
-                'trace': trace
-            })
-            return_payload = (False, task.task_token, failure_reason, failure_details)
-        logging.info(f'done with task: {task.activity_name}, return payload: {return_payload}')
-        connection.send(return_payload)
-        connection.close()
+    def _fire_task(self, **kwargs):
+        from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
-    def _work_task(self, task: Task):
-        from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
-
-        task_modules = [fungi_tasks]
-        task_name = task.activity_name
-        for task_module in task_modules:
-            task_fn = getattr(task_module, task_name, None)
-            if task_fn:
-                results = task_fn(**task.task_args.for_task)
-                return results
-        raise NotImplementedError('could not find a registered task for type: %s' % task_name)
+        client = boto3.client('lambda')
+        task_list = self._work_lists['list_name']
+        poll_response = kwargs['poll_response']
+        task_name = poll_response['activityType']['name']
+        task_args = poll_response['input']
+        lambda_payload = {'task_name': task_name, 'task_args': task_args, 'register_results': True}
+        logging.info(f'firing a controlled activity for {task_list}, named {task_name} with args: {task_args}')
+        response = client.invoke(
+            FunctionName=task_name,
+            InvocationType='RequestResponse',
+            Payload=json.dumps(lambda_payload, cls=AlgEncoder)
+        )
+        results = json.loads(response['Payload'].read(), cls=AlgDecoder)
+        logging.info(f'got the results from controlled activity {task_name} back: {results}')
+        return results
