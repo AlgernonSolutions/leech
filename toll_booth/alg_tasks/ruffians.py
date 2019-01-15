@@ -36,6 +36,7 @@ def labor(event, context):
 @lambda_logged
 def lambda_labor(event, context):
     from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
+    logging.info(f'starting a lambda_labor task, event is {event}')
 
     task_name = event['task_name']
     task_args = json.loads(json.dumps(event['task_args'], cls=AlgEncoder), cls=AlgDecoder)
