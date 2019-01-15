@@ -15,7 +15,7 @@ def rough_work(production_fn):
 
 
 def lambda_work(production_fn):
-    def wrapper(event):
+    def wrapper(event, context):
         task_name = event['task_name']
         task_args = json.loads(event['task_args'], cls=AlgDecoder)
         register_results = event.get('register_results', False)
