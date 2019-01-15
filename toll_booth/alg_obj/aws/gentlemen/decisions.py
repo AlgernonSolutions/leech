@@ -33,7 +33,7 @@ class StartLambda(Decision):
     def __init__(self, lambda_id, function_name, task_args=None, **kwargs):
         lambda_attributes = {
             'id': lambda_id,
-            'name': os.getenv('LABOR_FUNCTION', 'leech-labor')
+            'name': os.getenv('LABOR_FUNCTION', 'leech-lambda-labor')
         }
         if task_args:
             lambda_attributes['input'] = json.dumps({
