@@ -22,7 +22,8 @@ def lambda_work(production_fn):
         if register_results is True:
             try:
                 results = production_fn(task_name, task_args)
-                return json.dumps({'fail': False, 'result': results}, cls=AlgEncoder)
+                results = json.dumps(results, cls=AlgEncoder)
+                return json.dumps({'fail': False, 'result': results})
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()

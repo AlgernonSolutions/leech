@@ -174,6 +174,7 @@ class Ruffian:
             InvocationType='RequestResponse',
             Payload=json.dumps(lambda_payload, cls=AlgEncoder)
         )
-        results = json.loads(response['Payload'].read(), cls=AlgDecoder)
+        raw_result = response['Payload'].read().decode()
+        results = json.loads(raw_result, cls=AlgDecoder)
         logging.info(f'got the results from controlled activity {task_name} back: {results}')
         return results
