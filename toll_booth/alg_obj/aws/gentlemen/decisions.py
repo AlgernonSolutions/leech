@@ -29,13 +29,17 @@ class Decision:
 
 
 class StartLambda(Decision):
-    def __init__(self, lambda_id, function_name, task_args, **kwargs):
+    def __init__(self, lambda_id, function_name, task_args=None, **kwargs):
         lambda_attributes = {
             'id': lambda_id,
-            'name': function_name,
-            'input': task_args
+            'name': 'leech-lambda-labor'
         }
-        if 'control' in kwargs:
+        if task_args:
+            lambda_attributes['input'] = json.dumps({
+                'task_name': function_name,
+                'task_args': task_args
+            })
+        if kwargs.get('control', None) is not None:
             lambda_attributes['control'] = kwargs['control']
         attributes_name = 'scheduleLambdaFunctionDecisionAttributes'
         super().__init__('ScheduleLambdaFunction', lambda_attributes, attributes_name)

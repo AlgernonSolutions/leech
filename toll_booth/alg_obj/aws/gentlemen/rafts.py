@@ -198,14 +198,15 @@ class ActivitySignature(Signature):
 
 
 class LambdaSignature(Signature):
-    def __init__(self, lambda_identifier, task_type, task_args, **kwargs):
+    def __init__(self, lambda_identifier, task_type, task_args=None, **kwargs):
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
         cls_kwargs = self.generate_signature_status(lambda_identifier, kwargs['lambdas'], **kwargs)
         super().__init__(task_type, version, config, lambda_identifier, task_args, **cls_kwargs)
+        self._control = kwargs.get('control', None)
 
     def _build_start(self, **kwargs):
-        return StartLambda(*self.start_args, **kwargs)
+        return StartLambda(*self.start_args, control=self._control)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['lambdas']

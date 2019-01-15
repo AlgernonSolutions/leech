@@ -72,7 +72,7 @@ class General:
                 workflow_histories.append(flow_history)
         return workflow_histories
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
+    # @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _poll_for_decision(self):
         history = None
         workflow_histories = []

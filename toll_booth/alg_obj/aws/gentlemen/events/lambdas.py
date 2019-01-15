@@ -32,8 +32,12 @@ class LambdaExecution(Execution):
     @classmethod
     def generate_from_start_event(cls, event: Event):
         run_id = event.event_attributes['scheduledEventId']
-        execution_id: event.event_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
+        execution_id = event.event_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
         return cls(execution_id, run_id, [event])
+
+    @property
+    def run_id(self):
+        return self._run_id
 
 
 class LambdaOperation(Operation):
@@ -68,7 +72,10 @@ class LambdaHistory(History):
         super().__init__(provided_steps, operations)
 
     def _add_operation_event(self, event: Event):
-        if event.event_attributes['id'] in self.operation_ids:
+        new_operation_id = event.event_attributes['id']
+        if new_operation_id in self.operation_ids:
+            existing_operation = self.get(new_operation_id)
+            existing_operation.add_run_id(event.event_id)
             return
         lambda_operation = LambdaOperation.generate_from_schedule_event(event)
         self._operations.append(lambda_operation)

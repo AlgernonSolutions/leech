@@ -66,10 +66,10 @@ def workflow(workflow_name):
             made_decisions.extend(_disband_idle_ruffians(work_history))
             decisions = MadeDecisions(work_history.task_token)
             for decision in made_decisions:
-                if isinstance(decision, StartSubtask):
-                    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
-                    if mark_ruffian:
-                        decisions.add_decision(mark_ruffian)
+                #if isinstance(decision, StartSubtask):
+                #    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
+                #    if mark_ruffian:
+                #        decisions.add_decision(mark_ruffian)
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
             return results

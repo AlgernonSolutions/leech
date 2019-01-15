@@ -1,4 +1,5 @@
 import json
+import logging
 
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
@@ -33,12 +34,12 @@ def labor(event, context):
 
 
 @lambda_logged
-@rough_work
 def lambda_labor(event, context):
     from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
 
     task_name = event['task_name']
-    task_args = event['task_args']
+    task_args = json.loads(json.dumps(event['task_args'], cls=AlgEncoder), cls=AlgDecoder)
+    logging.info(f'received a call to run a lambda task named {task_name}, the task_args are {task_args}')
     task_modules = [fungi_tasks]
     for task_module in task_modules:
         task_fn = getattr(task_module, task_name, None)
