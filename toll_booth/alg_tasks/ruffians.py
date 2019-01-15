@@ -45,17 +45,8 @@ def decide(event, context):
 
 
 @lambda_logged
-@rough_work
-def labor(event, context):
-    from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
-
-    ruffian = Ruffian.build(context, **event)
-    ruffian.labor()
-
-
-@lambda_logged
 @lambda_work
-def lambda_labor(task_name, task_args):
+def labor(task_name, task_args):
     from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
     logging.info(f'received a call to run a lambda task named {task_name}, the task_args are {task_args}')
     task_modules = [fungi_tasks]

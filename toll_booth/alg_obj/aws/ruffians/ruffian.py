@@ -170,7 +170,7 @@ class Ruffian:
         lambda_payload = {'task_name': task_name, 'task_args': task_args, 'register_results': True}
         logging.info(f'firing a controlled activity for {task_list}, named {task_name} with args: {task_args}')
         response = client.invoke(
-            FunctionName=task_name,
+            FunctionName=os.getenv('LABOR_FUNCTION', 'leech-labor'),
             InvocationType='RequestResponse',
             Payload=json.dumps(lambda_payload, cls=AlgEncoder)
         )

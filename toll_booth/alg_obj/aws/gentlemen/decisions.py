@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
@@ -32,7 +33,7 @@ class StartLambda(Decision):
     def __init__(self, lambda_id, function_name, task_args=None, **kwargs):
         lambda_attributes = {
             'id': lambda_id,
-            'name': 'leech-lambda-labor'
+            'name': os.getenv('LABOR_FUNCTION', 'leech-labor')
         }
         if task_args:
             lambda_attributes['input'] = json.dumps({
