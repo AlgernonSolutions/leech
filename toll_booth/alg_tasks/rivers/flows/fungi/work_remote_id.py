@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group
+from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, SubtaskSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -16,7 +16,7 @@ def work_remote_id(task_args, **kwargs):
     for category_id, change_category in changelog_types.categories.items():
         new_task_args = task_args.replace_argument_value(subtask_name, {'category_id': category_id}, category_id)
         subtask_identifier = f'work_type-{change_category}-{execution_id}'
-        category_signature = Signature.for_subtask(subtask_identifier, subtask_name, new_task_args, **kwargs)
+        category_signature = SubtaskSignature(subtask_identifier, subtask_name, new_task_args, **kwargs)
         signatures.append(category_signature)
     tuple_signatures = tuple(signatures)
     great_group = group(*tuple_signatures)

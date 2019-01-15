@@ -54,6 +54,7 @@ def workflow(workflow_name):
                 'markers': work_history.marker_history,
                 'timers': work_history.timer_history,
                 'activities': work_history.activity_history,
+                'lambdas': work_history.lambda_history,
                 'lambda_role': work_history.lambda_role,
                 'execution_id': work_history.flow_id,
                 'versions': versions,

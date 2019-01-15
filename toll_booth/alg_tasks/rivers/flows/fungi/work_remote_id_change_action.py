@@ -9,7 +9,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, chain
+from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, LambdaSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -39,7 +39,7 @@ def work_remote_id_change_action(**kwargs):
 def _build_enrich_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['enrich']
-    enrich_signature = Signature.for_activity(fn_identifier, 'get_enrichment_for_change_action', **kwargs)
+    enrich_signature = ActivitySignature(fn_identifier, 'get_enrichment_for_change_action', **kwargs)
     return enrich_signature
 
 
@@ -57,7 +57,7 @@ def _build_change_data_group(task_args, **kwargs):
     remote_actions = change_actions.get(change_action.action, {})
     for remote_change in remote_actions:
         new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change)
-        signature = Signature.for_activity(fn_identifier, subtask_name, new_task_args, **kwargs)
+        signature = LambdaSignature(fn_identifier, subtask_name, new_task_args, **kwargs)
         signatures.append(signature)
     if not signatures:
         return None

@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, chain
+from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, SubtaskSignature, group, chain
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 """
@@ -37,7 +37,7 @@ def work_remote_id_change_type(**kwargs):
 def _build_local_max_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['local_max']
-    get_local_max_signature = Signature.for_activity(fn_identifier, 'get_local_max_change_type_value', **kwargs)
+    get_local_max_signature = ActivitySignature(fn_identifier, 'get_local_max_change_type_value', **kwargs)
     return get_local_max_signature
 
 
@@ -45,7 +45,7 @@ def _build_local_max_signature(**kwargs):
 def _build_work_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['work']
-    work_signature = Signature.for_activity(fn_identifier, 'work_remote_id_change_type', **kwargs)
+    work_signature = ActivitySignature(fn_identifier, 'work_remote_id_change_type', **kwargs)
     return work_signature
 
 
@@ -61,7 +61,7 @@ def _build_group(task_args, **kwargs):
     for action_id, change_action in change_category.change_types.items():
         new_task_args = task_args.replace_argument_value(subtask_name, {'action_id': action_id}, action_id)
         subtask_identifier = f'work_action-{change_action}-{execution_id}'
-        change_type_signature = Signature.for_subtask(subtask_identifier, subtask_name, new_task_args, **kwargs)
+        change_type_signature = SubtaskSignature(subtask_identifier, subtask_name, new_task_args, **kwargs)
         signatures.append(change_type_signature)
     tuple_signatures = tuple(signatures)
     return group(*tuple_signatures)

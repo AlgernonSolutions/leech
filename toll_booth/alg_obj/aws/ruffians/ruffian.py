@@ -138,7 +138,7 @@ class Ruffian:
             if pending_task is None:
                 return
             task_connection = pending_task['connection']
-            has_results = task_connection.poll(1)
+            has_results = task_connection.poll()
             if has_results is False:
                 # client.record_activity_task_heartbeat(
                 #   taskToken=pending_task['token']

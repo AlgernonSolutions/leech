@@ -28,14 +28,15 @@ class Decision:
         return self._attributes_name
 
 
-class ScheduleLambda(Decision):
-    def __init__(self, function_name, task_args):
-        execution_id = uuid.uuid4().hex
+class StartLambda(Decision):
+    def __init__(self, lambda_id, function_name, task_args, **kwargs):
         lambda_attributes = {
-            'id': execution_id,
+            'id': lambda_id,
             'name': function_name,
-            'input': json.dumps(task_args, cls=AlgEncoder)
+            'input': task_args
         }
+        if 'control' in kwargs:
+            lambda_attributes['control'] = kwargs['control']
         attributes_name = 'scheduleLambdaFunctionDecisionAttributes'
         super().__init__('ScheduleLambdaFunction', lambda_attributes, attributes_name)
 
@@ -48,7 +49,7 @@ class ScheduleLambda(Decision):
         return self.__getitem__('name')
 
     @property
-    def input(self):
+    def input_args(self):
         return self.__getitem__('input')
 
 

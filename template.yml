@@ -69,6 +69,16 @@ Resources:
       Timeout: 300
       MemorySize: 448
 
+  lambdaLabor:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
+      FunctionName: leech-lambda-labor
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+
   vpclabor:
     Type: AWS::Serverless::Function
     Properties:

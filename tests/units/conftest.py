@@ -19,6 +19,12 @@ from tests.units.test_data.transform_results import generate_transform_results
 from tests.units.test_data.vertex_generator import generate_potential_vertex
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
+pytest_plugins = [
+    'tests.units.conftests.mock_boto',
+    'tests.units.conftests.environments',
+    'tests.units.conftests.mock_swf',
+]
+
 
 @pytest.fixture(scope='session')
 def blank_table():

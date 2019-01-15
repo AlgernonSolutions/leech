@@ -30,3 +30,19 @@ def labor(event, context):
 
     ruffian = Ruffian.build(context, **event)
     ruffian.labor()
+
+
+@lambda_logged
+@rough_work
+def lambda_labor(event, context):
+    from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
+
+    task_name = event['task_name']
+    task_args = event['task_args']
+    task_modules = [fungi_tasks]
+    for task_module in task_modules:
+        task_fn = getattr(task_module, task_name, None)
+        if task_fn:
+            results = task_fn(**task_args)
+            return results
+    raise NotImplementedError('could not find a registered task for type: %s' % task_name)

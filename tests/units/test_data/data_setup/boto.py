@@ -276,4 +276,6 @@ def intercept(*args, **kwargs):
             return credible_fe.handler(payload, mock_context.context)
     if operation_name == 'SendMessageBatch':
         return None
+    if operation_name == 'ListActivityTypes':
+        return
     raise NotImplementedError(f'cannot find an intercept command for {args}')
