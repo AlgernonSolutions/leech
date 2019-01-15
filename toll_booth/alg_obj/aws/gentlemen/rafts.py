@@ -180,10 +180,10 @@ class SubtaskSignature(Signature):
 
 class ActivitySignature(Signature):
     def __init__(self, task_identifier, task_type, task_args, task_list=None, **kwargs):
-        if not task_list:
-            task_list = kwargs['work_history'].flow_id
-        version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
+        if not task_list:
+            task_list = config.get('task_list', kwargs['work_history'].flow_id)
+        version = getattr(kwargs['versions'], 'task_versions')[task_type]
         cls_kwargs = self.generate_signature_status(task_identifier, kwargs['activities'], **kwargs)
         super().__init__(task_type, version, config, task_identifier, task_args, **cls_kwargs)
         self._task_list = task_list
