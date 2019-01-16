@@ -64,12 +64,14 @@ class Ruffian:
 
     @classmethod
     def build(cls, context, domain_name, work_list, **kwargs):
-        warn_seconds = kwargs.get('warn_seconds', 45)
+        warn_seconds = kwargs.get('warn_seconds', 120)
         warn_level = (warn_seconds * 1000)
         return cls(domain_name, work_list, warn_level, context)
 
     def _check_watch(self):
-        return self._context.get_remaining_time_in_millis()
+        time_remaining = self._context.get_remaining_time_in_millis()
+        logging.info(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
+        return time_remaining
 
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
