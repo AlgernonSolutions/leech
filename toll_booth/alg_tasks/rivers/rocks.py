@@ -56,8 +56,7 @@ def workflow(workflow_name):
             decisions = MadeDecisions(work_history.task_token)
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
-                    # mark_ruffian = _conscript_ruffian(work_history, decision, configs)
-                    mark_ruffian = None
+                    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
                     if mark_ruffian:
                         for marker in mark_ruffian:
                             decisions.add_decision(marker)
