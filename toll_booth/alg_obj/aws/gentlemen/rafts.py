@@ -59,7 +59,7 @@ class Signature:
             return checkpoints[identifier]
         return None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, task_args, **kwargs):
         if self._back_off_status is True:
             return
         if self._is_complete:
@@ -70,11 +70,11 @@ class Signature:
             if self._fail_count != back_off_count:
                 self._back_off(**kwargs)
                 return
-            self._start(**kwargs)
+            self._start(task_args=task_args, **kwargs)
             return
         if self._is_started and not self._is_failed:
             return
-        self._start(**kwargs)
+        self._start(task_args=task_args, **kwargs)
 
     def _back_off(self, **kwargs):
         decisions = kwargs['decisions']
@@ -90,10 +90,10 @@ class Signature:
         start_timer = StartTimer('error_back_off', back_off, details)
         decisions.append(start_timer)
 
-    def _start(self, **kwargs):
+    def _start(self, task_args, **kwargs):
         decisions = kwargs['decisions']
         self._check_concurrency(**kwargs)
-        start_operation = self._build_start(**kwargs)
+        start_operation = self._build_start(task_args=task_args, **kwargs)
         decisions.append(start_operation)
 
     def _build_start(self, **kwargs):
@@ -222,10 +222,10 @@ class Chain:
         chain_results = {}
         for signature in self._signatures:
             if not signature.is_started:
-                signature(task_args, **kwargs)
+                signature(task_args=task_args, **kwargs)
                 return
             if signature.is_failed:
-                signature(task_args, **kwargs)
+                signature(task_args=task_args, **kwargs)
                 return
             if not signature.is_complete and not signature.is_failed:
                 return
@@ -281,7 +281,7 @@ class Group:
         for signature in self._signatures:
             if not signature.is_started:
                 try:
-                    signature(task_args, **kwargs)
+                    signature(task_args=task_args, **kwargs)
                 except ConcurrencyExceededException:
                     logging.warning(f'reached maximum concurrency running group, will retry as tasks finish')
                     return
@@ -290,7 +290,7 @@ class Group:
             return
         for signature in self._signatures:
             if signature.is_failed:
-                signature(task_args, **kwargs)
+                signature(task_args=task_args, **kwargs)
                 group_finished = False
                 continue
             if not signature.is_complete and not signature.is_failed:
