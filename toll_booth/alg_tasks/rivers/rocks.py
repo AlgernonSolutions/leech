@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker
@@ -71,6 +73,7 @@ def task(task_name):
     def task_wrapper(production_fn):
         def wrapper(**kwargs):
             results = production_fn(**kwargs)
+            logging.info(f'completed task: {task_name}, results: {results}')
             if results is None:
                 return results
             stored_results = StoredData.from_object(task_name, results, full_unpack=False)
