@@ -1,8 +1,6 @@
 import json
 import logging
 
-import boto3
-
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
@@ -17,6 +15,7 @@ def rough_work(production_fn):
 def lambda_work(production_fn):
     def wrapper(event, context):
         task_name = event['task_name']
+        logging.info(f'raw task_args for {task_name} are {event["task_args"]}')
         task_args = json.loads(event['task_args'], cls=AlgDecoder)
         register_results = event.get('register_results', False)
         if register_results is True:
