@@ -61,10 +61,10 @@ class Ruffian:
         self._connections = []
 
     @classmethod
-    def build(cls, context, domain_name, work_lists, **kwargs):
+    def build(cls, context, domain_name, work_list, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 45)
         warn_level = (warn_seconds * 1000)
-        return cls(domain_name, work_lists, warn_level, context)
+        return cls(domain_name, work_list, warn_level, context)
 
     def _check_watch(self):
         return self._context.get_remaining_time_in_millis()
