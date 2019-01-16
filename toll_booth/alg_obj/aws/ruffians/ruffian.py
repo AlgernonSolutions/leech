@@ -74,10 +74,8 @@ class Ruffian:
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
-        while True:
-            time_remaining = self._check_watch()
-            if time_remaining <= self._warn_level:
-                return
+        time_remaining = self._check_watch()
+        while time_remaining >= self._warn_level:
             general = General(self._domain_name, self._work_list)
             try:
                 general.command()
@@ -87,6 +85,7 @@ class Ruffian:
                 import traceback
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
+            time_remaining = self._check_watch()
 
     def labor(self):
         work_list_name = self._work_list['list_name']
@@ -105,7 +104,10 @@ class Ruffian:
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
             if len(self._pending_tasks) <= self._work_list['number_threads']:
-                poll_results = self._poll_for_tasks()
+                try:
+                    poll_results = self._poll_for_tasks()
+                except ReadTimeoutError:
+                    continue
                 if 'taskToken' in poll_results:
                     queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()

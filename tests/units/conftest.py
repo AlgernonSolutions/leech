@@ -287,6 +287,7 @@ def stub_potential_vertex(request):
 @pytest.fixture
 def timed_mock_context():
     context = MagicMock(name='context')
+    context.__reduce__ = cheap_mock
     context.function_name = 'test_function'
     context.invoked_function_arn = 'test_function_arn'
     context.aws_request_id = '12344_request_id'

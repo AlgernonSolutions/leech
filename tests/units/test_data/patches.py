@@ -17,6 +17,8 @@ leech_driver_base = 'toll_booth.alg_obj.aws.sapper.dynamo_driver.LeechDriver'
 schema_entry_patch = 'toll_booth.alg_obj.graph.schemata.schema_entry.SchemaEntry'
 version_path = 'toll_booth.alg_obj.aws.gentlemen.tasks.Versions._retrieve'
 config_path = 'toll_booth.alg_obj.aws.gentlemen.tasks.LeechConfig.get'
+decision_polling = 'toll_booth.alg_obj.aws.gentlemen.command.General._poll_for_decision'
+activity_polling = 'toll_booth.alg_obj.aws.gentlemen.labor.Laborer.poll_for_tasks'
 
 base_paths = {
     'leech_driver': 'toll_booth.alg_obj.aws.sapper.dynamo_driver.LeechDriver',
@@ -31,6 +33,12 @@ def get_version_patch():
 
 def get_config_patch():
     return patch(config_path)
+
+
+def get_poll_patch(for_decision=False):
+    if for_decision:
+        return patch(decision_polling)
+    return patch(activity_polling)
 
 
 def get_boto_patch():
