@@ -14,6 +14,8 @@ def rough_work(production_fn):
 
 def lambda_work(production_fn):
     def wrapper(event, context):
+        logging.info(f'started a lambda_work decorated function: {production_fn}, event: {event}')
+
         task_name = event['task_name']
         logging.info(f'raw task_args for {task_name} are {event["task_args"]}')
         task_args = json.loads(event['task_args'], cls=AlgDecoder)

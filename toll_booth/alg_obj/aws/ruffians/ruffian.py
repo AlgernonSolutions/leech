@@ -155,7 +155,7 @@ class Ruffian:
             swf_payload.update({'reason': results['reason'], 'details': results['details']})
             swf_client.respond_activity_task_failed(**swf_payload)
         else:
-            swf_payload.update({'result': results['result']})
+            swf_payload.update({'result': results})
             swf_client.respond_activity_task_completed(**swf_payload)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
