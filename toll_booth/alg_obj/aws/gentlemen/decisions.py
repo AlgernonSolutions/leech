@@ -60,14 +60,14 @@ class StartLambda(Decision):
 
 
 class StartSubtask(Decision):
-    def __init__(self, subtask_identifier, subtask_type, flow_input, lambda_role, **kwargs):
+    def __init__(self, subtask_identifier, subtask_type, task_args, lambda_role, **kwargs):
         subtask_attributes = {
             'workflowType': {
                 'name': subtask_type,
                 'version': kwargs['version']
             },
             'workflowId': subtask_identifier,
-            'input': json.dumps(flow_input, cls=AlgEncoder),
+            'input': json.dumps(task_args, cls=AlgEncoder),
             'taskList': {'name': kwargs.get('task_list', subtask_identifier)},
             'lambdaRole': lambda_role
         }
