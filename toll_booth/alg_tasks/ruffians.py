@@ -22,7 +22,7 @@ def lambda_work(production_fn):
             try:
                 results = production_fn(task_name, task_args)
                 results = json.dumps(results, cls=AlgEncoder)
-                return json.dumps({'fail': False, 'result': results})
+                return results
             except Exception as e:
                 import traceback
 
