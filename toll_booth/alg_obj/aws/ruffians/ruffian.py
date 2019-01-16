@@ -57,7 +57,7 @@ class Ruffian:
         self._work_list = work_list
         self._warn_level = warn_level
         self._context = context
-        self._pending_tasks = []
+        self._pending_tasks = {}
         self._connections = []
 
     @classmethod

@@ -40,7 +40,7 @@ class StartLambda(Decision):
                 'task_name': function_name,
                 'task_args': task_args,
                 'register_results': False
-            })
+            }, cls=AlgEncoder)
         if kwargs.get('control', None) is not None:
             lambda_attributes['control'] = kwargs['control']
         attributes_name = 'scheduleLambdaFunctionDecisionAttributes'
@@ -131,7 +131,7 @@ class StartActivity(Decision):
                 'task_name': activity_name,
                 'task_args': task_args,
                 'register_results': True
-            })
+            }, cls=AlgEncoder)
         if 'control' in kwargs:
             activity_attributes['control'] = json.dumps(kwargs['control'], cls=AlgEncoder)
         attributes_name = 'scheduleActivityTaskDecisionAttributes'

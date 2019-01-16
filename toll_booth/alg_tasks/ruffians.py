@@ -20,7 +20,7 @@ def lambda_work(production_fn):
 
         task_name = event['task_name']
         logging.info(f'raw task_args for {task_name} are {event["task_args"]}')
-        task_args = json.loads(event['task_args'], cls=AlgDecoder)
+        task_args = json.loads(json.dumps(event['task_args']), cls=AlgDecoder)
         register_results = event.get('register_results', False)
         if register_results is True:
             try:
@@ -30,7 +30,7 @@ def lambda_work(production_fn):
             except Exception as e:
                 import traceback
 
-                logging.info(f'failure running lambda task named {task_name}, task_args {task_args}, cause: {e.args}')
+                logging.info(f'failure running lambda task named {task_name}, task_args {task_args}, cause: {e.args[0]}')
                 trace = traceback.format_exc()
                 return json.dumps({'fail': True, 'reason': e.args, 'details': trace})
         results = production_fn(task_name, task_args)

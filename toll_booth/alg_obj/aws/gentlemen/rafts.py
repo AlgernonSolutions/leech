@@ -119,8 +119,7 @@ class Signature:
 
     @property
     def start_args(self):
-        flow_input = json.dumps(self._task_args, cls=AlgEncoder)
-        start_args = (self._fn_identifier, self._fn_name, flow_input)
+        start_args = (self._fn_identifier, self._fn_name, self._task_args)
         return start_args
 
     @property
