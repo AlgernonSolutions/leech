@@ -34,7 +34,7 @@ def lambda_work(production_fn):
                 trace = traceback.format_exc()
                 return json.dumps({'fail': True, 'reason': str(e.args), 'details': trace})
         results = production_fn(task_name, task_args)
-        return results
+        return json.dumps(results, cls=AlgEncoder)
     return wrapper
 
 

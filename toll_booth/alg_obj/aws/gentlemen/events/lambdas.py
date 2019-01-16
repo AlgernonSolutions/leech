@@ -39,6 +39,15 @@ class LambdaExecution(Execution):
     def run_id(self):
         return self._run_id
 
+    @property
+    def results(self):
+        import json
+        from toll_booth.alg_obj.serializers import AlgDecoder
+        for event in self._events:
+            if event.event_type == steps['completed']:
+                return json.loads(event.event_attributes['result'], cls=AlgDecoder)
+        return None
+
 
 class LambdaOperation(Operation):
     def __init__(self, operation_id: str, run_ids: str, fn_name: str, task_args: TaskArguments, events: [Event]):
