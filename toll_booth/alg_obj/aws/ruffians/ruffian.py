@@ -104,7 +104,8 @@ class Ruffian:
         while time_remaining >= self._warn_level:
             if len(self._pending_tasks) <= self._work_list['number_threads']:
                 poll_results = self._poll_for_tasks()
-                queue.put({'task_type': 'new_task', 'poll_response': poll_results})
+                if 'taskToken' in poll_results:
+                    queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
         queue.put(None)
         for thread in threads:
