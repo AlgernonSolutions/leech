@@ -67,7 +67,7 @@ class StartSubtask(Decision):
                 'version': kwargs['version']
             },
             'workflowId': subtask_identifier,
-            'input': flow_input,
+            'input': json.dumps(flow_input, cls=AlgEncoder),
             'taskList': {'name': kwargs.get('task_list', subtask_identifier)},
             'lambdaRole': lambda_role
         }

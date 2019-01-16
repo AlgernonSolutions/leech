@@ -127,6 +127,7 @@ class Ruffian:
                 return
             task_type = new_task['task_type']
             if task_type == 'new_task':
+                logging.info(f'received orders to dispatch a task: {new_task}')
                 poll_response = new_task['poll_response']
                 task_token = poll_response['taskToken']
                 task_args = {
@@ -136,12 +137,16 @@ class Ruffian:
                 pending = Thread(target=self._run_task, kwargs=task_args)
                 pending.start()
                 self._pending_tasks[task_token] = pending
+                logging.info(f'started the task in a thread, total pending tasks: {len(self._pending_tasks)}')
             if task_type == 'close_task':
+                logging.info(f'received orders to close a task thread: {new_task}')
                 task_token = new_task['task_token']
                 self._pending_tasks[task_token].join()
                 del(self._pending_tasks[task_token])
+                logging.info(f'closed out a task thread, total pending tasks: {len(self._pending_tasks)}')
 
     def _run_task(self, **kwargs):
+        logging.info(f'task thread started: {kwargs}')
         swf_client = boto3.client('swf')
         task_token = kwargs['poll_response']['taskToken']
         results = self._fire_task(**kwargs)
