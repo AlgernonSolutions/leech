@@ -155,7 +155,9 @@ class Signature:
         results = self._results
         if results is not None:
             results = json.loads(self._results, cls=AlgDecoder)
-        return {self._fn_name: results}
+        signature_results = {self._fn_name: results}
+        kwargs['task_args'].add_argument_values(signature_results)
+        return signature_results
 
 
 class SubtaskSignature(Signature):
@@ -274,7 +276,7 @@ class Group:
         return results
 
     def __call__(self, *args, **kwargs):
-        results = {}
+        group_results = {}
         group_started = True
         group_finished = True
         for signature in self._signatures:
@@ -295,10 +297,12 @@ class Group:
             if not signature.is_complete and not signature.is_failed:
                 group_finished = False
                 continue
-            results.update(signature.get_results(**kwargs))
+            results = signature.get_results(**kwargs)
+            kwargs['task_args'].add_argument_values(results)
+            group_results.update(results)
         if not group_finished:
             return
-        return results
+        return group_results
 
 
 def chain(*args):
