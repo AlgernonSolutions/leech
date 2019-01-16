@@ -40,11 +40,7 @@ class TestRuffian:
     @pytest.mark.usefixtures('mock_decision_poll')
     def test_ruffian_decider_graceful_exit(self, timed_mock_context):
         event = {
-            "work_list": {
-                "list_name": "credible",
-                "number_threads": 1,
-                "is_vpc": False
-            },
+            "work_list": "credible",
             "domain_name": "TheLeech",
             "warn_seconds": 275
         }

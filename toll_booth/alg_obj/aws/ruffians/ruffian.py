@@ -74,6 +74,7 @@ class Ruffian:
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
+        logging.info(f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
             general = General(self._domain_name, self._work_list)
@@ -89,7 +90,7 @@ class Ruffian:
 
     def labor(self):
         work_list_name = self._work_list['list_name']
-        logging.info(f'starting a worker to work task_list: {work_list_name}')
+        logging.info(f'starting up a ruffian as a worker for task_list: {work_list_name}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
         threads = []
         queue = Queue()
         labor_args = {
