@@ -26,9 +26,9 @@ class MockSwfEvent:
 
 
 _lambda_labor_params = [
-    ('get_remote_ids', """{"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {"fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/fungus!1547588514.708972.json"}}, "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/command_fungi!1547588517.265948.json"}}}}}"""),
-    ('get_local_ids', """{"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {"fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/fungus!1547588514.708972.json"}}, "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/command_fungi!1547588517.265948.json"}}}}}"""),
-    ('put_new_ids', """{"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {"fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/fungus!1547588514.708972.json"}}, "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/command_fungi!1547588517.265948.json"}}}}}"""),
+    ('get_remote_ids', '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"fungus": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/fungus!1547632256.888168.json"}}, "command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1547632257.494224.json"}}}}}'),
+    ('get_local_ids', '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"fungus": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/fungus!1547632256.888168.json"}}, "command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1547632257.494224.json"}}}}}'),
+    ('put_new_ids', '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"fungus": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/fungus!1547632610.605488.json"}}, "command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1547632611.220036.json"}}, "get_local_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_local_ids!1547614647.89166.json"}}, "get_remote_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_remote_ids!1547614625.421932.json"}}}}}'),
 ]
 
 
@@ -58,4 +58,4 @@ def mock_config():
 def lambda_labor_arg(request):
     params = request.param
     task_args = json.loads(params[1], cls=AlgDecoder)
-    return {'task_name': params[0], 'task_args': json.dumps(task_args, cls=AlgEncoder)}
+    return {'task_name': params[0], 'task_args': task_args}

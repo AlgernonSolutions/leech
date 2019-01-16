@@ -38,18 +38,6 @@ def lambda_work(production_fn):
     return wrapper
 
 
-def _manually_rehydrate_task_args(task_arg_dict):
-    from toll_booth.alg_obj.aws.snakes.snakes import StoredData
-    from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
-    arguments = {}
-    argument_values = task_arg_dict['value']
-    for operation_name, snake_dict in argument_values['_arguments'].items():
-        pointer = snake_dict['value']['pointer']
-        stored_data = StoredData.retrieve(pointer)
-        arguments[operation_name] = stored_data
-    return TaskArguments(arguments)
-
-
 @lambda_logged
 @rough_work
 def decide(event, context):
