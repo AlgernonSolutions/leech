@@ -179,7 +179,7 @@ class SubtaskSignature(Signature):
 
 
 class ActivitySignature(Signature):
-    def __init__(self, task_identifier, task_type, task_args, task_list=None, **kwargs):
+    def __init__(self, task_identifier, task_type, task_args=None, task_list=None, **kwargs):
         config = kwargs['configs'][('task', task_type)]
         if not task_list:
             task_list = config.get('task_list', kwargs['work_history'].flow_id)
@@ -189,7 +189,7 @@ class ActivitySignature(Signature):
         self._task_list = task_list
 
     def _build_start(self, **kwargs):
-        return StartActivity(*self.start_args, version=self.fn_version, task_list=self._task_list, **kwargs)
+        return StartActivity(*self.start_args, version=self.fn_version, task_list=self._task_list)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['activities']

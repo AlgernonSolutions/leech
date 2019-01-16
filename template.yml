@@ -94,116 +94,6 @@ Resources:
         SubnetIds:
           Ref: LeechVpcSn
 
-  monitor:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.work
-      FunctionName: leech-monitor
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 60
-      MemorySize: 448
-
-  monitorObject:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-monitor-object
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 300
-      MemorySize: 448
-      Events:
-        monitor:
-          Type: SQS
-          Properties:
-            Queue: arn:aws:sqs:us-east-1:803040539655:monitor
-            BatchSize: 10
-
-  extract:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-extract
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 60
-      MemorySize: 448
-      Events:
-        extraction:
-          Type: SQS
-          Properties:
-            Queue: arn:aws:sqs:us-east-1:803040539655:extraction
-            BatchSize: 10
-
-  transform:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-transform
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 120
-      MemorySize: 448
-      Events:
-        transformation:
-          Type: SQS
-          Properties:
-            Queue: arn:aws:sqs:us-east-1:803040539655:transform
-            BatchSize: 10
-
-  assimilate:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-assimilate
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 120
-      MemorySize: 448
-      Events:
-        assimilation:
-          Type: SQS
-          Properties:
-            Queue: arn:aws:sqs:us-east-1:803040539655:assimilate
-            BatchSize: 10
-
-  load:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-load
-      Role:
-        Ref: LambdaRoleArn
-      VpcConfig:
-        SecurityGroupIds:
-          Ref: LeechVpcSg
-        SubnetIds:
-          Ref: LeechVpcSn
-      Timeout: 300
-      MemorySize: 448
-      Events:
-        loading:
-          Type: SQS
-          Properties:
-            Queue: arn:aws:sqs:us-east-1:803040539655:load
-            BatchSize: 10
-
-  audit:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.queued
-      FunctionName: leech-audit
-      Role:
-        Ref: LambdaRoleArn
-      VpcConfig:
-        SecurityGroupIds:
-          Ref: LeechVpcSg
-        SubnetIds:
-          Ref: LeechVpcSn
-      Timeout: 300
-      MemorySize: 448
-
   aphid:
     Type: AWS::Serverless::Function
     Properties:
@@ -216,16 +106,6 @@ Resources:
           Ref: LeechVpcSg
         SubnetIds:
           Ref: LeechVpcSn
-      Timeout: 300
-      MemorySize: 448
-
-  explode:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.exploded
-      FunctionName: leech-explode
-      Role:
-        Ref: LambdaRoleArn
       Timeout: 300
       MemorySize: 448
 
@@ -257,34 +137,4 @@ Resources:
       Role:
         Ref: LambdaRoleArn
       Timeout: 300
-      MemorySize: 448
-
-  propagate:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.propagate
-      FunctionName: leech-propagate
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 300
-      MemorySize: 448
-
-  creep:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.creep
-      FunctionName: leech-creep
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 300
-      MemorySize: 448
-
-  fruit:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.fruit
-      FunctionName: leech-fruit
-      Role:
-        Ref: LambdaRoleArn
-      Timeout: 600
       MemorySize: 448

@@ -25,6 +25,8 @@ def lambda_work(production_fn):
                 return json.dumps({'fail': False, 'result': results})
             except Exception as e:
                 import traceback
+
+                logging.info(f'failure running lambda task named {task_name}, task_args {task_args}, cause: {e.args}')
                 trace = traceback.format_exc()
                 return json.dumps({'fail': True, 'reason': e.args, 'details': trace})
         results = production_fn(task_name, task_args)
