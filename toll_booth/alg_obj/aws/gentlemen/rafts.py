@@ -229,7 +229,7 @@ class Chain:
                 return
             if not signature.is_complete and not signature.is_failed:
                 return
-            results = signature.get_results(**kwargs)
+            results = signature.get_results(task_args=task_args, **kwargs)
             chain_results = results
             task_args.add_argument_values(results)
         return chain_results
