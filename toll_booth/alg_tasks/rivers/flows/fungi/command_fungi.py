@@ -64,7 +64,7 @@ def _build_group(names, task_args, **kwargs):
     for remote_id_value in remote_id_values['remote_id_values']:
         subtask_identifier = f'work_id-{remote_id_value}-{execution_id}'
         new_task_args = task_args.replace_argument_value(subtask_name, {'id_value': remote_id_value}, remote_id_value)
-        work_remote_id_signature = SubtaskSignature(subtask_identifier, subtask_name, new_task_args, **kwargs)
+        work_remote_id_signature = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
         work_remote_ids_signatures.append(work_remote_id_signature)
     tuple_signatures = tuple(work_remote_ids_signatures)
     return group(*tuple_signatures)
