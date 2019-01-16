@@ -21,7 +21,7 @@ class RuffianRoost:
         execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, client)]
         for work_list in work_lists:
             list_machine_arn = ruffian_machine_arn
-            if work_lists.get('is_vpc', False) is True:
+            if work_list.get('is_vpc', False) is True:
                 list_machine_arn = vpc_ruffian_machine_arn
             execution_arns.append(
                 cls._start_machine(list_machine_arn, work_list, domain_name, client)

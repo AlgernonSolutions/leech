@@ -7,6 +7,8 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 def rough_work(production_fn):
     def wrapper(event, context):
+        logging.info(f'started a rough_work decorated function: {production_fn}, event: {event}')
+
         event = json.loads(json.dumps(event, cls=AlgEncoder), cls=AlgDecoder)
         return production_fn(event, context)
     return wrapper
@@ -43,7 +45,6 @@ def decide(event, context):
 
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
-    event['work_lists'] = event['decider_list']
     ruffian = Ruffian.build(context, **event)
     ruffian.supervise()
 
