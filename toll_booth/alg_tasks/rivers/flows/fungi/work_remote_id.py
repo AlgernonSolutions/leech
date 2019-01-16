@@ -20,7 +20,7 @@ def work_remote_id(task_args, **kwargs):
         signatures.append(category_signature)
     tuple_signatures = tuple(signatures)
     great_group = group(*tuple_signatures)
-    group_results = great_group(**kwargs)
+    group_results = great_group(task_args=task_args, **kwargs)
     if group_results is None:
         return
     decisions.append(CompleteWork())

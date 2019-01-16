@@ -57,7 +57,7 @@ def _build_change_data_group(task_args, **kwargs):
     remote_actions = change_actions.get(change_action.action, {})
     for remote_change in remote_actions:
         new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change)
-        signature = LambdaSignature(fn_identifier, subtask_name, new_task_args, **kwargs)
+        signature = LambdaSignature(fn_identifier, subtask_name, task_args=new_task_args, **kwargs)
         signatures.append(signature)
     if not signatures:
         return None

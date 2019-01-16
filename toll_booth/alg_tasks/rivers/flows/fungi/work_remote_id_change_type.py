@@ -61,7 +61,7 @@ def _build_group(task_args, **kwargs):
     for action_id, change_action in change_category.change_types.items():
         new_task_args = task_args.replace_argument_value(subtask_name, {'action_id': action_id}, action_id)
         subtask_identifier = f'work_action-{change_action}-{execution_id}'
-        change_type_signature = SubtaskSignature(subtask_identifier, subtask_name, new_task_args, **kwargs)
+        change_type_signature = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
         signatures.append(change_type_signature)
     tuple_signatures = tuple(signatures)
     return group(*tuple_signatures)
