@@ -159,8 +159,7 @@ class Ruffian:
                 swf_payload.update({'reason': results['reason'], 'details': results['details']})
                 swf_client.respond_activity_task_failed(**swf_payload)
         except TypeError:
-            swf_payload.update({'result': results})
-            swf_payload = json.dumps(swf_payload, cls=AlgEncoder)
+            swf_payload.update({'result': json.dumps(results, cls=AlgEncoder)})
             swf_client.respond_activity_task_completed(**swf_payload)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
