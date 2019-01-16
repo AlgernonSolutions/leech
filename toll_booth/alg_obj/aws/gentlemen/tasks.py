@@ -5,7 +5,7 @@ from jsonschema import validate
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
 class Task:

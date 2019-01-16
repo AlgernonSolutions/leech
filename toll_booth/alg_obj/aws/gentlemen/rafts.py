@@ -60,20 +60,30 @@ class Signature:
         return None
 
     def __call__(self, *args, task_args, **kwargs):
+        logging.info(f'calling a signature, name: {self._fn_name}, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         if self._back_off_status is True:
+            logging.info(f'signature {self._fn_name} is backing off due to failures')
             return
         if self._is_complete:
+            logging.info(f'signature {self._fn_name} is completed, results: {self._results}')
             self._set_checkpoint(**kwargs)
             return self._results
         if self._is_failed:
+            logging.info(f'signature {self._fn_name} has failed')
             back_off_count = self._back_off_status
+            logging.info(f'signature {self._fn_name} has back_off_count: {back_off_count}')
             if self._fail_count != back_off_count:
+                logging.info(f'based on the back_off_count: {back_off_count} and the fail_count: {self._fail_count}, '
+                             f'signature: {self._fn_name} needs to be backed off')
                 self._back_off(**kwargs)
                 return
+            logging.info(f'signature {self._fn_name} has been backed off already, can be rerun now, invoking_kwargs: {kwargs}')
             self._start(task_args=task_args, **kwargs)
             return
         if self._is_started and not self._is_failed:
+            logging.info(f'signature: {self._fn_name} is has started, and has not failed, let it run')
             return
+        logging.info(f'signature: {self._fn_name} is ready to be run, starting it')
         self._start(task_args=task_args, **kwargs)
 
     def _back_off(self, **kwargs):
@@ -218,20 +228,35 @@ class Chain:
     def __init__(self, signatures):
         self._signatures = signatures
 
+    def get_results(self, **kwargs):
+        logging.info(f'calling the get_results method on a chain with signatures: {self._signatures}, invoking_kwargs: {kwargs}')
+        results = {}
+        for signature in self._signatures:
+            results = signature.get_results(**kwargs)
+        logging.info(f'the returned results for the chain with signatures: {self._signatures} are {results}')
+        return results
+
     def __call__(self, *args, task_args, **kwargs):
+        logging.info(f'calling a chain with args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         chain_results = {}
         for signature in self._signatures:
+            logging.info(f'starting a signature within a chain: {signature}')
             if not signature.is_started:
+                logging.info(f'signature: {signature} is not started yet, so let us start it')
                 signature(task_args=task_args, **kwargs)
                 return
             if signature.is_failed:
+                logging.info(f'signature: {signature} has failed, let us retry it')
                 signature(task_args=task_args, **kwargs)
                 return
             if not signature.is_complete and not signature.is_failed:
+                logging.info(f'signature: {signature} is neither failed nor completed, hopefully running, we will check later')
                 return
             results = signature.get_results(task_args=task_args, **kwargs)
+            logging.info(f'signature: {signature} has completed with results: {results}')
             chain_results = results
             task_args.add_argument_values(results)
+        logging.info(f'the chain has completed, chain_results: {chain_results}')
         return chain_results
 
 
@@ -269,17 +294,22 @@ class Group:
         return True
 
     def get_results(self, **kwargs):
+        logging.info(f'called get results on a group')
         results = {}
         for signature in self._signatures:
             results.update(signature.get_results(**kwargs))
+        logging.info(f'group results are: {results}')
         return results
 
     def __call__(self, *args, task_args, **kwargs):
+        logging.info(f'called a group, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         group_results = {}
         group_started = True
         group_finished = True
+        logging.info(f'checking to see which signatures in the group are running currently')
         for signature in self._signatures:
             if not signature.is_started:
+                logging.info(f'signature: {signature} is not running, let us start it')
                 try:
                     signature(task_args=task_args, **kwargs)
                 except ConcurrencyExceededException:
@@ -287,20 +317,25 @@ class Group:
                     return
                 group_started = False
         if not group_started:
+            logging.info(f'not all the signatures in a group had been started, so no point checking the results yet')
             return
         for signature in self._signatures:
             if signature.is_failed:
+                logging.info(f'signature: {signature} in a group has failed, retry it')
                 signature(task_args=task_args, **kwargs)
                 group_finished = False
                 continue
             if not signature.is_complete and not signature.is_failed:
+                logging.info(f'signature: {signature} is not complete, nor failed, hopefully running, come back later')
                 group_finished = False
                 continue
             results = signature.get_results(**kwargs)
             task_args.add_argument_values(results)
             group_results.update(results)
         if not group_finished:
+            logging.info(f'some signatures in the group had not completed, do not check results yet')
             return
+        logging.info(f'all the signatures in this group are completed, return the results: {group_results}')
         return group_results
 
 
