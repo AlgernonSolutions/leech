@@ -160,19 +160,18 @@ class Ruffian:
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
     def _fire_task(self, **kwargs):
-        from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
+        from toll_booth.alg_obj.serializers import AlgDecoder
 
         client = boto3.client('lambda')
         task_list = self._work_lists['list_name']
         poll_response = kwargs['poll_response']
         task_name = poll_response['activityType']['name']
         task_args = poll_response['input']
-        lambda_payload = {'task_name': task_name, 'task_args': task_args, 'register_results': True}
         logging.info(f'firing a controlled activity for {task_list}, named {task_name} with args: {task_args}')
         response = client.invoke(
             FunctionName=os.getenv('LABOR_FUNCTION', 'leech-lambda-labor'),
             InvocationType='RequestResponse',
-            Payload=json.dumps(lambda_payload, cls=AlgEncoder)
+            Payload=poll_response['input']
         )
         raw_result = response['Payload'].read().decode()
         results = json.loads(json.loads(raw_result), cls=AlgDecoder)

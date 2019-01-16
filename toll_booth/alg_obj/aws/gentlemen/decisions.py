@@ -38,7 +38,8 @@ class StartLambda(Decision):
         if task_args:
             lambda_attributes['input'] = json.dumps({
                 'task_name': function_name,
-                'task_args': task_args
+                'task_args': task_args,
+                'register_results': False
             })
         if kwargs.get('control', None) is not None:
             lambda_attributes['control'] = kwargs['control']
@@ -116,16 +117,21 @@ class StartSubtask(Decision):
 
 
 class StartActivity(Decision):
-    def __init__(self, activity_id, activity_name, input_string, **kwargs):
+    def __init__(self, activity_id, activity_name, task_args=None, **kwargs):
         activity_attributes = {
             'activityType': {
                 'name': activity_name,
                 'version': kwargs.get('version', '1')
             },
             'taskList': {'name': kwargs.get('task_list', 'Leech')},
-            'activityId': activity_id,
-            'input': input_string
+            'activityId': activity_id
         }
+        if task_args:
+            activity_attributes['input'] = json.dumps({
+                'task_name': activity_name,
+                'task_args': task_args,
+                'register_results': True
+            })
         if 'control' in kwargs:
             activity_attributes['control'] = json.dumps(kwargs['control'], cls=AlgEncoder)
         attributes_name = 'scheduleActivityTaskDecisionAttributes'

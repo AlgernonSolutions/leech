@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -5,6 +6,7 @@ import pytest
 
 from tests.units.test_data import patches
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
 class MockSwfEvent:
@@ -28,6 +30,7 @@ _lambda_labor_params = [
     ('get_local_ids', """{"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {"fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/fungus!1547588514.708972.json"}}, "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/command_fungi!1547588517.265948.json"}}}}}"""),
     ('put_new_ids', """{"_alg_class": "<class 'toll_booth.alg_obj.aws.gentlemen.tasks.TaskArguments'>", "value": {"_arguments": {"fungus": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/fungus!1547588514.708972.json"}}, "command_fungi": {"_alg_class": "<class 'toll_booth.alg_obj.aws.snakes.snakes.StoredData'>", "value": {"pointer": "the-leech#cache/command_fungi!1547588517.265948.json"}}}}}"""),
 ]
+
 
 @pytest.fixture
 def initial_decision_history():
@@ -54,4 +57,5 @@ def mock_config():
 @pytest.fixture(params=_lambda_labor_params)
 def lambda_labor_arg(request):
     params = request.param
-    return {'task_name': params[0], 'task_args': params[1]}
+    task_args = json.loads(params[1], cls=AlgDecoder)
+    return {'task_name': params[0], 'task_args': json.dumps(task_args, cls=AlgEncoder)}
