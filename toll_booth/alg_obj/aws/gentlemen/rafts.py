@@ -4,7 +4,8 @@ import random
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import StartActivity, StartTimer, StartSubtask, RecordMarker, \
     StartLambda
-from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
+from toll_booth.alg_obj.serializers import AlgDecoder
 
 
 class ConcurrencyExceededException(Exception):
@@ -13,11 +14,12 @@ class ConcurrencyExceededException(Exception):
 
 
 class Signature:
-    def __init__(self, name, version, config, identifier, **kwargs):
+    def __init__(self, name, version, config, identifier, task_args: TaskArguments = None, **kwargs):
         self._fn_name = name
         self._fn_version = version
         self._fn_identifier = identifier
         self._config = config
+        self._task_args = task_args
         self._is_started = kwargs['is_started']
         self._is_complete = kwargs['is_complete']
         self._is_failed = kwargs['is_failed']
@@ -59,7 +61,7 @@ class Signature:
             return checkpoints[identifier]
         return None
 
-    def __call__(self, *args, task_args, **kwargs):
+    def __call__(self, *args, task_args: TaskArguments, **kwargs):
         logging.info(f'calling a signature, name: {self._fn_name}, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         if self._back_off_status is True:
             logging.info(f'signature {self._fn_name} is backing off due to failures')
@@ -176,16 +178,18 @@ class Signature:
 
 
 class SubtaskSignature(Signature):
-    def __init__(self, subtask_identifier, subtask_type, task_list=None, **kwargs):
+    def __init__(self, subtask_identifier, subtask_type, task_args: TaskArguments = None, task_list=None, **kwargs):
         if not task_list:
             task_list = subtask_identifier
         version = getattr(kwargs['versions'], 'workflow_versions')[subtask_type]
         config = kwargs['configs'][('workflow', subtask_type)]
         cls_kwargs = self.generate_signature_status(subtask_identifier, kwargs['sub_tasks'], **kwargs)
-        super().__init__(subtask_type, version, config, subtask_identifier, **cls_kwargs)
+        super().__init__(subtask_type, version, config, subtask_identifier, task_args, **cls_kwargs)
         self._task_list = task_list
 
-    def _build_start(self, task_args, **kwargs):
+    def _build_start(self, task_args: TaskArguments, **kwargs):
+        if self._task_args:
+            task_args.merge_other_task_arguments(self._task_args)
         return StartSubtask(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list, **kwargs)
 
     def _check_concurrency(self, **kwargs):
@@ -195,16 +199,18 @@ class SubtaskSignature(Signature):
 
 
 class ActivitySignature(Signature):
-    def __init__(self, task_identifier, task_type, task_list=None, **kwargs):
+    def __init__(self, task_identifier, task_type, task_args: TaskArguments = None, task_list=None, **kwargs):
         config = kwargs['configs'][('task', task_type)]
         if not task_list:
             task_list = config.get('task_list', kwargs['work_history'].flow_id)
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         cls_kwargs = self.generate_signature_status(task_identifier, kwargs['activities'], **kwargs)
-        super().__init__(task_type, version, config, task_identifier, **cls_kwargs)
+        super().__init__(task_type, version, config, task_identifier, task_args, **cls_kwargs)
         self._task_list = task_list
 
-    def _build_start(self, task_args, **kwargs):
+    def _build_start(self, task_args: TaskArguments, **kwargs):
+        if self._task_args:
+            task_args.merge_other_task_arguments(self._task_args)
         return StartActivity(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list)
 
     def _check_concurrency(self, **kwargs):
@@ -214,14 +220,16 @@ class ActivitySignature(Signature):
 
 
 class LambdaSignature(Signature):
-    def __init__(self, lambda_identifier, task_type, **kwargs):
+    def __init__(self, lambda_identifier, task_type, task_args: TaskArguments = None, **kwargs):
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
         cls_kwargs = self.generate_signature_status(lambda_identifier, kwargs['lambdas'], **kwargs)
-        super().__init__(task_type, version, config, lambda_identifier, **cls_kwargs)
+        super().__init__(task_type, version, config, lambda_identifier, task_args, **cls_kwargs)
         self._control = kwargs.get('control', None)
 
-    def _build_start(self, task_args, **kwargs):
+    def _build_start(self, task_args: TaskArguments, **kwargs):
+        if self._task_args:
+            task_args.merge_other_task_arguments(self._task_args)
         return StartLambda(*self.start_args, task_args=task_args, control=self._control)
 
     def _check_concurrency(self, **kwargs):
@@ -242,7 +250,7 @@ class Chain:
         logging.info(f'the returned results for the chain with signatures: {self._signatures} are {results}')
         return results
 
-    def __call__(self, *args, task_args, **kwargs):
+    def __call__(self, *args, task_args: TaskArguments, **kwargs):
         logging.info(f'calling a chain with args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         chain_results = {}
         for signature in self._signatures:
@@ -307,7 +315,7 @@ class Group:
         logging.info(f'group results are: {results}')
         return results
 
-    def __call__(self, *args, task_args, **kwargs):
+    def __call__(self, *args, task_args: TaskArguments, **kwargs):
         logging.info(f'called a group, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         group_results = {}
         group_started = True

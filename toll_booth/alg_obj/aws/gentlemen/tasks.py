@@ -5,7 +5,7 @@ from jsonschema import validate
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
-from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
+from toll_booth.alg_obj.serializers import AlgDecoder
 
 
 class Task:
@@ -203,6 +203,11 @@ class TaskArguments(AlgObject):
                 if argument_name == name:
                     return argument_value
         raise AttributeError(f'task arguments do not have argument value for key {name}')
+
+    def merge_other_task_arguments(self, other):
+        if not isinstance(other, TaskArguments):
+            raise NotImplementedError
+        self.add_argument_values(other.arguments)
 
     def __getitem__(self, item):
         return self._arguments[item]
