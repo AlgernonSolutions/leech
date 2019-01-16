@@ -2,6 +2,7 @@ import json
 import logging
 
 import boto3
+from botocore.client import Config
 from retrying import retry
 
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
@@ -17,10 +18,12 @@ class General:
         self._domain_name = domain_name
         self._task_list = task_list
         self._activity_tasks = []
-        self._client = boto3.client('swf')
+        self._client = boto3.client('swf', config=Config(connect_timeout=70))
 
     def command(self):
         work_history = self._poll_for_decision()
+        if work_history is None:
+            return
         try:
             self._make_decisions(work_history)
             logging.info(f'completed decision making on task_list: {self._task_list} for flow_id: {work_history.flow_id}')
@@ -85,6 +88,8 @@ class General:
         )
 
         for page in response_iterator:
+            if not page['taskToken']:
+                return None
             logging.info(f'received a page in the decisions_iterator:" {page}')
             workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
             workflow_histories.append(workflow_history)

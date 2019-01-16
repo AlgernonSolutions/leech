@@ -3,6 +3,7 @@ from threading import Thread
 from time import sleep
 
 import boto3
+from botocore.config import Config
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Task
 from toll_booth.alg_obj.serializers import AlgEncoder
@@ -14,7 +15,7 @@ class Laborer:
         self._laborer_name = laborer_name
         self._domain_name = domain_name
         self._task_list = task_list
-        self._client = boto3.client('swf')
+        self._client = boto3.client('swf', config=Config(connect_timeout=70))
         self._fire_alarm = False
         self._threads = []
 
