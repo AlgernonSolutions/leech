@@ -12,7 +12,7 @@ class TestRuffian:
     @pytest.mark.ruffian_labor
     def test_ruffian_labor(self, mock_context):
         event = {
-          "work_lists": {
+          "work_list": {
             "list_name": "credible",
             "number_threads": 1,
             "is_vpc": False

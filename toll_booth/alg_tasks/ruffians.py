@@ -24,6 +24,7 @@ def lambda_work(production_fn):
         register_results = event.get('register_results', False)
         if register_results is True:
             try:
+                task_args = _manually_rehydrate_task_args(task_args)
                 results = production_fn(task_name, task_args)
                 results = json.dumps(results, cls=AlgEncoder)
                 return results
@@ -36,6 +37,18 @@ def lambda_work(production_fn):
         results = production_fn(task_name, task_args)
         return json.dumps(results, cls=AlgEncoder)
     return wrapper
+
+
+def _manually_rehydrate_task_args(task_arg_dict):
+    from toll_booth.alg_obj.aws.snakes.snakes import StoredData
+    from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
+    arguments = {}
+    argument_values = task_arg_dict['value']
+    for operation_name, snake_dict in argument_values['_arguments'].items():
+        pointer = snake_dict['value']['pointer']
+        stored_data = StoredData.retrieve(pointer)
+        arguments[operation_name] = stored_data
+    return TaskArguments(arguments)
 
 
 @lambda_logged

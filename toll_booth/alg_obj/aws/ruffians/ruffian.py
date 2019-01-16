@@ -152,10 +152,11 @@ class Ruffian:
         task_token = kwargs['poll_response']['taskToken']
         results = self._fire_task(**kwargs)
         swf_payload = {'taskToken': task_token}
-        if results['fail'] is True:
-            swf_payload.update({'reason': results['reason'], 'details': results['details']})
-            swf_client.respond_activity_task_failed(**swf_payload)
-        else:
+        try:
+            if results['fail'] is True:
+                swf_payload.update({'reason': results['reason'], 'details': results['details']})
+                swf_client.respond_activity_task_failed(**swf_payload)
+        except TypeError:
             swf_payload.update({'result': results})
             swf_client.respond_activity_task_completed(**swf_payload)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
@@ -172,7 +173,7 @@ class Ruffian:
         response = client.invoke(
             FunctionName=os.getenv('LABOR_FUNCTION', 'leech-lambda-labor'),
             InvocationType='RequestResponse',
-            Payload=poll_response['input']
+            Payload=task_args
         )
         raw_result = response['Payload'].read().decode()
         results = json.loads(json.loads(raw_result), cls=AlgDecoder)
