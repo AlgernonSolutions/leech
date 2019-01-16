@@ -112,3 +112,6 @@ class StoredData(AlgObject):
         resource.Object(self._bucket_name, self.data_key).put(Body=body_string)
         self._is_stored = True
         return self.pointer
+
+    def __str__(self):
+        return self.pointer
