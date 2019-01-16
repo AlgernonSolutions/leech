@@ -57,7 +57,7 @@ class Ruffian:
         self._work_list = work_list
         self._warn_level = warn_level
         self._context = context
-        self._rackets = []
+        self._pending_tasks = []
         self._connections = []
 
     @classmethod
@@ -93,7 +93,6 @@ class Ruffian:
         queue = Queue()
         labor_args = {
             'list_name': work_list_name,
-            'number_threads': self._work_list['number_threads'],
             'queue': queue
         }
         labor_components = [self._dispatch_tasks]
@@ -103,8 +102,9 @@ class Ruffian:
             threads.append(component_thread)
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
-            poll_results = self._poll_for_tasks()
-            queue.put({'task_type': 'new_task', 'poll_response': poll_results})
+            if len(self._pending_tasks) <= self._work_list['number_threads']:
+                poll_results = self._poll_for_tasks()
+                queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
         queue.put(None)
         for thread in threads:
@@ -121,17 +121,12 @@ class Ruffian:
 
     def _dispatch_tasks(self, **kwargs):
         queue = kwargs['queue']
-        number_threads = kwargs['number_threads']
-        pending_tasks = {}
         while True:
             new_task = queue.get()
             if new_task is None:
                 return
             task_type = new_task['task_type']
             if task_type == 'new_task':
-                if len(pending_tasks) > number_threads:
-                    queue.put(new_task)
-                    continue
                 poll_response = new_task['poll_response']
                 task_token = poll_response['taskToken']
                 task_args = {
@@ -140,11 +135,11 @@ class Ruffian:
                 }
                 pending = Thread(target=self._run_task, kwargs=task_args)
                 pending.start()
-                pending_tasks[task_token] = pending
+                self._pending_tasks[task_token] = pending
             if task_type == 'close_task':
                 task_token = new_task['task_token']
-                pending_tasks[task_token].join()
-                del(pending_tasks[task_token])
+                self._pending_tasks[task_token].join()
+                del(self._pending_tasks[task_token])
 
     def _run_task(self, **kwargs):
         swf_client = boto3.client('swf')
