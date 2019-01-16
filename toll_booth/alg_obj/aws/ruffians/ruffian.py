@@ -52,9 +52,9 @@ class RuffianRoost:
 
 
 class Ruffian:
-    def __init__(self, domain_name, work_lists, warn_level, context):
+    def __init__(self, domain_name, work_list, warn_level, context):
         self._domain_name = domain_name
-        self._work_lists = work_lists
+        self._work_list = work_list
         self._warn_level = warn_level
         self._context = context
         self._rackets = []
@@ -76,7 +76,7 @@ class Ruffian:
             time_remaining = self._check_watch()
             if time_remaining <= self._warn_level:
                 return
-            general = General(self._domain_name, self._work_lists)
+            general = General(self._domain_name, self._work_list)
             try:
                 general.command()
             except ReadTimeoutError:
@@ -84,16 +84,16 @@ class Ruffian:
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
-                logging.error(f'error occurred in the decide task for list {self._work_lists}: {e}, trace: {trace}')
+                logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
 
     def labor(self):
-        work_list_name = self._work_lists['list_name']
+        work_list_name = self._work_list['list_name']
         logging.info(f'starting a worker to work task_list: {work_list_name}')
         threads = []
         queue = Queue()
         labor_args = {
             'list_name': work_list_name,
-            'number_threads': self._work_lists['number_threads'],
+            'number_threads': self._work_list['number_threads'],
             'queue': queue
         }
         labor_components = [self._dispatch_tasks]
@@ -113,7 +113,7 @@ class Ruffian:
     def _poll_for_tasks(self):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
         domain_name = self._domain_name
-        list_name = self._work_lists['list_name']
+        list_name = self._work_list['list_name']
         laborer = Laborer(domain_name, list_name)
         poll_response = laborer.poll_for_tasks()
         logging.info(f'received a response from polling {domain_name} for task_list: {list_name}, {poll_response}')
@@ -163,7 +163,7 @@ class Ruffian:
         from toll_booth.alg_obj.serializers import AlgDecoder
 
         client = boto3.client('lambda')
-        task_list = self._work_lists['list_name']
+        task_list = self._work_list['list_name']
         poll_response = kwargs['poll_response']
         task_name = poll_response['activityType']['name']
         task_args = poll_response['input']
