@@ -63,7 +63,7 @@ class AlgDecoder(json.JSONDecoder):
         host_module = importlib.import_module(alg_module)
         obj_class = getattr(host_module, alg_class, None)
         if obj_class is None:
-            return obj
+            raise RuntimeError(f'alg_class: {alg_class}, in alg_module: {alg_module} could not be located')
         return obj_class.from_json(obj_value)
 
 
