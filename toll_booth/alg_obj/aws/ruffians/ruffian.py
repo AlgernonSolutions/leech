@@ -7,6 +7,8 @@ from threading import Thread
 import boto3
 from botocore.exceptions import ReadTimeoutError
 
+from toll_booth.alg_obj.serializers import AlgEncoder
+
 
 class RuffianRoost:
     @classmethod
@@ -158,6 +160,7 @@ class Ruffian:
                 swf_client.respond_activity_task_failed(**swf_payload)
         except TypeError:
             swf_payload.update({'result': results})
+            swf_payload = json.dumps(swf_payload, cls=AlgEncoder)
             swf_client.respond_activity_task_completed(**swf_payload)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
