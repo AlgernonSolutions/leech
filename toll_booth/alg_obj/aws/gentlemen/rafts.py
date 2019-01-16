@@ -13,11 +13,10 @@ class ConcurrencyExceededException(Exception):
 
 
 class Signature:
-    def __init__(self, name, version, config, identifier, task_args, **kwargs):
+    def __init__(self, name, version, config, identifier, **kwargs):
         self._fn_name = name
         self._fn_version = version
         self._fn_identifier = identifier
-        self._task_args = task_args
         self._config = config
         self._is_started = kwargs['is_started']
         self._is_complete = kwargs['is_complete']
@@ -119,7 +118,7 @@ class Signature:
 
     @property
     def start_args(self):
-        start_args = (self._fn_identifier, self._fn_name, self._task_args)
+        start_args = (self._fn_identifier, self._fn_name)
         return start_args
 
     @property
@@ -161,17 +160,17 @@ class Signature:
 
 
 class SubtaskSignature(Signature):
-    def __init__(self, subtask_identifier, subtask_type, task_args, task_list=None, **kwargs):
+    def __init__(self, subtask_identifier, subtask_type, task_list=None, **kwargs):
         if not task_list:
             task_list = subtask_identifier
         version = getattr(kwargs['versions'], 'workflow_versions')[subtask_type]
         config = kwargs['configs'][('workflow', subtask_type)]
         cls_kwargs = self.generate_signature_status(subtask_identifier, kwargs['sub_tasks'], **kwargs)
-        super().__init__(subtask_type, version, config, subtask_identifier, task_args, **cls_kwargs)
+        super().__init__(subtask_type, version, config, subtask_identifier, **cls_kwargs)
         self._task_list = task_list
 
-    def _build_start(self, **kwargs):
-        return StartSubtask(*self.start_args, version=self.fn_version, task_list=self._task_list, **kwargs)
+    def _build_start(self, task_args, **kwargs):
+        return StartSubtask(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list, **kwargs)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['sub_tasks']
@@ -180,17 +179,17 @@ class SubtaskSignature(Signature):
 
 
 class ActivitySignature(Signature):
-    def __init__(self, task_identifier, task_type, task_args=None, task_list=None, **kwargs):
+    def __init__(self, task_identifier, task_type, task_list=None, **kwargs):
         config = kwargs['configs'][('task', task_type)]
         if not task_list:
             task_list = config.get('task_list', kwargs['work_history'].flow_id)
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         cls_kwargs = self.generate_signature_status(task_identifier, kwargs['activities'], **kwargs)
-        super().__init__(task_type, version, config, task_identifier, task_args, **cls_kwargs)
+        super().__init__(task_type, version, config, task_identifier, **cls_kwargs)
         self._task_list = task_list
 
-    def _build_start(self, **kwargs):
-        return StartActivity(*self.start_args, version=self.fn_version, task_list=self._task_list)
+    def _build_start(self, task_args, **kwargs):
+        return StartActivity(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['activities']
@@ -199,15 +198,15 @@ class ActivitySignature(Signature):
 
 
 class LambdaSignature(Signature):
-    def __init__(self, lambda_identifier, task_type, task_args=None, **kwargs):
+    def __init__(self, lambda_identifier, task_type, **kwargs):
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
         cls_kwargs = self.generate_signature_status(lambda_identifier, kwargs['lambdas'], **kwargs)
-        super().__init__(task_type, version, config, lambda_identifier, task_args, **cls_kwargs)
+        super().__init__(task_type, version, config, lambda_identifier, **cls_kwargs)
         self._control = kwargs.get('control', None)
 
-    def _build_start(self, **kwargs):
-        return StartLambda(*self.start_args, control=self._control)
+    def _build_start(self, task_args, **kwargs):
+        return StartLambda(*self.start_args, task_args=task_args, control=self._control)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['lambdas']
@@ -219,20 +218,20 @@ class Chain:
     def __init__(self, signatures):
         self._signatures = signatures
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, task_args, **kwargs):
         chain_results = {}
         for signature in self._signatures:
             if not signature.is_started:
-                signature(**kwargs)
+                signature(task_args, **kwargs)
                 return
             if signature.is_failed:
-                signature(**kwargs)
+                signature(task_args, **kwargs)
                 return
             if not signature.is_complete and not signature.is_failed:
                 return
             results = signature.get_results(**kwargs)
             chain_results = results
-            kwargs['task_args'].add_argument_values(results)
+            task_args.add_argument_values(results)
         return chain_results
 
 
@@ -275,14 +274,14 @@ class Group:
             results.update(signature.get_results(**kwargs))
         return results
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, task_args, **kwargs):
         group_results = {}
         group_started = True
         group_finished = True
         for signature in self._signatures:
             if not signature.is_started:
                 try:
-                    signature(**kwargs)
+                    signature(task_args, **kwargs)
                 except ConcurrencyExceededException:
                     logging.warning(f'reached maximum concurrency running group, will retry as tasks finish')
                     return
@@ -291,14 +290,14 @@ class Group:
             return
         for signature in self._signatures:
             if signature.is_failed:
-                signature(**kwargs)
+                signature(task_args, **kwargs)
                 group_finished = False
                 continue
             if not signature.is_complete and not signature.is_failed:
                 group_finished = False
                 continue
             results = signature.get_results(**kwargs)
-            kwargs['task_args'].add_argument_values(results)
+            task_args.add_argument_values(results)
             group_results.update(results)
         if not group_finished:
             return
