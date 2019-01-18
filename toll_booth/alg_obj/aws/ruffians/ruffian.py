@@ -32,14 +32,18 @@ class RuffianRoost:
 
     @classmethod
     def _start_machine(cls, machine_arn, work_list, domain_name, client=None):
+        import uuid
         if not client:
             client = boto3.client('stepfunctions')
         machine_input = json.dumps({
             'work_list': work_list,
             'domain_name': domain_name
         })
+        machine_name = f'{work_list}-{uuid.uuid4().hex}'
+        machine_name = machine_arn[:80]
         response = client.start_execution(
             stateMachineArn=machine_arn,
+            name=machine_name,
             input=machine_input
         )
         execution_arn = response['executionArn']
