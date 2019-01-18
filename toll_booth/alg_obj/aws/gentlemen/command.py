@@ -20,7 +20,7 @@ class General:
         self._task_list = task_list
         self._activity_tasks = []
         self._client = boto3.client('swf', config=Config(
-            connect_timeout=50, read_timeout=70, retries={'max_attempts': 0}))
+            connect_timeout=70, read_timeout=70, retries={'max_attempts': 0}))
 
     def command(self):
         work_history = self._poll_for_decision()
