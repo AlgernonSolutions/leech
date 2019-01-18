@@ -26,7 +26,10 @@ def get_running_machines(machine_arn):
 
 
 if __name__ == '__main__':
-    target_machine_arn = 'arn:aws:states:us-east-1:803040539655:stateMachine:decider'
+    target_machine_arns = [
+        'arn:aws:states:us-east-1:803040539655:stateMachine:decider',
+        'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians']
     shutdown_cause = 'emergency shutdown'
-    for running_execution in get_running_machines(target_machine_arn):
-        shutdown_state_machine(running_execution, cause=shutdown_cause)
+    for target_machine_arn in target_machine_arns:
+        for running_execution in get_running_machines(target_machine_arn):
+            shutdown_state_machine(running_execution, cause=shutdown_cause)
