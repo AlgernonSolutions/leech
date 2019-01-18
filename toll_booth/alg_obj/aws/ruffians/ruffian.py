@@ -39,7 +39,10 @@ class RuffianRoost:
             'work_list': work_list,
             'domain_name': domain_name
         })
-        machine_name = f'{work_list}-{uuid.uuid4().hex}'
+        machine_id = work_list
+        if 'list_name' in work_list:
+            machine_id = work_list['list_name']
+        machine_name = f'{machine_id}!!{uuid.uuid4().hex}'
         machine_name = machine_name[:80]
         response = client.start_execution(
             stateMachineArn=machine_arn,
