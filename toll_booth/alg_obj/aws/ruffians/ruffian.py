@@ -44,6 +44,7 @@ class RuffianRoost:
             machine_id = work_list['list_name']
         machine_name = f'{machine_id}!!{uuid.uuid4().hex}'
         machine_name = machine_name[:80]
+        machine_name.replace(' ', '')
         response = client.start_execution(
             stateMachineArn=machine_arn,
             name=machine_name,
