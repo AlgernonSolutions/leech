@@ -40,7 +40,7 @@ class RuffianRoost:
             'domain_name': domain_name
         })
         machine_name = f'{work_list}-{uuid.uuid4().hex}'
-        machine_name = machine_arn[:80]
+        machine_name = machine_name[:80]
         response = client.start_execution(
             stateMachineArn=machine_arn,
             name=machine_name,
