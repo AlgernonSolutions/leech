@@ -105,7 +105,8 @@
       "task_name": "work_remote_id_change_type",
       "task_description": "extract all the remote entries for a given change type for a given emp_id in Credible",
       "task_config": {
-        "concurrency": 1
+        "concurrency": 1,
+        "task_list": "credible"
       }
     },
     {

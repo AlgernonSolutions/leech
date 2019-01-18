@@ -120,8 +120,8 @@ def get_enrichment_for_change_action(**kwargs):
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
     changelog_types = kwargs['changelog_types']
-    change_action = changelog_types[kwargs['action_id']]
     action_id = kwargs['action_id']
+    change_action = changelog_types[str(action_id)]
     category_id = changelog_types.get_category_id_from_action_id(str(action_id))
     if change_action.is_static and change_action.has_details is False:
         empty_data = {'change_detail': {}, 'emp_ids': {}}

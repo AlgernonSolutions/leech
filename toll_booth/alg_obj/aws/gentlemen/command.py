@@ -90,7 +90,7 @@ class General:
         )
 
         for page in response_iterator:
-            if not page['taskToken']:
+            if 'taskToken' not in page:
                 return None
             logging.info(f'received a page in the decisions_iterator:" {page}')
             workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)

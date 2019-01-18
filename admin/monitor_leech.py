@@ -36,6 +36,39 @@ def get_open_workflows(domain_name, workflow_type, workflow_version):
     return open_flows
 
 
+def get_completed_workflows(domain_name, workflow_type, workflow_version):
+    open_flows = []
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    client = boto3.client('swf')
+    paginator = client.get_paginator('list_closed_workflow_executions')
+    iterator = paginator.paginate(
+        domain=domain_name,
+        startTimeFilter={
+            'oldestDate': one_day_ago
+        },
+        closeStatusFilter={
+            'status': 'COMPLETED'
+        },
+        typeFilter={
+            'name': workflow_type,
+            'version': str(workflow_version)
+        },
+    )
+    for page in iterator:
+        for entry in page['executionInfos']:
+            execution = entry['execution']
+            parent_info = entry.get('parent', None)
+            flow_info = {
+                'run_id': execution['runId'],
+                'flow_id': execution['workflowId']
+            }
+            if parent_info:
+                flow_info['parent_flow_id'] = parent_info['workflowId']
+                flow_info['parent_run_id'] = parent_info['runId']
+            open_flows.append(flow_info)
+    return open_flows
+
+
 def get_workflow_history(domain_name, target_flow_id, target_run_id):
     history = []
     client = boto3.client('swf')
@@ -72,11 +105,12 @@ def update(d, u):
 
 if __name__ == '__main__':
     returned_flows = {}
-    target_domain_name = 'Leech'
+    target_domain_name = 'TheLeech'
     versions = Versions.retrieve(target_domain_name)
     flow_names = ['fungus', 'command_fungi', 'work_remote_id', 'work_remote_id_change_type', 'work_remote_id_change_action']
     for flow_name in flow_names:
-        current_open_flows = get_open_workflows(target_domain_name, flow_name, versions.workflow_versions[flow_name])
+        # current_open_flows = get_open_workflows(target_domain_name, flow_name, versions.workflow_versions[flow_name])
+        current_open_flows = get_completed_workflows(target_domain_name, flow_name, versions.workflow_versions[flow_name])
         for current_flow in current_open_flows:
             run_id = current_flow['run_id']
             flow_id = current_flow['flow_id']
