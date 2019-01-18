@@ -109,6 +109,7 @@ class Ruffian:
                 if 'taskToken' in poll_results:
                     queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
+        logging.info(f'time is up, preparing to quit')
         queue.put(None)
         for thread in threads:
             thread.join()

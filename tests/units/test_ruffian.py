@@ -23,7 +23,7 @@ class TestRuffian:
         labor(event, mock_context)
 
     @pytest.mark.ruffian_exit
-    @pytest.mark.usefixtures('mock_activity_poll')
+    # @pytest.mark.usefixtures('mock_activity_poll')
     def test_ruffian_labor_graceful_exit(self, timed_mock_context):
         event = {
             "work_list": {
@@ -37,7 +37,7 @@ class TestRuffian:
         labor(event, timed_mock_context)
 
     @pytest.mark.ruffian_exit
-    @pytest.mark.usefixtures('mock_decision_poll')
+    # @pytest.mark.usefixtures('mock_decision_poll')
     def test_ruffian_decider_graceful_exit(self, timed_mock_context):
         event = {
             "work_list": "credible",

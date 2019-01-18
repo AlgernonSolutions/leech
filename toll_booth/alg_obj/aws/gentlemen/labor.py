@@ -15,7 +15,8 @@ class Laborer:
         self._laborer_name = laborer_name
         self._domain_name = domain_name
         self._task_list = task_list
-        self._client = boto3.client('swf', config=Config(connect_timeout=70))
+        self._client = boto3.client('swf', config=Config(
+            connect_timeout=50, read_timeout=70, retries={'max_attempts': 0}))
         self._fire_alarm = False
         self._threads = []
 
