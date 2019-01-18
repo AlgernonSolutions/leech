@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, SubtaskSignature, group, chain
+from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, SubtaskSignature, group, chain, LambdaSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 """
@@ -37,7 +37,7 @@ def work_remote_id_change_type(**kwargs):
 def _build_local_max_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['local_max']
-    get_local_max_signature = ActivitySignature(fn_identifier, 'get_local_max_change_type_value', **kwargs)
+    get_local_max_signature = LambdaSignature(fn_identifier, 'get_local_max_change_type_value', **kwargs)
     return get_local_max_signature
 
 
