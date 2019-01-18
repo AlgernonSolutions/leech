@@ -49,7 +49,8 @@ class RuffianRoost:
     def disband_ruffians(cls, execution_arn):
         client = boto3.client('stepfunctions')
         client.stop_execution(
-            executionArn=execution_arn
+            executionArn=execution_arn,
+            cause='work completed'
         )
 
 
