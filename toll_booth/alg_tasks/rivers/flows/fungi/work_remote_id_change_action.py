@@ -9,7 +9,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, LambdaSignature
+from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, LambdaSignature, SubtaskSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -20,7 +20,7 @@ def work_remote_id_change_action(**kwargs):
     execution_id = kwargs['execution_id']
     names = {
         'enrich': f'enrichment-{execution_id}',
-        'change': f'generate-{execution_id}',
+        'change': f'generate-{execution_id}'
     }
     kwargs['names'] = names
     enrich_signature = _build_enrich_signature(**kwargs)
@@ -32,7 +32,11 @@ def work_remote_id_change_action(**kwargs):
     chain_results = great_chain(**kwargs)
     if chain_results is None:
         return
-    decisions.append(CompleteWork(chain_results))
+    fungal_leech = _build_fungal_leech(**kwargs)
+    leech_results = fungal_leech(**kwargs)
+    if leech_results is None:
+        return
+    decisions.append(CompleteWork())
 
 
 @xray_recorder.capture('work_remote_id_change_action_build_enrich_signature')
@@ -62,3 +66,13 @@ def _build_change_data_group(task_args, **kwargs):
     if not signatures:
         return None
     return signatures
+
+
+@xray_recorder.capture('work_remote_id_change_action_build_fungal_leech')
+def _build_fungal_leech(execution_id, task_args, **kwargs):
+    subtask_name = 'fungal_leech'
+    subtask_identifier = f'fungal_leech-{execution_id}'
+    extracted_data = task_args.get_argument_value('change_data')
+    new_task_args = task_args.replace_argument_value(subtask_name, {'extracted_data': extracted_data})
+    fungal_leech = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
+    return fungal_leech
