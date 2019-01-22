@@ -53,3 +53,11 @@ class TestRuffian:
         loaded_results = json.loads(results, cls=AlgDecoder)
         assert isinstance(results, str)
         assert isinstance(loaded_results, StoredData)
+
+    @pytest.mark.ruffian_mule_team
+    def test_ruffian_mule_team(self, mule_team_arg, mock_context):
+        sent_args = json.loads(json.dumps(mule_team_arg, cls=AlgEncoder))
+        results = lambda_labor(sent_args, mock_context)
+        loaded_results = json.loads(results, cls=AlgDecoder)
+        assert isinstance(results, str)
+        assert isinstance(loaded_results, StoredData)

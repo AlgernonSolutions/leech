@@ -1,3 +1,6 @@
+from toll_booth.alg_obj import AlgObject
+
+
 class CachedEmployeeIds:
     def __init__(self, emp_ids=None):
         if not emp_ids:
@@ -38,7 +41,7 @@ class CachedEmployeeIds:
         return f'{last_name}, {first_initial}'
 
 
-class PromiseToken:
+class PromiseToken(AlgObject):
     def __init__(self, timestamp, callback):
         self._timestamp = timestamp
         self._callback = callback
@@ -48,3 +51,11 @@ class PromiseToken:
             return int(self._callback(self._timestamp))
         except ValueError:
             print()
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return json_dict
+
+    @property
+    def to_json(self):
+        return int(self._callback(self._timestamp))
