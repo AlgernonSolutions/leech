@@ -9,7 +9,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, LambdaSignature, SubtaskSignature
+from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, LambdaSignature, SubtaskSignature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -24,11 +24,11 @@ def work_remote_id_change_action(**kwargs):
     }
     kwargs['names'] = names
     enrich_signature = _build_enrich_signature(**kwargs)
-    change_data_group = _build_change_data_group(**kwargs)
-    if change_data_group is None:
+    change_data_signatures = _build_change_data_signatures(**kwargs)
+    if change_data_signatures is None:
         decisions.append(CompleteWork())
         return
-    great_chain = chain(enrich_signature, change_data_group)
+    great_chain = chain(enrich_signature, group(change_data_signatures))
     chain_results = great_chain(**kwargs)
     if chain_results is None:
         return
@@ -47,8 +47,8 @@ def _build_enrich_signature(**kwargs):
     return enrich_signature
 
 
-@xray_recorder.capture('work_remote_id_change_action_build_change_data_group')
-def _build_change_data_group(task_args, **kwargs):
+@xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
+def _build_change_data_signatures(task_args, **kwargs):
     subtask_name = 'generate_remote_id_change_data'
     signatures = []
     names = kwargs['names']
