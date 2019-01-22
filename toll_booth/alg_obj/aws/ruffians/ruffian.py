@@ -5,7 +5,6 @@ from queue import Queue
 from threading import Thread
 
 import boto3
-from botocore.exceptions import ReadTimeoutError
 
 from toll_booth.alg_obj.serializers import AlgEncoder
 
@@ -31,20 +30,36 @@ class RuffianRoost:
         return execution_arns
 
     @classmethod
-    def _start_machine(cls, machine_arn, work_list, domain_name, client=None):
+    def _build_machine_name(cls, work_list):
         import uuid
+
+        abbreviations = {
+            'PROGRAM': 'PGM',
+            'EMPLOYEE': 'EMP',
+            'ASSIGNMENT': 'ASGMT',
+            'ACCEPT': 'ACPT',
+            'REQUEST': 'RQST',
+            'PRESCRIPTION': 'RX'
+        }
+        machine_id = work_list
+        if 'list_name' in work_list:
+            machine_id = work_list['list_name']
+        for original_word, replacement_word in abbreviations.items():
+            machine_id = machine_id.replace(original_word, replacement_word)
+        machine_name = f'{machine_id}!!{uuid.uuid4().hex}'
+        machine_name = machine_name.replace(' ', '')
+        machine_name = machine_name[:80]
+        return machine_name
+
+    @classmethod
+    def _start_machine(cls, machine_arn, work_list, domain_name, client=None):
         if not client:
             client = boto3.client('stepfunctions')
         machine_input = json.dumps({
             'work_list': work_list,
             'domain_name': domain_name
         })
-        machine_id = work_list
-        if 'list_name' in work_list:
-            machine_id = work_list['list_name']
-        machine_name = f'{machine_id}!!{uuid.uuid4().hex}'
-        machine_name = machine_name[:80]
-        machine_name = machine_name.replace(' ', '')
+        machine_name = cls._build_machine_name(work_list)
         response = client.start_execution(
             stateMachineArn=machine_arn,
             name=machine_name,
