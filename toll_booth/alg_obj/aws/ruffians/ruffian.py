@@ -41,7 +41,9 @@ class RuffianRoost:
             'REQUEST': 'RQST',
             'PRESCRIPTION': 'RX',
             'SUCCESS': 'SCS',
-            'CONFIRM': 'CNFRM'
+            'CONFIRM': 'CNFRM',
+            'REVOCATION': 'RVCTN',
+            'EXOSTAR': 'XSTR'
         }
         machine_id = work_list
         if 'list_name' in work_list:
