@@ -61,7 +61,8 @@ class Signature:
             return checkpoints[identifier]
         return None
 
-    def __call__(self, *args, task_args: TaskArguments, **kwargs):
+    def __call__(self, *args, **kwargs):
+        task_args = kwargs['task_args']
         logging.info(f'calling a signature, name: {self._fn_name}, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         if self._back_off_status is True:
             logging.info(f'signature {self._fn_name} is backing off due to failures')
@@ -250,7 +251,8 @@ class Chain:
         logging.info(f'the returned results for the chain with signatures: {self._signatures} are {results}')
         return results
 
-    def __call__(self, *args, task_args: TaskArguments, **kwargs):
+    def __call__(self, *args, **kwargs):
+        task_args = kwargs['task_args']
         logging.info(f'calling a chain with args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         chain_results = {}
         for signature in self._signatures:
@@ -315,7 +317,8 @@ class Group:
         logging.info(f'group results are: {results}')
         return results
 
-    def __call__(self, *args, task_args: TaskArguments, **kwargs):
+    def __call__(self, *args, **kwargs):
+        task_args = kwargs['task_args']
         logging.info(f'called a group, args: {args}, task_args: {task_args}, kwargs: {kwargs}')
         group_results = {}
         group_started = True

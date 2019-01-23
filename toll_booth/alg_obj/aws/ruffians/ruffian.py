@@ -39,7 +39,9 @@ class RuffianRoost:
             'ASSIGNMENT': 'ASGMT',
             'ACCEPT': 'ACPT',
             'REQUEST': 'RQST',
-            'PRESCRIPTION': 'RX'
+            'PRESCRIPTION': 'RX',
+            'SUCCESS': 'SCS',
+            'CONFIRM': 'CNFRM'
         }
         machine_id = work_list
         if 'list_name' in work_list:
