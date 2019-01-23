@@ -3,6 +3,7 @@ import logging
 
 import boto3
 from botocore.client import Config
+from botocore.exceptions import ConnectionClosedError
 from retrying import retry
 
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
@@ -15,15 +16,18 @@ from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
 
 
 class General:
-    def __init__(self, domain_name, task_list):
+    def __init__(self, domain_name, task_list, identity=None):
         self._domain_name = domain_name
         self._task_list = task_list
-        self._activity_tasks = []
+        self._identity = identity
         self._client = boto3.client('swf', config=Config(
             connect_timeout=70, read_timeout=70, retries={'max_attempts': 0}))
 
     def command(self):
-        work_history = self._poll_for_decision()
+        try:
+            work_history = self._poll_for_decision()
+        except ConnectionClosedError:
+            work_history = None
         if work_history is None:
             return
         try:
@@ -82,17 +86,18 @@ class General:
         history = None
         workflow_histories = []
         paginator = self._client.get_paginator('poll_for_decision_task')
-        response_iterator = paginator.paginate(
-            domain=self._domain_name,
-            taskList={
-                'name': self._task_list
-            }
-        )
+        poll_args = {
+            'domain': self._domain_name,
+            'taskList': {'name': self._task_list}
+        }
+        if self._identity:
+            poll_args['identity'] = self._identity
+        response_iterator = paginator.paginate(**poll_args)
 
         for page in response_iterator:
             if 'taskToken' not in page:
                 return None
-            logging.info(f'received a page in the decisions_iterator:" {page}')
+            logging.info(f'received a page in the decisions_iterator: {page}')
             workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
             workflow_histories.append(workflow_history)
         for workflow_history in workflow_histories:

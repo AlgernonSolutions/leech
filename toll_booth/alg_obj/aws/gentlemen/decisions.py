@@ -284,7 +284,8 @@ class MadeDecisions:
 
     @property
     def for_commit(self):
-        self.check_decision_order()
+        if not self.check_decision_order():
+            self.reorder_decisions()
         return {
             'taskToken': self._task_token,
             'decisions': [{
@@ -297,8 +298,16 @@ class MadeDecisions:
         close_decisions = [x for x  in self._decisions if isinstance(x, CompleteWork)]
         for decision in close_decisions:
             if decision is self._decisions[-1]:
-                return
-            raise RuntimeError(f'error when checking the made decisions: {self._decisions}')
+                return True
+            raise False
 
     def add_decision(self, decision: Decision):
         self._decisions.append(decision)
+
+    def reorder_decisions(self):
+        close_decisions = [x for x in self._decisions if isinstance(x, CompleteWork)]
+        other_decisions = [x for x in self._decisions if not isinstance(x, CompleteWork)]
+        other_decisions.extend(close_decisions)
+        self._decisions = other_decisions
+        if not self.check_decision_order():
+            raise RuntimeError(f'even after reordering, decisions incorrectly ordered: {self._decisions}')
