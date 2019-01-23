@@ -83,8 +83,8 @@ class General:
 
     # @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _poll_for_decision(self):
+        events = []
         history = None
-        workflow_histories = []
         paginator = self._client.get_paginator('poll_for_decision_task')
         poll_args = {
             'domain': self._domain_name,
@@ -98,17 +98,14 @@ class General:
             if 'taskToken' not in page:
                 return None
             logging.info(f'received a page in the decisions_iterator: {page}')
-            workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, page)
-            workflow_histories.append(workflow_history)
-        for workflow_history in workflow_histories:
-            if history is None:
-                history = workflow_history
-                continue
-            history.merge_history(workflow_history)
-        markers = self._get_past_runs(history.flow_id)
+            events.extend(page['events'])
+            history = page
+        history['events'] = events
+        workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, history)
+        markers = self._get_past_runs(workflow_history.flow_id)
         for marker_history in markers:
-            history.marker_history.merge_history(marker_history)
-        return history
+            workflow_history.marker_history.merge_history(marker_history)
+        return workflow_history
 
     def _make_decisions(self, work_history: WorkflowHistory):
         flow_modules = [

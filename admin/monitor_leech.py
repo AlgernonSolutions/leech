@@ -46,9 +46,6 @@ def get_completed_workflows(domain_name, workflow_type, workflow_version):
         startTimeFilter={
             'oldestDate': one_day_ago
         },
-        closeStatusFilter={
-            'status': 'COMPLETED'
-        },
         typeFilter={
             'name': workflow_type,
             'version': str(workflow_version)
@@ -69,21 +66,87 @@ def get_completed_workflows(domain_name, workflow_type, workflow_version):
     return open_flows
 
 
-def get_workflow_history(domain_name, target_flow_id, target_run_id):
+def get_workflow_history(domain_name, flow_id, run_id, event_filter=None):
     history = []
     client = boto3.client('swf')
     paginator = client.get_paginator('get_workflow_execution_history')
     iterator = paginator.paginate(
         domain=domain_name,
         execution={
-            'workflowId': target_flow_id,
-            'runId': target_run_id
+            'workflowId': flow_id,
+            'runId': run_id
         }
     )
     for page in iterator:
         for event in page['events']:
+            if event_filter:
+                if event['eventType'] != event_filter:
+                    continue
             history.append(event)
     return history
+
+
+def get_complete_flows(domain_name, flow_names):
+    returned_flows = {}
+    versions = Versions.retrieve(domain_name)
+    for flow_name in flow_names:
+        current_open_flows = get_completed_workflows(domain_name, flow_name, versions.workflow_versions[flow_name])
+        for current_flow in current_open_flows:
+            run_id = current_flow['run_id']
+            flow_id = current_flow['flow_id']
+            if 'parent_flow_id' not in current_flow:
+                if flow_id not in returned_flows:
+                    returned_flows[flow_id] = {}
+                returned_flows[flow_id][run_id] = {}
+                continue
+            parent_flow_id = current_flow['parent_flow_id']
+            parent_run_id = current_flow['parent_run_id']
+            attached_obj = {parent_run_id: {flow_id: {run_id: {}}}}
+            recurse_attach(parent_flow_id, attached_obj, returned_flows)
+    return returned_flows
+
+
+def get_checkpoint_history(domain_name, flow_id):
+    markers = []
+    run_ids = get_run_history(domain_name, flow_id=flow_id)
+    for run_id in run_ids:
+        collected_markers = get_workflow_history(domain_name, flow_id, run_id, 'MarkerRecorded')
+        for marker in collected_markers:
+            marker_name = marker['markerRecordedEventAttributes']['markerName']
+        markers.extend(collected_markers)
+    return markers
+
+
+def get_run_history(domain_name, **kwargs):
+    run_ids = set()
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    client = boto3.client('swf')
+    closed_paginator = client.get_paginator('list_closed_workflow_executions')
+    open_paginator = client.get_paginator('list_open_workflow_executions')
+    run_history_args = {
+        'domain': domain_name,
+        'startTimeFilter': {'oldestDate': one_day_ago}
+    }
+    if 'flow_name' in kwargs:
+        versions = Versions.retrieve(domain_name)
+        flow_name = kwargs['flow_name']
+        flow_version = versions.workflow_versions[flow_name]
+        run_history_args['typeFilter'] = {'name': flow_name, 'version': str(flow_version)}
+    if 'flow_id' in kwargs:
+        run_history_args['executionFilter'] = {'workflowId': kwargs['flow_id']}
+    closed_iterator = closed_paginator.paginate(**run_history_args)
+    for page in closed_iterator:
+        for entry in page['executionInfos']:
+            execution = entry['execution']
+            run_id = execution['runId']
+            run_ids.add(run_id)
+    open_iterator = open_paginator.paginate(**run_history_args)
+    for page in open_iterator:
+        for entry in page['executionInfos']:
+            execution = entry['execution']
+            run_id = execution['runId']
+            run_ids.add(run_id)
+    return run_ids
 
 
 def recurse_attach(target_key_value, attaching_obj, dict_obj):
@@ -104,23 +167,7 @@ def update(d, u):
 
 
 if __name__ == '__main__':
-    returned_flows = {}
     target_domain_name = 'TheLeech'
-    versions = Versions.retrieve(target_domain_name)
-    flow_names = ['fungus', 'command_fungi', 'work_remote_id', 'work_remote_id_change_type', 'work_remote_id_change_action']
-    for flow_name in flow_names:
-        # current_open_flows = get_open_workflows(target_domain_name, flow_name, versions.workflow_versions[flow_name])
-        current_open_flows = get_completed_workflows(target_domain_name, flow_name, versions.workflow_versions[flow_name])
-        for current_flow in current_open_flows:
-            run_id = current_flow['run_id']
-            flow_id = current_flow['flow_id']
-            if 'parent_flow_id' not in current_flow:
-                if flow_id not in returned_flows:
-                    returned_flows[flow_id] = {}
-                returned_flows[flow_id][run_id] = {}
-                continue
-            parent_flow_id = current_flow['parent_flow_id']
-            parent_run_id = current_flow['parent_run_id']
-            attached_obj = {parent_run_id: {flow_id: {run_id: {}}}}
-            recurse_attach(parent_flow_id, attached_obj, returned_flows)
-    print(returned_flows)
+    target_flow_names = ['fungus', 'command_fungi', 'work_remote_id', 'work_remote_id_change_type', 'work_remote_id_change_action']
+    get_checkpoint_history(target_domain_name, '31')
+

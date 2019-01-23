@@ -69,3 +69,7 @@ class TestRuffian:
         loaded_results = json.loads(results, cls=AlgDecoder)
         assert isinstance(results, str)
         assert isinstance(loaded_results, StoredData)
+
+    @pytest.mark.ruffian_work_bad_subtask_events
+    def test_ruffian_bad_subtask_events(self, spiked_decision_poll, mock_context):
+        print(spiked_decision_poll)
