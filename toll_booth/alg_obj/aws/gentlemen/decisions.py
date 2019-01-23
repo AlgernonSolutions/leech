@@ -295,7 +295,9 @@ class MadeDecisions:
         }
 
     def check_decision_order(self):
-        close_decisions = [x for x  in self._decisions if isinstance(x, CompleteWork)]
+        close_decisions = [x for x in self._decisions if isinstance(x, CompleteWork)]
+        if not close_decisions:
+            return True
         for decision in close_decisions:
             if decision is self._decisions[-1]:
                 return True
