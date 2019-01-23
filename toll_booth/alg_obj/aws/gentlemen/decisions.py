@@ -301,7 +301,7 @@ class MadeDecisions:
         for decision in close_decisions:
             if decision is self._decisions[-1]:
                 return True
-            raise False
+            return False
 
     def add_decision(self, decision: Decision):
         self._decisions.append(decision)
