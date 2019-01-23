@@ -81,13 +81,13 @@ class Signature:
                 self._back_off(**kwargs)
                 return
             logging.info(f'signature {self._fn_name} has been backed off already, can be rerun now, invoking_kwargs: {kwargs}')
-            self._start(task_args=task_args, **kwargs)
+            self._start(**kwargs)
             return
         if self._is_started and not self._is_failed:
             logging.info(f'signature: {self._fn_name} is has started, and has not failed, let it run')
             return
         logging.info(f'signature: {self._fn_name} is ready to be run, starting it')
-        self._start(task_args=task_args, **kwargs)
+        self._start(**kwargs)
 
     def _back_off(self, **kwargs):
         decisions = kwargs['decisions']
@@ -259,16 +259,16 @@ class Chain:
             logging.info(f'starting a signature within a chain: {signature}')
             if not signature.is_started:
                 logging.info(f'signature: {signature} is not started yet, so let us start it')
-                signature(task_args=task_args, **kwargs)
+                signature(**kwargs)
                 return
             if signature.is_failed:
                 logging.info(f'signature: {signature} has failed, let us retry it')
-                signature(task_args=task_args, **kwargs)
+                signature(**kwargs)
                 return
             if not signature.is_complete and not signature.is_failed:
                 logging.info(f'signature: {signature} is neither failed nor completed, hopefully running, we will check later')
                 return
-            results = signature.get_results(task_args=task_args, **kwargs)
+            results = signature.get_results(**kwargs)
             logging.info(f'signature: {signature} has completed with results: {results}')
             chain_results = results
             task_args.add_argument_values(results)
@@ -328,7 +328,7 @@ class Group:
             if not signature.is_started:
                 logging.info(f'signature: {signature} is not running, let us start it')
                 try:
-                    signature(task_args=task_args, **kwargs)
+                    signature(**kwargs)
                 except ConcurrencyExceededException:
                     logging.warning(f'reached maximum concurrency running group, will retry as tasks finish')
                     return
@@ -339,7 +339,7 @@ class Group:
         for signature in self._signatures:
             if signature.is_failed:
                 logging.info(f'signature: {signature} in a group has failed, retry it')
-                signature(task_args=task_args, **kwargs)
+                signature(**kwargs)
                 group_finished = False
                 continue
             if not signature.is_complete and not signature.is_failed:
