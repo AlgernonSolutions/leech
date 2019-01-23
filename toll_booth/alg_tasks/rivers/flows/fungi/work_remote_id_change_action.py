@@ -28,7 +28,7 @@ def work_remote_id_change_action(**kwargs):
     if change_data_signatures is None:
         decisions.append(CompleteWork())
         return
-    great_chain = chain(enrich_signature, group(change_data_signatures))
+    great_chain = chain(enrich_signature, group(*tuple(change_data_signatures)))
     chain_results = great_chain(**kwargs)
     if chain_results is None:
         return
