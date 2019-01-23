@@ -279,7 +279,12 @@ class MadeDecisions:
         self._decisions = decisions
 
     @property
+    def decisions(self):
+        return self._decisions
+
+    @property
     def for_commit(self):
+        self.check_decision_order()
         return {
             'taskToken': self._task_token,
             'decisions': [{
@@ -287,6 +292,13 @@ class MadeDecisions:
                 x.attributes_name: x.decision_attributes
             } for x in self._decisions]
         }
+
+    def check_decision_order(self):
+        close_decisions = [x for x  in self._decisions if isinstance(x, CompleteWork)]
+        for decision in close_decisions:
+            if decision is self._decisions[-1]:
+                return
+            raise RuntimeError(f'error when checking the made decisions: {self._decisions}')
 
     def add_decision(self, decision: Decision):
         self._decisions.append(decision)

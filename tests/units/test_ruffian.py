@@ -61,3 +61,11 @@ class TestRuffian:
         loaded_results = json.loads(results, cls=AlgDecoder)
         assert isinstance(results, str)
         assert isinstance(loaded_results, StoredData)
+
+    @pytest.mark.ruffian_work_change_type
+    def test_ruffian_work_change_type(self, work_change_type_arg, mock_context):
+        sent_args = json.loads(json.dumps(work_change_type_arg, cls=AlgEncoder))
+        results = lambda_labor(sent_args, mock_context)
+        loaded_results = json.loads(results, cls=AlgDecoder)
+        assert isinstance(results, str)
+        assert isinstance(loaded_results, StoredData)
