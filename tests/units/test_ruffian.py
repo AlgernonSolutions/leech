@@ -73,3 +73,11 @@ class TestRuffian:
     @pytest.mark.ruffian_work_bad_subtask_events
     def test_ruffian_bad_subtask_events(self, spiked_decision_poll, mock_context):
         print(spiked_decision_poll)
+
+    @pytest.mark.ruffian_generate_remote_id_change_data
+    def test_generate_remote_id_change_data(self, generate_remote_id_change_data_arg, mock_context):
+        sent_args = json.loads(json.dumps(generate_remote_id_change_data_arg, cls=AlgEncoder))
+        results = lambda_labor(sent_args, mock_context)
+        loaded_results = json.loads(results, cls=AlgDecoder)
+        assert isinstance(results, str)
+        assert isinstance(loaded_results, StoredData)

@@ -6,6 +6,7 @@
     extraction. If so, that data is gathered, and finally the entire thing is collected together into a single package,
     which we can then transform, assimilate, etc.
 """
+
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
@@ -49,6 +50,8 @@ def _build_enrich_signature(**kwargs):
 
 @xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
 def _build_change_data_signatures(task_args, **kwargs):
+    import json
+    from toll_booth.alg_obj.serializers import AlgEncoder
     subtask_name = 'generate_remote_id_change_data'
     signatures = []
     names = kwargs['names']
@@ -60,7 +63,8 @@ def _build_change_data_signatures(task_args, **kwargs):
     change_action = changelog_types[str(action_id)]
     remote_actions = change_actions.get(change_action.action, {})
     for remote_change in remote_actions:
-        new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change)
+        remote_change_identifier = json.dumps(remote_change, cls=AlgEncoder)
+        new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change_identifier)
         signature = LambdaSignature(fn_identifier, subtask_name, task_args=new_task_args, **kwargs)
         signatures.append(signature)
     if not signatures:
