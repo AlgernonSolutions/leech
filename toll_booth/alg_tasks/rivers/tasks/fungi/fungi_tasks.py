@@ -3,8 +3,8 @@ from aws_xray_sdk.core import xray_recorder
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
-@task('get_local_max_change_type_value')
 @xray_recorder.capture('get_local_max_change_type_value')
+@task('get_local_max_change_type_value')
 def get_local_max_change_type_value(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
     from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException
@@ -26,8 +26,8 @@ def get_local_max_change_type_value(**kwargs):
     return {'local_max_value': local_max_value}
 
 
-@task('pull_change_types')
 @xray_recorder.capture('pull_change_types')
+@task('pull_change_types')
 def pull_change_types(**kwargs):
     from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 
@@ -35,8 +35,8 @@ def pull_change_types(**kwargs):
     return {'changelog_types': change_types}
 
 
-@task('unlink_old_ids')
 @xray_recorder.capture('unlink_old_ids')
+@task('unlink_old_ids')
 def unlink_old_ids(**kwargs):
     remote_id_values = kwargs['remote_id_values']
     local_id_values = kwargs['local_id_values']
@@ -45,8 +45,8 @@ def unlink_old_ids(**kwargs):
     _set_changed_ids(change_type='unlink', id_values=unlinked_id_values, **kwargs)
 
 
-@task('link_new_ids')
 @xray_recorder.capture('link_new_ids')
+@task('link_new_ids')
 def link_new_ids(**kwargs):
     remote_id_values = kwargs['remote_id_values']
     local_id_values = kwargs['local_id_values']
@@ -55,8 +55,8 @@ def link_new_ids(**kwargs):
     _set_changed_ids(change_type='link', id_values=newly_linked_id_values, **kwargs)
 
 
-@task('put_new_ids')
 @xray_recorder.capture('put_new_ids')
+@task('put_new_ids')
 def put_new_ids(**kwargs):
     remote_id_values = kwargs['remote_id_values']
     local_id_values = kwargs['local_id_values']
@@ -64,8 +64,8 @@ def put_new_ids(**kwargs):
     _set_changed_ids(change_type='new', id_values=new_id_values, **kwargs)
 
 
-@task('get_local_ids')
 @xray_recorder.capture('get_local_ids')
+@task('get_local_ids')
 def get_local_ids(**kwargs):
     from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
     from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
@@ -79,8 +79,8 @@ def get_local_ids(**kwargs):
     return {'local_id_values': local_id_values}
 
 
-@task('get_remote_ids')
 @xray_recorder.capture('get_remote_ids')
+@task('get_remote_ids')
 def get_remote_ids(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
@@ -91,8 +91,8 @@ def get_remote_ids(**kwargs):
         return {'remote_id_values': results}
 
 
-@task('work_remote_id_change_type')
 @xray_recorder.capture('work_remote_id_change_type')
+@task('work_remote_id_change_type')
 def work_remote_id_change_type(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -122,8 +122,8 @@ def work_remote_id_change_type(**kwargs):
         return {'change_actions': sorted_changes}
 
 
-@task('get_enrichment_for_change_action')
 @xray_recorder.capture('get_enrichment_for_change_action')
+@task('get_enrichment_for_change_action')
 def get_enrichment_for_change_action(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe.mule_team import CredibleMuleTeam
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -153,8 +153,8 @@ def get_enrichment_for_change_action(**kwargs):
     return {'enriched_data': enriched_data}
 
 
-@task('build_mapping')
 @xray_recorder.capture('build_mapping')
+@task('build_mapping')
 def build_mapping(**kwargs):
     from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
@@ -170,8 +170,8 @@ def build_mapping(**kwargs):
     return {'mapping': object_mapping}
 
 
-@task('generate_remote_id_change_data')
 @xray_recorder.capture('generate_remote_id_change_data')
+@task('generate_remote_id_change_data')
 def generate_remote_id_change_data(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
