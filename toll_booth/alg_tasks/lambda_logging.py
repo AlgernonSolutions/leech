@@ -1,8 +1,15 @@
 import logging
+import boto3
+import botocore
+import requests
+
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.core import patch_all
 
 
 def lambda_logged(lambda_function):
     def wrapper(*args):
+        patch_all()
         event = args[0]
         context = args[1]
         root = logging.getLogger()
