@@ -63,7 +63,7 @@ def _build_change_data_signatures(task_args, **kwargs):
     change_action = changelog_types[str(action_id)]
     remote_actions = change_actions.get(change_action.action, {})
     for remote_change in remote_actions:
-        remote_change_identifier = json.dumps(remote_change, cls=AlgEncoder)
+        remote_change_identifier = hash(json.dumps(remote_change, cls=AlgEncoder))
         new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change_identifier)
         lambda_identifier = f'{remote_change_identifier}-{fn_identifier}'
         signature = LambdaSignature(lambda_identifier, subtask_name, task_args=new_task_args, **kwargs)

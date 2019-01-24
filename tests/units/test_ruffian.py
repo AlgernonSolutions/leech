@@ -81,3 +81,8 @@ class TestRuffian:
         loaded_results = json.loads(results, cls=AlgDecoder)
         assert isinstance(results, str)
         assert isinstance(loaded_results, StoredData)
+
+    @pytest.mark.test_hanging_decider
+    def test_hanging_decider(self, hanging_decider_arg, mock_context):
+        sent_args = json.loads(json.dumps(hanging_decider_arg, cls=AlgEncoder))
+        decide(sent_args, mock_context)
