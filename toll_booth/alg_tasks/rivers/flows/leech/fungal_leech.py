@@ -17,7 +17,8 @@ def fungal_leech(**kwargs):
     kwargs['names'] = names
     transform_signature = _build_transform_signature(**kwargs)
     assimilate_signature = _build_assimilate_signature(**kwargs)
-    leech_chain = chain(transform_signature, assimilate_signature)
+    load_signature = _build_load_signature(**kwargs)
+    leech_chain = chain(transform_signature, assimilate_signature, load_signature)
     leech_results = leech_chain(**kwargs)
     if leech_results is None:
         return
@@ -39,7 +40,7 @@ def _build_assimilate_signature(**kwargs):
 
 
 @xray_recorder.capture('fungal_leech_build_load_signature')
-def _build_assimilate_signature(**kwargs):
+def _build_load_signature(**kwargs):
     names = kwargs['names']
     task_identifier = names['load']
     return LambdaSignature(task_identifier, 'load', **kwargs)

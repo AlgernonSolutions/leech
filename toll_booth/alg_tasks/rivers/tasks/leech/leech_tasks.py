@@ -1,6 +1,9 @@
+from aws_xray_sdk.core import xray_recorder
+
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
+@xray_recorder.capture('transform')
 @task('transform')
 def transform(**kwargs):
     from toll_booth.alg_obj.graph.ogm.arbiter import RuleArbiter
@@ -16,6 +19,7 @@ def transform(**kwargs):
     return {'potentials': potentials}
 
 
+@xray_recorder.capture('assimilate')
 @task('assimilate')
 def assimilate(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import EdgeRegulator
@@ -36,6 +40,14 @@ def assimilate(**kwargs):
     return {'assimilation': assimilation_results}
 
 
+@xray_recorder.capture('load')
+@task('load')
+def load(**kwargs):
+    from toll_booth.alg_obj.graph.ogm.ogm import Ogm
+
+    ogm = Ogm(**kwargs)
+
+
 def _derive_vertexes(potential_vertex, rule_entry, leech_driver):
     if potential_vertex.is_properties_complete and potential_vertex.is_identifiable:
         return [potential_vertex], False
@@ -46,4 +58,3 @@ def _derive_vertexes(potential_vertex, rule_entry, leech_driver):
     if rule_entry.is_stub:
         return [potential_vertex], False
     return [], None
-
