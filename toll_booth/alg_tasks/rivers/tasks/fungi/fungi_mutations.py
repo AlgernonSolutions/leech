@@ -25,8 +25,8 @@ def split_entry(field_value):
     return field_value, None
 
 
-def split_record_id(cls, field_value, **kwargs):
-    record_id, record_type = cls._split_entry(field_value)
+def split_record_id(field_value):
+    record_id, record_type = split_entry(field_value)
     return {'record_id': record_id, 'record_type': record_type}
 
 
