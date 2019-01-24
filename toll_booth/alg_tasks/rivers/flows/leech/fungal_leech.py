@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, chain
+from toll_booth.alg_obj.aws.gentlemen.rafts import chain, LambdaSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -28,18 +28,18 @@ def fungal_leech(**kwargs):
 def _build_transform_signature(**kwargs):
     names = kwargs['names']
     task_identifier = names['transform']
-    return ActivitySignature(task_identifier, 'transform', **kwargs)
+    return LambdaSignature(task_identifier, 'transform', **kwargs)
 
 
 @xray_recorder.capture('fungal_leech_build_assimilate_signature')
 def _build_assimilate_signature(**kwargs):
     names = kwargs['names']
     task_identifier = names['assimilate']
-    return ActivitySignature(task_identifier, 'assimilate', **kwargs)
+    return LambdaSignature(task_identifier, 'assimilate', **kwargs)
 
 
 @xray_recorder.capture('fungal_leech_build_load_signature')
 def _build_assimilate_signature(**kwargs):
     names = kwargs['names']
     task_identifier = names['load']
-    return ActivitySignature(task_identifier, 'load', **kwargs)
+    return LambdaSignature(task_identifier, 'load', **kwargs)
