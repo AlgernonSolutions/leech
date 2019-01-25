@@ -33,6 +33,11 @@ class RuffianRoost:
     def _build_machine_name(cls, work_list):
         import uuid
 
+        banned_characters = [
+            '?', '*', '<', '>', '{', '}', '[', ']',
+            ':', ';', ',', '\\', '|', '^', '~', '$',
+            '#', '%', '&', '`', '"', ' '
+        ]
         abbreviations = {
             'PROGRAM': 'PGM',
             'EMPLOYEE': 'EMP',
@@ -59,9 +64,11 @@ class RuffianRoost:
             machine_id = work_list['list_name']
         for original_word, replacement_word in abbreviations.items():
             machine_id = machine_id.replace(original_word, replacement_word)
+        for entry in banned_characters:
+            machine_id = machine_id.replace(entry, '')
+        if len(machine_id) > 70:
+            machine_id = hash(machine_id)
         machine_name = f'{machine_id}!!{uuid.uuid4().hex}'
-        machine_name = machine_name.replace(' ', '')
-        machine_name = machine_name.replace('?', '')
         machine_name = machine_name[:80]
         return machine_name
 
