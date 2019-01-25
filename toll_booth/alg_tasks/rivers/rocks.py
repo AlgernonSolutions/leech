@@ -1,4 +1,3 @@
-import json
 import logging
 
 import boto3
@@ -34,8 +33,7 @@ def _get_versions(work_history):
     if marker is None:
         versions = Versions.retrieve(work_history.domain_name)
         return versions, RecordMarker.for_versions(versions)
-    versions = json.loads(marker.marker_details)
-    return versions, None
+    return marker.marker_details, None
 
 
 def _get_config(work_history):
@@ -43,8 +41,7 @@ def _get_config(work_history):
     if marker is None:
         configs = LeechConfig.get()
         return configs, RecordMarker.for_config(configs)
-    configs = json.loads(marker.marker_details)
-    return configs, None
+    return marker.marker_details, None
 
 
 def workflow(workflow_name):
