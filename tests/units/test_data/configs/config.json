@@ -36,14 +36,14 @@
         "workflow_name": "work_remote_id_change_action",
         "workflow_description": "workflow for extracting and collecting a change action",
         "workflow_config": {
-          "concurrency": 1
+          "concurrency": 25
         }
       },
       {
         "workflow_name": "work_remote_id_change_type",
         "workflow_description": "workflow for extracting and collecting a change type",
         "workflow_config": {
-          "concurrency": 25,
+          "concurrency": 5,
           "time_outs": {
             "task": 300
           }
