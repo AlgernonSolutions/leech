@@ -29,19 +29,25 @@ def _disband_idle_ruffians(work_history):
 
 
 def _get_versions(work_history):
+    versions = work_history.versions
     marker = work_history.marker_history.versions_marker
-    if marker is None:
-        versions = Versions.retrieve(work_history.domain_name)
-        return versions, RecordMarker.for_versions(versions)
-    return marker.marker_details, None
+    if versions is None:
+        if marker is None:
+            versions = Versions.retrieve(work_history.domain_name)
+            return versions, RecordMarker.for_versions(versions)
+        return marker.marker_details, None
+    return versions, None
 
 
 def _get_config(work_history):
+    config = work_history.config
     marker = work_history.marker_history.config_marker
-    if marker is None:
-        configs = LeechConfig.get()
-        return configs, RecordMarker.for_config(configs)
-    return marker.marker_details, None
+    if config is None:
+        if marker is None:
+            configs = LeechConfig.get()
+            return configs, RecordMarker.for_config(configs)
+        return marker.marker_details, None
+    return config, None
 
 
 def workflow(workflow_name):

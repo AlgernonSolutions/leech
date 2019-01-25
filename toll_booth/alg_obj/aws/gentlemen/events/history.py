@@ -7,7 +7,7 @@ from toll_booth.alg_obj.aws.gentlemen.events.lambdas import LambdaHistory
 from toll_booth.alg_obj.aws.gentlemen.events.markers import MarkerHistory
 from toll_booth.alg_obj.aws.gentlemen.events.subtasks import SubtaskHistory
 from toll_booth.alg_obj.aws.gentlemen.events.timers import TimerHistory
-from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments, Versions, LeechConfig
 from toll_booth.alg_obj.serializers import AlgDecoder
 
 _starting_step = 'WorkflowExecutionStarted'
@@ -15,6 +15,7 @@ _starting_step = 'WorkflowExecutionStarted'
 
 class WorkflowHistory:
     def __init__(self, domain_name, flow_type, task_token, flow_id, run_id, lambda_role, parent_flow_id, parent_run_id,
+                 versions: Versions, config: LeechConfig,
                  task_args: TaskArguments, events: [Event], subtask_history: SubtaskHistory, lambda_history: LambdaHistory,
                  activity_history: ActivityHistory, marker_history: MarkerHistory, timer_history: TimerHistory):
         self._domain_name = domain_name
@@ -24,6 +25,8 @@ class WorkflowHistory:
         self._lambda_role = lambda_role
         self._parent_flow_id = parent_flow_id
         self._parent_run_id = parent_run_id
+        self._versions = versions
+        self._config = config
         self._task_args = task_args
         self._task_token = task_token
         self._events = events
@@ -53,9 +56,10 @@ class WorkflowHistory:
         activity_history = ActivityHistory.generate_from_events(events, activities.steps)
         marker_history = MarkerHistory.generate_from_events(run_id, events)
         timer_history = TimerHistory.generate_from_events(events)
-        task_args, lambda_role, parent_flow_id, parent_run_id = cls._generate_workflow_starter_data(flow_type, events)
+        task_args, lambda_role, parent_flow_id, parent_run_id, versions, config = cls._generate_workflow_starter_data(flow_type, events)
         cls_args = {
             'domain_name': domain_name, 'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id,
+            'versions': versions, 'config': config,
             'run_id': run_id, 'parent_flow_id': parent_flow_id, 'parent_run_id': parent_run_id, 'task_args': task_args,
             'lambda_role': lambda_role, 'events': events, 'subtask_history': subtask_history,
             'lambda_history': lambda_history, 'activity_history': activity_history,
@@ -68,11 +72,14 @@ class WorkflowHistory:
         for event in events:
             if event.event_type == _starting_step:
                 input_string = event.event_attributes.get('input', '{}')
-                task_args = TaskArguments.for_starting_data(operation_name, json.loads(input_string, cls=AlgDecoder))
+                input_data = json.loads(input_string, cls=AlgDecoder)
+                versions = input_data.get('versions', None)
+                config = input_data.get('config', None)
+                task_args = TaskArguments.for_starting_data(operation_name, input_data.get('task_args', {}))
                 parent_data = event.event_attributes.get('parentWorkflowExecution', {})
                 parent_flow_id = parent_data.get('workflowId', None)
                 parent_run_id = parent_data.get('runId', None)
-                return task_args, event.event_attributes['lambdaRole'], parent_flow_id, parent_run_id
+                return task_args, event.event_attributes['lambdaRole'], parent_flow_id, parent_run_id, versions, config
 
     @property
     def domain_name(self):
@@ -93,6 +100,14 @@ class WorkflowHistory:
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def versions(self):
+        return self._versions
+
+    @property
+    def config(self):
+        return self._config
 
     @property
     def has_parent(self):
