@@ -1,3 +1,4 @@
+import json
 import logging
 
 import boto3
@@ -28,14 +29,32 @@ def _disband_idle_ruffians(work_history):
     return disband_markers
 
 
+def _get_versions(work_history):
+    marker = work_history.marker_history.versions_marker
+    if marker is None:
+        versions = Versions.retrieve(work_history.domain_name)
+        return versions, RecordMarker.for_versions(versions)
+    versions = json.loads(marker.marker_details)
+    return versions, None
+
+
+def _get_config(work_history):
+    marker = work_history.marker_history.versions_marker
+    if marker is None:
+        configs = LeechConfig.get()
+        return configs, RecordMarker.for_config(configs)
+    configs = json.loads(marker.marker_details)
+    return configs, None
+
+
 def workflow(workflow_name):
     def workflow_wrapper(production_fn):
         def wrapper(*args):
             client = boto3.client('swf')
             work_history = args[0]
             made_decisions = []
-            versions = Versions.retrieve(work_history.domain_name)
-            configs = LeechConfig.get()
+            versions, version_decision = _get_versions(work_history)
+            configs, config_decision = _get_config(work_history)
             task_args = work_history.task_args
             context_kwargs = {
                 'task_args': task_args,
@@ -56,6 +75,10 @@ def workflow(workflow_name):
             results = production_fn(**context_kwargs)
             made_decisions.extend(_disband_idle_ruffians(work_history))
             decisions = MadeDecisions(work_history.task_token)
+            if version_decision:
+                decisions.add_decision(version_decision)
+            if config_decision:
+                decisions.add_decision(config_decision)
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
                     mark_ruffian = _conscript_ruffian(work_history, decision, configs)

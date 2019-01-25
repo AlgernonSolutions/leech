@@ -69,6 +69,20 @@ class MarkerHistory:
             checkpoints.update(marker.marker_details)
         return checkpoints
 
+    @property
+    def config_marker(self):
+        config_markers = self.get_markers_by_type('config')
+        for marker in config_markers:
+            return marker
+        return None
+
+    @property
+    def versions_marker(self):
+        value_markers = self.get_markers_by_type('versions')
+        for marker in value_markers:
+            return marker
+        return None
+
     def get_ruffians(self, run_id):
         ruffians = {}
         ruffian_markers = self.get_markers_by_type('ruffian')

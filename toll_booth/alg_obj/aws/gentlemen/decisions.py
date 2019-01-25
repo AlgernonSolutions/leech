@@ -218,6 +218,16 @@ class RecordMarker(Decision):
         return cls('checkpoint', checkpoint_string)
 
     @classmethod
+    def for_versions(cls, versions):
+        version_data = json.dumps(versions, cls=AlgEncoder)
+        return cls('versions', version_data)
+
+    @classmethod
+    def for_config(cls, config):
+        config_data = json.dumps(config, cls=AlgEncoder)
+        return cls('config', config_data)
+
+    @classmethod
     def for_ruffian(cls, task_identifier, execution_arn, is_close=False):
         ruffian_data = {'task_identifier': task_identifier, 'execution_arn': execution_arn, 'is_close': is_close}
         data_string = json.dumps(ruffian_data, cls=AlgEncoder)
