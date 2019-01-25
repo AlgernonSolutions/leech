@@ -258,7 +258,7 @@ class LeechConfig(AlgObject):
 
     @classmethod
     def parse_json(cls, json_dict):
-        return json_dict['workflow_configs']
+        return cls(json_dict['workflow_configs'], json_dict['task_configs'])
 
     @classmethod
     def get(cls, **kwargs):
