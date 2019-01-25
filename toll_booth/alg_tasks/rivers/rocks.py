@@ -84,6 +84,7 @@ def workflow(workflow_name):
                 decisions.add_decision(config_decision)
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
+                    decision.set_parent_data(configs, versions)
                     mark_ruffian = _conscript_ruffian(work_history, decision, configs)
                     if mark_ruffian:
                         for marker in mark_ruffian:

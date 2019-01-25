@@ -59,14 +59,14 @@ class StartLambda(Decision):
 
 
 class StartSubtask(Decision):
-    def __init__(self, subtask_identifier, subtask_type, task_args, versions, config, lambda_role, **kwargs):
+    def __init__(self, subtask_identifier, subtask_type, task_args, lambda_role, **kwargs):
         subtask_attributes = {
             'workflowType': {
                 'name': subtask_type,
                 'version': kwargs['version']
             },
             'workflowId': subtask_identifier,
-            'input': json.dumps({'task_args': task_args, 'config': config, 'versions': versions}, cls=AlgEncoder),
+            'input': json.dumps({'task_args': task_args}, cls=AlgEncoder),
             'taskList': {'name': kwargs.get('task_list', subtask_identifier)},
             'lambdaRole': lambda_role
         }
@@ -113,6 +113,12 @@ class StartSubtask(Decision):
 
     def set_control(self, control_string):
         self._decision_attributes['control'] = control_string
+
+    def set_parent_data(self, config, versions):
+        input_string = self._decision_attributes['input']
+        input_data = json.loads(input_string, cls=AlgEncoder)
+        input_data.update({'config': config, 'versions': versions})
+        self._decision_attributes['input'] = json.dumps(input_data)
 
 
 class StartActivity(Decision):
