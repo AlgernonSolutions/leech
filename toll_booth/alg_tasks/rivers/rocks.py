@@ -37,7 +37,7 @@ def _get_versions(work_history):
 
 
 def _get_config(work_history):
-    marker = work_history.marker_history.versions_marker
+    marker = work_history.marker_history.config_marker
     if marker is None:
         configs = LeechConfig.get()
         return configs, RecordMarker.for_config(configs)
