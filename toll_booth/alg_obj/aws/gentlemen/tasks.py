@@ -83,7 +83,7 @@ class OperationName:
         return self.name
 
 
-class Versions:
+class Versions(AlgObject):
     def __init__(self, workflow_versions, task_versions):
         self._workflow_versions = workflow_versions
         self._task_versions = task_versions
@@ -136,6 +136,10 @@ class Versions:
                 if version > results[activity_name]:
                     results[activity_name] = version
         return results
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['workflow_versions'], json_dict['task_versions'])
 
 
 class TaskArguments(AlgObject):
