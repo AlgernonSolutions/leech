@@ -46,11 +46,13 @@ class RuffianRoost:
             'REVOCATION': 'RVCTN',
             'EXOSTAR': 'XSTR',
             'DELETED': 'DLTD',
+            'DELETE': 'DLT',
             'DIAGNOSIS': 'DX',
             'SUPPORT': 'SUPT',
             'REMOVED': 'RMVD',
             'SUBSCRIPTION': 'SBSCPTN',
-            'PROOFING': 'PRFNG'
+            'PROOFING': 'PRFNG',
+            'PROFILE': 'PRFL'
         }
         machine_id = work_list
         if 'list_name' in work_list:
