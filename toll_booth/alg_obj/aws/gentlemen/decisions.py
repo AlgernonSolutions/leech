@@ -116,9 +116,9 @@ class StartSubtask(Decision):
 
     def set_parent_data(self, config, versions):
         input_string = self._decision_attributes['input']
-        input_data = json.loads(input_string, cls=AlgEncoder)
+        input_data = json.loads(input_string, cls=AlgDecoder)
         input_data.update({'config': config, 'versions': versions})
-        self._decision_attributes['input'] = json.dumps(input_data)
+        self._decision_attributes['input'] = json.dumps(input_data, cls=AlgEncoder)
 
 
 class StartActivity(Decision):
