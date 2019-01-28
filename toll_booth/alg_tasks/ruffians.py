@@ -6,6 +6,10 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
 def _set_run_id_logging(flow_id, run_id, task_id, context):
+    root = logging.getLogger()
+    if root.handlers:
+        for handler in root.handlers:
+            root.removeHandler(handler)
     logging.basicConfig(format='[%(levelname)s] || ' +
                                f'function_name:{context.function_name}|function_arn:{context.invoked_function_arn}'
                                f'|request_id:{context.aws_request_id}' +

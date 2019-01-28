@@ -51,6 +51,10 @@ def _get_config(work_history):
 
 
 def _set_run_id_logging(flow_id, run_id, context):
+    root = logging.getLogger()
+    if root.handlers:
+        for handler in root.handlers:
+            root.removeHandler(handler)
     logging.basicConfig(format='[%(levelname)s] || ' +
                                f'function_name:{context.function_name}|function_arn:{context.invoked_function_arn}'
                                f'|request_id:{context.aws_request_id}' +
@@ -62,7 +66,8 @@ def workflow(workflow_name):
         def wrapper(*args, **kwargs):
             client = boto3.client('swf')
             work_history = args[0]
-            _set_run_id_logging(work_history.flow_id, work_history.run_id, kwargs['context'])
+            if kwargs['context']:
+                _set_run_id_logging(work_history.flow_id, work_history.run_id, kwargs['context'])
             made_decisions = []
             versions, version_decision = _get_versions(work_history)
             configs, config_decision = _get_config(work_history)
