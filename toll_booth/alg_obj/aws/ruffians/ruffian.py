@@ -115,7 +115,7 @@ class Ruffian:
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
-        logging.info(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
+        logging.debug(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
         return time_remaining
 
     def supervise(self):

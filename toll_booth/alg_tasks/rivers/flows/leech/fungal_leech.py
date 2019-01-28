@@ -5,7 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import chain, LambdaSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@workflow
+@workflow('fungal_leech')
 def fungal_leech(**kwargs):
     decisions = kwargs['decisions']
     execution_id = kwargs['execution_id']

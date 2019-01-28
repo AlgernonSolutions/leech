@@ -6,6 +6,7 @@ import pytest
 
 from tests.units.conftests.bad_subtask_events import bad_subtask_events
 from tests.units.test_data import patches
+from tests.units.test_data.data_setup.boto import intercept
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.serializers import AlgDecoder
 
