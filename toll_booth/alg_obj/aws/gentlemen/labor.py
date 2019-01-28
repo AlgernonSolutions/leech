@@ -11,8 +11,9 @@ from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
 
 
 class Laborer:
-    def __init__(self, domain_name, task_list, laborer_name=None):
+    def __init__(self, domain_name, task_list, laborer_name=None, context=None):
         self._laborer_name = laborer_name
+        self._context = context
         self._domain_name = domain_name
         self._task_list = task_list
         self._client = boto3.client('swf', config=Config(

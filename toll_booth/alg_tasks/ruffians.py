@@ -5,6 +5,14 @@ from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
+def _set_run_id_logging(flow_id, run_id, task_id, context):
+    logging.basicConfig(format='[%(levelname)s] || ' +
+                               f'function_name:{context.function_name}|function_arn:{context.invoked_function_arn}'
+                               f'|request_id:{context.aws_request_id}' +
+                               f'|flow_id:{flow_id}|run_id:{run_id}|task_id:{task_id}'
+                               f'|| %(asctime)s %(message)s', level=logging.INFO)
+
+
 def rough_work(production_fn):
     def wrapper(event, context):
         logging.info(f'started a rough_work decorated function: {production_fn}, event: {event}')
@@ -19,6 +27,8 @@ def lambda_work(production_fn):
         logging.info(f'started a lambda_work decorated function: {production_fn}, event: {event}')
 
         task_name = event['task_name']
+        flow_id, run_id, task_id = event['flow_id'], event['run_id'], event['task_id']
+        _set_run_id_logging(flow_id, run_id, task_id, context)
         logging.info(f'raw task_args for {task_name} are {event["task_args"]}')
         task_args = json.loads(json.dumps(event['task_args']), cls=AlgDecoder)
         register_results = event.get('register_results', False)
@@ -30,7 +40,7 @@ def lambda_work(production_fn):
             except Exception as e:
                 import traceback
 
-                logging.info(f'failure running lambda task named {task_name}, task_args {task_args}, cause: {str(e.args)}')
+                logging.error(f'failure running lambda task named {task_name}, task_args {task_args}, cause: {str(e.args)}')
                 trace = traceback.format_exc()
                 return json.dumps({'fail': True, 'reason': str(e.args), 'details': trace})
         results = production_fn(task_name, task_args)

@@ -38,6 +38,8 @@ class StartLambda(Decision):
             lambda_attributes['input'] = json.dumps({
                 'task_name': function_name,
                 'task_args': task_args,
+                'flow_id': kwargs.get('flow_id', '0'), 'run_id': kwargs.get('run_id', '0'),
+                'task_id': lambda_id,
                 'register_results': False
             }, cls=AlgEncoder)
         if kwargs.get('control', None) is not None:
@@ -56,6 +58,13 @@ class StartLambda(Decision):
     @property
     def input_args(self):
         return self.__getitem__('input')
+
+    def set_id_info(self, flow_id, run_id):
+        input_string = self._decision_attributes['input']
+        input_data = json.loads(input_string, cls=AlgDecoder)
+        input_data['flow_id'] = flow_id
+        input_data['run_id'] = run_id
+        self._decision_attributes['input'] = json.dumps(input_data, cls=AlgEncoder)
 
 
 class StartSubtask(Decision):
@@ -135,6 +144,8 @@ class StartActivity(Decision):
             activity_attributes['input'] = json.dumps({
                 'task_name': activity_name,
                 'task_args': task_args,
+                'flow_id': kwargs.get('flow_id', '0'), 'run_id': kwargs.get('run_id', '0'),
+                'task_id': activity_id,
                 'register_results': True
             }, cls=AlgEncoder)
         if 'control' in kwargs:
@@ -167,6 +178,13 @@ class StartActivity(Decision):
 
     def set_control(self, control_string):
         self._decision_attributes['control'] = control_string
+
+    def set_id_info(self, flow_id, run_id):
+        input_string = self._decision_attributes['input']
+        input_data = json.loads(input_string, cls=AlgDecoder)
+        input_data['flow_id'] = flow_id
+        input_data['run_id'] = run_id
+        self._decision_attributes['input'] = json.dumps(input_data, cls=AlgEncoder)
 
 
 class CompleteWork(Decision):

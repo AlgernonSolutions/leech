@@ -16,9 +16,10 @@ from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
 
 
 class General:
-    def __init__(self, domain_name, task_list, identity=None):
+    def __init__(self, domain_name, task_list, context=None, identity=None):
         self._domain_name = domain_name
         self._task_list = task_list
+        self._context = context
         self._identity = identity
         self._client = boto3.client('swf', config=Config(
             connect_timeout=70, read_timeout=70, retries={'max_attempts': 0}))
@@ -116,7 +117,7 @@ class General:
             for flow_module in flow_modules:
                 flow = getattr(flow_module, flow_type, None)
                 if flow:
-                    return flow(work_history)
+                    return flow(work_history, context=self._context)
             raise NotImplementedError('could not find a registered flow for type: %s' % flow_type)
 
     def _fail_task(self, work_history, exception, trace):

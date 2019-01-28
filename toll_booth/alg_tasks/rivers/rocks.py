@@ -50,11 +50,19 @@ def _get_config(work_history):
     return config, None
 
 
+def _set_run_id_logging(flow_id, run_id, context):
+    logging.basicConfig(format='[%(levelname)s] || ' +
+                               f'function_name:{context.function_name}|function_arn:{context.invoked_function_arn}'
+                               f'|request_id:{context.aws_request_id}' +
+                               f'|flow_id:{flow_id}|run_id:{run_id} || %(asctime)s %(message)s', level=logging.INFO)
+
+
 def workflow(workflow_name):
     def workflow_wrapper(production_fn):
-        def wrapper(*args):
+        def wrapper(*args, **kwargs):
             client = boto3.client('swf')
             work_history = args[0]
+            _set_run_id_logging(work_history.flow_id, work_history.run_id, kwargs['context'])
             made_decisions = []
             versions, version_decision = _get_versions(work_history)
             configs, config_decision = _get_config(work_history)
@@ -89,6 +97,10 @@ def workflow(workflow_name):
                     if mark_ruffian:
                         for marker in mark_ruffian:
                             decisions.add_decision(marker)
+                try:
+                    decision.set_id_info(work_history.flow_id, work_history.run_id)
+                except AttributeError:
+                    pass
                 decisions.add_decision(decision)
             client.respond_decision_task_completed(**decisions.for_commit)
             return results
