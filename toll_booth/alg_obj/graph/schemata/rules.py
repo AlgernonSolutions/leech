@@ -144,6 +144,9 @@ class VertexLinkRuleEntry(AlgObject):
     def is_pass(self):
         return self._if_absent == 'pass'
 
+    def __str__(self):
+        return self._edge_type
+
 
 class TargetSpecifier(AlgObject, ABC):
     def __init__(self, specifier_name, specifier_type):

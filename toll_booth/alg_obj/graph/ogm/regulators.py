@@ -434,6 +434,9 @@ class PotentialVertex(GraphObject):
     def graphed_object_type(self):
         return self._identifier_stem.object_type
 
+    def __str__(self):
+        return f'{self._object_type}-{self._identifier_stem}-{self._internal_id}'
+
 
 class PotentialEdge(GraphObject):
     def __init__(self, object_type, internal_id, object_properties, from_object, to_object):
