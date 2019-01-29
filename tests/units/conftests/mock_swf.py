@@ -135,3 +135,11 @@ def spiked_decision_poll():
     work_history = WorkflowHistory.parse_from_poll('TheLeech', poll_response)
     yield mock_poll
     poll_patch.stop()
+
+
+@pytest.fixture
+def mock_work_history():
+    from tests.units.conftests.mock_events import bad_subtask_execution
+    from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
+    history = WorkflowHistory.parse_from_poll('TheLeech', bad_subtask_execution)
+    return history

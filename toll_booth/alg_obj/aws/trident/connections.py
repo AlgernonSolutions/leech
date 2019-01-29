@@ -66,6 +66,8 @@ class TridentNotary:
     _service = 'neptune-db'
 
     def __init__(self, neptune_endpoint, session=None):
+        if neptune_endpoint is None:
+            raise RuntimeError('must specify neptune endpoint when calling the trident_notary')
         if not session:
             session = requests.session()
         self._session = session
@@ -83,12 +85,12 @@ class TridentNotary:
 
     @classmethod
     def get_for_writer(cls, **kwargs):
-        endpoint = kwargs.get('neptune_endpoint', os.getenv('NEPTUNE_ENDPOINT', ''))
+        endpoint = kwargs.get('graph_db_endpoint', os.getenv('GRAPH_DB_ENDPOINT', None))
         return cls(endpoint)
 
     @classmethod
     def get_for_reader(cls, **kwargs):
-        endpoint = kwargs.get('graph_reader_endpoint', os.getenv('GRAPH_READER_ENDPOINT', ''))
+        endpoint = kwargs.get('graph_db_reader_endpoint', os.getenv('GRAPH_DB_READER_ENDPOINT', None))
         return cls(endpoint)
 
     def send(self, command):

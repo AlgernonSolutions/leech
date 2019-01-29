@@ -74,8 +74,8 @@ class TestRuffian:
         assert isinstance(loaded_results, StoredData)
 
     @pytest.mark.ruffian_work_bad_subtask_events
-    def test_ruffian_bad_subtask_events(self, spiked_decision_poll, mock_context):
-        print(spiked_decision_poll)
+    def test_ruffian_bad_subtask_events(self, mock_work_history, mock_context):
+        print(mock_work_history)
 
     @pytest.mark.ruffian_generate_remote_id_change_data
     def test_generate_remote_id_change_data(self, generate_remote_id_change_data_arg, mock_context):

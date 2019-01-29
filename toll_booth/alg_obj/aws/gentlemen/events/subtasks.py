@@ -35,6 +35,7 @@ class SubtaskExecution(Execution):
     def __init__(self, execution_id: str, run_id: str, events: [Event]):
         super().__init__(execution_id, events, steps)
         self._run_id = run_id
+        self._flow_id = execution_id
 
     @classmethod
     def generate_from_start_event(cls, event: Event):
@@ -48,6 +49,10 @@ class SubtaskExecution(Execution):
     @property
     def run_id(self):
         return self._run_id
+
+    @property
+    def flow_id(self):
+        return self._flow_id
 
 
 class SubtaskOperation(Operation):
@@ -107,10 +112,10 @@ class SubtaskHistory(History):
         return
 
     def _add_execution_event(self, event: Event):
-        operation_run_id = event.event_attributes['initiatedEventId']
         subtask_execution = SubtaskExecution.generate_from_start_event(event)
+        operation_flow_id = subtask_execution.execution_id
         for operation in self._operations:
-            if operation_run_id in operation.run_ids:
+            if operation_flow_id == operation.operation_id:
                 if event.event_id in operation.event_ids:
                     return
                 operation.add_execution(subtask_execution)
