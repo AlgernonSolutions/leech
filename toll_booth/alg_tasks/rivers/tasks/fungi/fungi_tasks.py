@@ -198,19 +198,21 @@ def generate_remote_id_change_data(**kwargs):
     }
     returned_data = {
         'source': source_data,
-        'by_emp_id_target': {
+        'by_emp_id_target': [{
             'id_source': id_source,
             'id_type': 'Employees',
             'id_value': by_emp_id
-        }
+        }],
+        'change_target': [],
+        'changed_target': []
     }
-    changed_target = _build_changed_targets(id_source, extracted_data, change_action)
-    if changed_target:
-        returned_data['changed_target'] = changed_target
+    changed_targets = _build_changed_targets(id_source, extracted_data, change_action)
+    if changed_targets:
+        returned_data['changed_target'].extend(changed_targets)
     change_details = enriched_data.get('change_detail', {})
     change_detail_target = change_details.get(change_date_utc, None)
     if change_detail_target is not None:
-        returned_data['change_target'] = change_detail_target
+        returned_data['change_target'].extend(change_detail_target)
     return {'change_data': returned_data}
 
 
