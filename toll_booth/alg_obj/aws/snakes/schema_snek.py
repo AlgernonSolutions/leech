@@ -42,7 +42,3 @@ class SchemaSnek:
         file_name = f'{self._folder_name}/{schema_name}'
         s3 = boto3.resource('s3')
         s3.Bucket(self._bucket_name).upload_file(file_path, file_name)
-
-    def get_schema_entry(self, entry_name, schema_name=None):
-        schema = self.get_schema(schema_name)
-        return schema[entry_name]
