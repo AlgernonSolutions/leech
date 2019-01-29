@@ -12,7 +12,8 @@ from toll_booth.alg_obj.graph.schemata.schema import Schema
 def refresh():
     logging.info('going to refresh the remote schema files')
     admin_file_name = os.path.dirname(__file__)
-    top_level = os.path.dirname(admin_file_name)
+    admin_directory = os.path.dirname(admin_file_name)
+    top_level = os.path.dirname(admin_directory)
     schema_path = ('tests', 'units', 'test_data', 'schemas', 'schema.json')
     master_schema_path = ('tests', 'units', 'test_data', 'schemas', 'master_schema.json')
     schema_file_path = os.path.join(top_level, *schema_path)

@@ -1,5 +1,6 @@
 import json
 
+import jsonref
 from jsonschema import validate
 
 from toll_booth.alg_obj import AlgObject
@@ -40,8 +41,8 @@ class Schema(AlgObject):
     def post(cls, schema_file_path, validation_schema_file_path, **kwargs):
         schema_snek = SchemaSnek(**kwargs)
         with open(schema_file_path) as schema_file, open(validation_schema_file_path) as validation_file:
-            working_schema = json.load(schema_file)
-            master_schema = json.load(validation_file)
+            working_schema = jsonref.load(schema_file)
+            master_schema = jsonref.load(validation_file)
             validate(working_schema, master_schema)
             schema_snek.put_schema(schema_file_path, **kwargs)
             schema_snek.put_validation_schema(schema_file_path, **kwargs)

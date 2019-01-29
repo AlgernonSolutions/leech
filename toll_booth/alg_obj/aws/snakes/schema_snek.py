@@ -2,6 +2,7 @@ import json
 import os
 
 import boto3
+import jsonref
 
 from toll_booth.alg_obj.serializers import AlgDecoder
 
@@ -32,7 +33,7 @@ class SchemaSnek:
         object_key = f'{self._folder_name}/{schema_name}'
         stored_object = s3.Object(self._bucket_name, object_key).get()
         stored_schema_string = stored_object['Body'].read()
-        schema = json.loads(stored_schema_string, cls=AlgDecoder)
+        schema = jsonref.loads(stored_schema_string, cls=AlgDecoder)
         return schema
 
     def put_schema(self, file_path, schema_name=None):

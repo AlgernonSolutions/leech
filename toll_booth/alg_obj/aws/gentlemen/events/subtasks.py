@@ -131,12 +131,13 @@ class SubtaskHistory(History):
         raise RuntimeError('attempted to add a failure event to a non-existent subtask operation')
 
     def _add_general_event(self, event: Event):
-        execution_run_id = event.event_attributes['startedEventId']
+        execution_details = event.event_attributes['workflowExecution']
+        event_flow_id = execution_details['workflowId']
         operation_run_id = event.event_attributes['initiatedEventId']
         for operation in self._operations:
-            if operation_run_id in operation.run_ids:
+            if event_flow_id == operation.operation_id:
                 for execution in operation.executions:
-                    if execution_run_id == execution.execution_id:
+                    if operation_run_id == execution.run_id:
                         if event.event_id in execution.event_ids:
                             return
                     execution.add_event(event)

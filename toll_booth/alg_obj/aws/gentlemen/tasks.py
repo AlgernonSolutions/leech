@@ -1,5 +1,6 @@
 import json
 
+import jsonref
 from jsonschema import validate
 
 from toll_booth.alg_obj import AlgObject
@@ -277,8 +278,8 @@ class LeechConfig(AlgObject):
         validation_file_name = kwargs.get('MASTER_CONFIG_FILE', 'master_config.json')
         snek = SchemaSnek(folder_name=folder_name, **kwargs)
         with open(config_file_path) as config_file, open(validation_file_path) as validation_file:
-            working_config = json.load(config_file)
-            master_config = json.load(validation_file)
+            working_config = jsonref.load(config_file)
+            master_config = jsonref.load(validation_file)
             validate(working_config, master_config)
             snek.put_schema(config_file_path, config_file_name)
             snek.put_schema(validation_file_path, validation_file_name)

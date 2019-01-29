@@ -270,7 +270,7 @@ class CredibleFrontEndDriver:
             raise RuntimeError(
                 'could not find employee with last_name: %s, first_initial: %s' % (last_name, first_initial))
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    # @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     @_login_required
     def get_monitor_extraction(self, **kwargs):
         mapping = kwargs['mapping']
