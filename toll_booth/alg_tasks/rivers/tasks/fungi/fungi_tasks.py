@@ -184,6 +184,7 @@ def generate_remote_id_change_data(**kwargs):
     change_date_utc = remote_change['UTCDate']
     extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
     id_source = driving_identifier_stem.get('id_source')
+    by_emp_id = enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
     source_data = {
         'change_date_utc': extracted_data['change_date_utc'],
         'change_description': extracted_data['change_description'],
@@ -193,10 +194,15 @@ def generate_remote_id_change_data(**kwargs):
         'id_source': id_source,
         'id_type': 'ChangeLog',
         'id_name': 'change_date_utc',
-        'by_emp_id': enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
+        'by_emp_id': by_emp_id
     }
     returned_data = {
-        'source': source_data
+        'source': source_data,
+        'by_emp_id_target': {
+            'id_source': id_source,
+            'id_type': 'Employees',
+            'id_value': by_emp_id
+        }
     }
     changed_target = _build_changed_targets(id_source, extracted_data, change_action)
     if changed_target:

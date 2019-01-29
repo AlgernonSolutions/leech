@@ -634,7 +634,7 @@
           "property_data_type": "String"
         },
         {
-          "property_name": "done_by",
+          "property_name": "by_emp_id",
           "property_data_type": "String"
         }
       ],
