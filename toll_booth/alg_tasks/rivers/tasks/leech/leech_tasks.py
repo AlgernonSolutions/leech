@@ -40,12 +40,22 @@ def assimilate(**kwargs):
     return {'assimilation': assimilation_results}
 
 
-@xray_recorder.capture('load')
-@task('load')
-def load(**kwargs):
+@xray_recorder.capture('index')
+@task('index')
+def index(**kwargs):
     from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 
     ogm = Ogm(**kwargs)
+    raise NotImplementedError('have not done the index operation you chuckle head')
+
+
+@xray_recorder.capture('graph')
+@task('graph')
+def graph(**kwargs):
+    from toll_booth.alg_obj.graph.ogm.ogm import Ogm
+
+    ogm = Ogm(**kwargs)
+    raise NotImplementedError('have not done the graph operation you chuckle head')
 
 
 def _derive_vertexes(potential_vertex, rule_entry, leech_driver):

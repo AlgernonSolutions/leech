@@ -149,6 +149,20 @@
         }
       },
       {
+        "task_name": "index",
+        "task_description": "uploads generated vertexes and edges into DynamoDB for indexing",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "task_name": "graph",
+        "task_description": "plots the generated vertex and it's edges into the graph database",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
         "task_name": "generate_remote_id_change_data",
         "task_description": "collects and formats the extracted data into a standard format recognizable by the Leech",
         "task_config": {

@@ -367,7 +367,7 @@ class CredibleFrontEndDriver:
         }
         response = self._session.post(url, data=data)
         if response.status_code != 200:
-            raise RuntimeError('could not get the change logs for %s' % data)
+            raise RuntimeError(f'could not get the change logs for {data}, response code: {response.status_code}')
         csv_response = CredibleCsvParser.parse_csv_response(response.text)
         return csv_response
 
