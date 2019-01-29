@@ -1,6 +1,6 @@
-from toll_booth.alg_obj import AlgObject
 from abc import ABC, abstractmethod
 
+from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.utils import get_subclasses
 
 
@@ -10,14 +10,13 @@ class VertexRules(AlgObject):
 
     @classmethod
     def get(cls, vertex_type):
-        from toll_booth.alg_obj.aws.sapper.schema_whisperer import SchemaWhisperer
-        whisperer = SchemaWhisperer()
-        rules_query = whisperer.get_rules(vertex_type)
-        try:
-            rules = rules_query['Items'][0]['rules']
-        except IndexError:
-            raise Exception('no rules returned for object type: %s' % vertex_type)
-        return cls.parse(rules)
+        from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
+        snek = SchemaSnek()
+        schema = snek.get_schema()
+        for vertex_entry in schema['vertex']:
+            if vertex_type == vertex_entry['vertex_name']:
+                return cls.parse(['rules'])
+        raise RuntimeError('no rules returned for object type: %s' % vertex_type)
 
     @classmethod
     def parse(cls, rules):

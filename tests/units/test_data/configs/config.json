@@ -45,7 +45,7 @@
         "workflow_name": "work_remote_id_change_action",
         "workflow_description": "workflow for extracting and collecting a change action",
         "workflow_config": {
-          "concurrency": 25,
+          "concurrency": 5,
           "time_outs": {
             "decision": "300"
           }
@@ -55,7 +55,7 @@
         "workflow_name": "work_remote_id_change_type",
         "workflow_description": "workflow for extracting and collecting a change type",
         "workflow_config": {
-          "concurrency": 5,
+          "concurrency": 1,
           "time_outs": {
             "decision": "300"
           }
@@ -137,6 +137,13 @@
         "task_config": {
           "concurrency": 1,
           "task_list": "credible"
+        }
+      },
+      {
+        "task_name": "pull_schema_entry",
+        "task_description": "query and build the leech schema for a given object type",
+        "task_config": {
+          "concurrency": 1
         }
       },
       {

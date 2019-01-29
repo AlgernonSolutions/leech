@@ -1,5 +1,5 @@
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.sapper.schema_whisperer import SchemaWhisperer
+from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 from toll_booth.alg_obj.graph.schemata.entry_property import SchemaPropertyEntry, EdgePropertyEntry
 from toll_booth.alg_obj.graph.schemata.indexes import SortedSetIndexEntry, UniqueIndexEntry
 from toll_booth.alg_obj.graph.schemata.rules import VertexRules
@@ -23,14 +23,16 @@ class SchemaEntry(AlgObject):
 
     @classmethod
     def get(cls, entry_name):
-        whisperer = SchemaWhisperer()
-        entry = whisperer.get_schema_entry(entry_name)
-        entry_value = entry['Items'][0]
-        if 'vertex_name' in entry_value:
-            return SchemaVertexEntry.parse(entry_value)
-        if 'edge_label' in entry_value:
-            return SchemaEdgeEntry.parse(entry_value)
-        return cls.parse(entry_value)
+
+        schema_writer = SchemaSnek()
+        current_entries = schema_writer.get_schema()
+        for vertex_entry in current_entries['vertex']:
+            if entry_name == vertex_entry['vertex_name']:
+                return SchemaVertexEntry.parse(vertex_entry)
+        for edge_entry in current_entries['edge']:
+            if entry_name == edge_entry['edge_label']:
+                return SchemaEdgeEntry.parse(edge_entry)
+        raise RuntimeError(f'could not find an appropriate schema entry for: {entry_name}')
 
     @classmethod
     def get_for_index(cls, index_name):

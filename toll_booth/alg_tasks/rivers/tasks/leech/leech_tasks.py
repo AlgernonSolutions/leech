@@ -1,6 +1,17 @@
 from aws_xray_sdk.core import xray_recorder
 
+from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 from toll_booth.alg_tasks.rivers.rocks import task
+
+
+@xray_recorder.capture('pull_schema_entry')
+@task('pull_schema_entry')
+def pull_schema_entry(**kwargs):
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+    identifier_stem = IdentifierStem.from_raw(kwargs['identifier_stem'])
+    snek = SchemaSnek()
+    schema_entry = snek.get_schema_entry(identifier_stem.object_type)
+    return {'schema_entry': schema_entry}
 
 
 @xray_recorder.capture('transform')

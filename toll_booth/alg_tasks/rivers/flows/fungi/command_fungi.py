@@ -24,6 +24,7 @@ def command_fungi(**kwargs):
         'link': f'link_new_ids-{execution_id}',
         'unlink': f'unlink_old_ids-{execution_id}',
         'change_types': f'pull_change_types-{execution_id}',
+        'schema_entry': f'pull_schema_entry-{execution_id}',
         'map': f'build_mapping-{execution_id}'
     }
     kwargs['names'] = names
@@ -50,7 +51,8 @@ def _build_chain(names, **kwargs):
     get_ids_group = group(get_local_ids, get_remote_ids)
     link_group = group(link_new_ids, unlink_old_ids)
     get_change_type = LambdaSignature(names['change_types'], 'pull_change_types', **kwargs)
-    great_chain = chain(get_ids_group, put_new_ids, link_group, get_change_type, generate_mapping)
+    get_schema_entry = LambdaSignature(names['schema_entry'], 'pull_schema_entry', **kwargs)
+    great_chain = chain(get_ids_group, put_new_ids, link_group, get_change_type, get_schema_entry, generate_mapping)
     return great_chain
 
 
