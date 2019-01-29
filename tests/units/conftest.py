@@ -306,6 +306,8 @@ def mock_context():
     context.function_name = 'test_function'
     context.invoked_function_arn = 'test_function_arn'
     context.aws_request_id = '12344_request_id'
+    context.run_id = '123_run_id'
+    context.flow_id = '123_flow_id'
     context.get_remaining_time_in_millis.return_value = 1000001
     return context
 

@@ -257,12 +257,7 @@ def _build_changed_targets(id_source, extracted_data, change_type):
                 'id_value': Decimal(record['record_id'])
             })
         if id_type == 'unspecified':
-            static_values = change_type.change_target
-            if static_values == 'dynamic':
-                raise RuntimeError('could not determine the id_type and id_name for: %s' % extracted_data)
-            static_values['id_value'] = Decimal(record['record_id'])
-            static_values['id_source'] = id_source
-            changed_target.append(static_values)
+            raise RuntimeError('could not determine the id_type and id_name for: %s' % extracted_data)
     return changed_target
 
 

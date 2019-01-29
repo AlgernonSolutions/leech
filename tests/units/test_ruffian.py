@@ -48,6 +48,9 @@ class TestRuffian:
 
     @pytest.mark.ruffian_lambda_labor
     def test_lambda_labor(self, lambda_labor_arg, mock_context):
+        lambda_labor_arg['flow_id'] = '123some_flow_id'
+        lambda_labor_arg['run_id'] = '123_some_run_id'
+        lambda_labor_arg['task_id'] = '123_some_task_id'
         sent_args = json.loads(json.dumps(lambda_labor_arg, cls=AlgEncoder))
         results = lambda_labor(sent_args, mock_context)
         loaded_results = json.loads(results, cls=AlgDecoder)
