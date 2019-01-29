@@ -4,6 +4,7 @@ import pytest
 
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
+from toll_booth.alg_tasks.rivers.flows.leech.fungal_leech import fungal_leech
 from toll_booth.alg_tasks.ruffians import labor, lambda_labor, decide
 
 
@@ -75,6 +76,7 @@ class TestRuffian:
 
     @pytest.mark.ruffian_work_bad_subtask_events
     def test_ruffian_bad_subtask_events(self, mock_work_history, mock_context):
+        fungal_leech(mock_work_history, context=mock_context)
         print(mock_work_history)
 
     @pytest.mark.ruffian_generate_remote_id_change_data

@@ -69,7 +69,8 @@ class Signature:
             return
         if self._is_complete:
             logging.info(f'signature {self._fn_name} is completed, results: {self._results}')
-            self._set_checkpoint(**kwargs)
+            results = self.get_results(**kwargs)
+            task_args.add_argument_values(results)
             return self._results
         if self._is_failed:
             logging.info(f'signature {self._fn_name} has failed')
