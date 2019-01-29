@@ -3,7 +3,7 @@ import logging
 
 import boto3
 from botocore.client import Config
-from botocore.exceptions import ConnectionClosedError
+from botocore.exceptions import ConnectionClosedError, ClientError
 from retrying import retry
 
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
@@ -13,6 +13,15 @@ from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action
     work_remote_id_change_type
 from toll_booth.alg_tasks.rivers.flows import fungus
 from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
+
+
+class WorkHistoryRetrievalException(Exception):
+    def __init__(self, work_history):
+        self._work_history = work_history
+
+    @property
+    def work_history(self):
+        return self._work_history
 
 
 class General:
@@ -29,6 +38,11 @@ class General:
             work_history = self._poll_for_decision()
         except ConnectionClosedError:
             work_history = None
+        except WorkHistoryRetrievalException as e:
+            import traceback
+            trace = traceback.format_exc()
+            self._fail_task(e.work_history, e, trace)
+            return
         if work_history is None:
             return
         try:
@@ -39,6 +53,7 @@ class General:
             trace = traceback.format_exc()
             self._fail_task(work_history, e, trace)
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _get_markers(self, flow_id, run_id):
         marker_histories = []
         history = None
@@ -62,6 +77,7 @@ class General:
             history.merge_history(marker_history)
         return history
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _get_past_runs(self, flow_id):
         from datetime import datetime, timedelta
         one_day_ago = datetime.utcnow() - timedelta(days=2)
@@ -84,7 +100,6 @@ class General:
                 workflow_histories.append(flow_history)
         return workflow_histories
 
-    # @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _poll_for_decision(self):
         events = []
         history = None
@@ -105,7 +120,12 @@ class General:
             history = page
         history['events'] = events
         workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, history)
-        markers = self._get_past_runs(workflow_history.flow_id)
+        try:
+            markers = self._get_past_runs(workflow_history.flow_id)
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ThrottlingException':
+                raise e
+            raise WorkHistoryRetrievalException(workflow_history)
         for marker_history in markers:
             workflow_history.marker_history.merge_history(marker_history)
         return workflow_history
