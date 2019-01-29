@@ -8,7 +8,10 @@
         "workflow_name": "fungus",
         "workflow_description": "master level workflow for all fungal leech operations",
         "workflow_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "time_outs": {
+            "decision": "300"
+          }
         }
       },
       {
@@ -16,27 +19,36 @@
         "workflow_description": "orchestrates and runs the entire Credible FE extraction process",
         "workflow_config": {
           "concurrency": 1,
-           "labor_task_lists": [
+          "labor_task_lists": [
             {
               "list_name": "credible",
               "number_threads": 1,
               "is_vpc": false
             }
-          ]
+          ],
+          "time_outs": {
+            "decision": "300"
+          }
         }
       },
       {
         "workflow_name": "work_remote_id",
         "workflow_description": "workflow for driving vertex growth from a single remote_id",
         "workflow_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "time_outs": {
+            "decision": "300"
+          }
         }
       },
       {
         "workflow_name": "work_remote_id_change_action",
         "workflow_description": "workflow for extracting and collecting a change action",
         "workflow_config": {
-          "concurrency": 25
+          "concurrency": 25,
+          "time_outs": {
+            "decision": "300"
+          }
         }
       },
       {
@@ -45,7 +57,7 @@
         "workflow_config": {
           "concurrency": 5,
           "time_outs": {
-            "task": 300
+            "decision": "300"
           }
         }
       },
@@ -55,7 +67,7 @@
         "workflow_config": {
           "concurrency": 1,
           "time_outs": {
-            "task": 300
+            "decision": "300"
           }
         }
       }

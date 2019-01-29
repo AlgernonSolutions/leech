@@ -146,14 +146,15 @@
       "description": "collection of time out values for a workflow",
       "properties": {
         "workflow": {
-          "description": "the time out for the workflow in seconds, if left blank, time out sets to 1 year",
-          "type": "number"
+          "description": "the time out for the workflow in seconds, if set to NONE, time out sets to 1 year",
+          "type": "string"
         },
-        "task": {
-          "description": "the time out for tasks started under the workflow, in seconds, if left blank defaults to 1 year",
-          "type": "number"
+        "decision": {
+          "description": "the time out for decision tasks started for the workflow, in seconds, if set to NONE, no time limit imposed",
+          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "task_timeouts": {
       "description": "collection of time out values applied to a task",

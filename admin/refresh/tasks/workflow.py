@@ -91,7 +91,7 @@ def _create_workflow(domain_name, flow_config, version='1'):
         'name': flow_config['workflow_name'],
         'version': str(version),
         'description': flow_config['workflow_description'],
-        'defaultTaskStartToCloseTimeout': str(time_outs.get('task', _defaults['workflow_task_timeout'])),
+        'defaultTaskStartToCloseTimeout': str(time_outs.get('decision', _defaults['workflow_task_timeout'])),
         'defaultExecutionStartToCloseTimeout': str(time_outs.get('workflow', _defaults['workflow_timeout'])),
         'defaultLambdaRole': config.get('lambda_role', _defaults['lambda_role']),
         'defaultChildPolicy': config.get('child_policy', _defaults['child_policy'])

@@ -42,7 +42,8 @@ class General:
     def _get_markers(self, flow_id, run_id):
         marker_histories = []
         history = None
-        paginator = self._client.get_paginator('get_workflow_execution_history')
+        client = boto3.client('swf', config=Config(retries={'max_attempts': 5}))
+        paginator = client.get_paginator('get_workflow_execution_history')
         response_iterator = paginator.paginate(
             domain=self._domain_name,
             execution={
@@ -65,7 +66,8 @@ class General:
         from datetime import datetime, timedelta
         one_day_ago = datetime.utcnow() - timedelta(days=2)
         workflow_histories = []
-        paginator = self._client.get_paginator('list_closed_workflow_executions')
+        client = boto3.client('swf', config=Config(retries={'max_attempts': 5}))
+        paginator = client.get_paginator('list_closed_workflow_executions')
         response_iterator = paginator.paginate(
             domain=self._domain_name,
             executionFilter={
