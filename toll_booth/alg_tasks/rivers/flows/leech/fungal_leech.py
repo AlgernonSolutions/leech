@@ -46,7 +46,7 @@ def _build_assimilate_group(task_args, **kwargs):
     task_name = 'assimilate'
     potentials = task_args.get_argument_value('potentials')
     for potential in potentials:
-        new_arg = {'rule_entry': potential[1], 'source_vertex': potential[0]}
+        new_arg = {'rule_entry': potential[1], 'potential_vertex': potential[0]}
         new_task_args = task_args.replace_argument_value(task_name, new_arg, str(new_arg))
         task_identifier = f'assimilate-[{str(potential[1])}]-[{str(potential[0])}]-{execution_id}'
         signature = LambdaSignature(task_identifier, task_name, task_args=new_task_args, **kwargs)

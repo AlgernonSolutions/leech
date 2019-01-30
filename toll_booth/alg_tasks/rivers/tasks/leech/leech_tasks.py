@@ -27,7 +27,7 @@ def transform(**kwargs):
     source_vertex = vertex_regulator.create_potential_vertex(extracted_data['source'])
     arbiter = RuleArbiter(source_vertex, schema_entry)
     potentials = arbiter.process_rules(extracted_data)
-    return {'potentials': potentials}
+    return {'potentials': potentials, 'source_vertex': source_vertex}
 
 
 @xray_recorder.capture('assimilate')
