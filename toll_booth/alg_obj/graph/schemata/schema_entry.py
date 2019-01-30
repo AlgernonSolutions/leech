@@ -205,6 +205,9 @@ class SchemaInternalIdKey(AlgObject):
     def __iter__(self):
         return iter(self._field_names)
 
+    def __str__(self):
+        return '-'.join(self._field_names)
+
 
 class SchemaIdentifierStem(AlgObject):
     def __init__(self, field_names):
