@@ -187,6 +187,12 @@ class TaskArguments(AlgObject):
         if identifier:
             stored_name = f'{operation_name}{identifier}'
         stored_arguments = StoredData.from_object(stored_name, arguments, full_unpack=False)
+        if operation_name in self._arguments:
+            existing_arguments = self._arguments[operation_name]
+            if not isinstance(existing_arguments, list):
+                self._arguments[operation_name] = [existing_arguments]
+            self._arguments[operation_name].append(stored_arguments)
+            return
         self._arguments[operation_name] = stored_arguments
 
     def add_argument_values(self, group_arguments):
