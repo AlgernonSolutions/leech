@@ -34,8 +34,10 @@ class EmailTemplate(AlgObject):
     @property
     def for_ses(self):
         return {
-            "TemplateName": self._template_name,
-            "SubjectPart": self._subject_line,
-            "HtmlPart": self._html_body,
-            "TextPart": self._text_body
+            'Template': {
+                "TemplateName": self._template_name,
+                "SubjectPart": self._subject_line,
+                "HtmlPart": self._html_body,
+                "TextPart": self._text_body
+            }
         }

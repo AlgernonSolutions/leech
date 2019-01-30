@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 
 from admin.refresh.tasks.task import _refresh_activity, _get_activities, _deprecate_activity
 from admin.refresh.tasks.workflow import _get_workflows, _refresh_workflow, _deprecate_workflow
+from admin.set_logging import set_logging
 from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 
 
@@ -60,5 +61,6 @@ def _refresh_activities(domain_name, config):
 
 
 if __name__ == '__main__':
+    set_logging()
     target_domain_name = 'TheLeech'
     refresh(target_domain_name)
