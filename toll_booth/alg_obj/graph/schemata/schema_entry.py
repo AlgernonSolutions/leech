@@ -184,11 +184,11 @@ class SchemaEdgeEntry(SchemaEntry):
         return self.entry_properties
 
     @property
-    def from_type(self):
+    def from_types(self):
         return self._from_type
 
     @property
-    def to_type(self):
+    def to_types(self):
         return self._to_type
 
 

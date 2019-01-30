@@ -214,14 +214,14 @@
             "inbound": [
               {
                 "edge_type": "_change_",
-                "target_type": "ChangeLogEntry",
+                "target_type": "ChangeLog",
                 "target_specifiers": [
                   {
                     "specifier_name": "changelog_source",
                     "specifier_type": "shared_property",
                     "shared_properties": [
                       "id_source",
-                      "changelog_id"
+                      "change_date_utc"
                     ]
                   }
                 ],
@@ -790,8 +790,8 @@
   "edge": [
     {
       "edge_label": "_changed_by_",
-      "from": "ExternalId",
-      "to": "ChangeLogEntry",
+      "from": ["ExternalId"],
+      "to": ["ChangeLogEntry", "ChangeLog"],
       "edge_properties": [],
       "internal_id_key": [
         "from.internal_id",
@@ -802,8 +802,8 @@
     },
     {
       "edge_label": "_changed_",
-      "from": "*",
-      "to": "*",
+      "from": ["ChangeLogEntry", "ChangeLog", "Change", "ChangeDetail"],
+      "to": ["Change", "ChangeDetail", "ExternalId"],
       "edge_properties": [
         {
           "property_name": "change_date_utc",
@@ -824,8 +824,8 @@
     },
     {
       "edge_label": "_generated_",
-      "from": "ChangeLogEntry",
-      "to": "ExternalId",
+      "from": ["ChangeLogEntry", "ChangeLog"],
+      "to": ["ExternalId"],
       "edge_properties": [],
       "internal_id_key": [
         "from.internal_id",
@@ -836,8 +836,8 @@
     },
     {
       "edge_label": "_change_",
-      "from": "ChangeLogEntry",
-      "to": "Change",
+      "from": ["ChangeLogEntry", "ChangeLog"],
+      "to": ["Change", "ChangeDetail"],
       "edge_properties": [],
       "internal_id_key": [
         "from.internal_id",
@@ -848,8 +848,8 @@
     },
     {
       "edge_label": "_by_emp_id_",
-      "from": "ExternalId",
-      "to": "ChangeLogEntry",
+      "from": ["ExternalId"],
+      "to": ["ChangeLogEntry", "ChangeLog"],
       "edge_properties": [],
       "internal_id_key": [
         "from.internal_id",

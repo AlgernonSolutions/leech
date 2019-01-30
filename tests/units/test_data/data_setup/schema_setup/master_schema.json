@@ -570,12 +570,20 @@
           "$ref": "#/definitions/edge_internal_id_key"
         },
         "from": {
-          "description": "the vertex type which the edge is allowed to start from",
-          "type": "string"
+          "description": "the vertex types which the edge is allowed to start from",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "uniqueItems": true
+          }
         },
         "to": {
-          "description": "the vertex type which the edge is allowed to terminate at",
-          "type": "string"
+          "description": "the vertex types which the edge is allowed to terminate at",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "uniqueItems": true
+          }
         },
         "edge_properties": {
           "description": "an array of edge properties",
@@ -601,7 +609,8 @@
         "to",
         "edge_properties",
         "indexes"
-      ]
+      ],
+      "additionalProperties": false
     },
     "cluster_entry": {
       "description": "the cluster object",

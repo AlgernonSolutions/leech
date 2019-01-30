@@ -161,33 +161,30 @@ class VertexRegulator(ObjectRegulator):
 class EdgeRegulator(ObjectRegulator):
     def standardize_edge_properties(self, edge_properties, source_vertex, potential_other, inbound):
         returned_properties = super()._standardize_object_properties(edge_properties)
-        accepted_source_vertex = self._schema_entry.from_type
-        accepted_target_vertex = self._schema_entry.to_type
+        accepted_source_vertexes = self._schema_entry.from_types
+        accepted_target_vertexes = self._schema_entry.to_types
         source_object_type = source_vertex.object_type
         potential_other_type = potential_other.object_type
         try:
-            self.validate_edge_origins(accepted_source_vertex, source_object_type, potential_other_type, inbound)
-            self.validate_edge_origins(accepted_target_vertex, potential_other_type, source_object_type, inbound)
+            self.validate_edge_origins(accepted_source_vertexes, source_object_type, potential_other_type, inbound)
+            self.validate_edge_origins(accepted_target_vertexes, potential_other_type, source_object_type, inbound)
         except RuntimeError:
             raise RuntimeError(
-                'error trying to build edge between %s and %s, '
-                'schema constraint fails, accepted vertexes: %s/%s' % (
-                    source_vertex, potential_other, accepted_source_vertex, accepted_target_vertex
-                )
+                f'error trying to build a {self._schema_entry.edge_label} edge between '
+                f'{source_vertex} and {potential_other}, '
+                f'schema constraint fails, accepted vertexes: {accepted_source_vertexes}/{accepted_target_vertexes}'
             )
         return returned_properties
 
-    @staticmethod
-    def validate_edge_origins(accepted_vertex_types, test_vertex, other_vertex, inbound):
-        if accepted_vertex_types == '*':
-            return
+    def validate_edge_origins(self, accepted_vertex_types, test_vertex, other_vertex, inbound):
         if inbound:
-            if accepted_vertex_types == other_vertex:
+            if other_vertex in accepted_vertex_types:
                 return
-        if accepted_vertex_types == test_vertex:
+        if test_vertex in accepted_vertex_types:
             return
-        raise RuntimeError(f'attempted to create an edge between {test_vertex} and {other_vertex}, but '
-                           f'failed constraint for edge origins')
+        raise RuntimeError(f'attempted to create a {self._schema_entry.edge_label} edge '
+                           f'between {test_vertex} and {other_vertex}, '
+                           f'but failed constraint for edge origins, accepted types: {accepted_vertex_types}')
 
     def generate_potential_edge(self, source_vertex, potential_other, extracted_data, inbound):
         edge_label = self._schema_entry.edge_label

@@ -23,7 +23,7 @@ def generate_potential_vertex(object_type, missing_properties=False):
 def generate_potential_edge(source_vertex, other_vertex, edge_type):
     schema_entry = SchemaEdgeEntry.get(edge_type)
     edge_regulator = EdgeRegulator(schema_entry)
-    inbound = schema_entry.to_type in ['*', source_vertex.object_type]
+    inbound = source_vertex.object_type in schema_entry.to_types
     extracted_data = _generate_extracted_data(schema_entry.edge_properties)
     potential_edge = edge_regulator.generate_potential_edge(source_vertex, other_vertex, extracted_data, inbound)
     return potential_edge
