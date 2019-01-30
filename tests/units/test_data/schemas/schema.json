@@ -641,7 +641,8 @@
       "internal_id_key": [
         "id_source",
         "object_type",
-        "done_by",
+        "action_id",
+        "by_emp_id",
         "change_date_utc"
       ],
       "identifier_stem": [
