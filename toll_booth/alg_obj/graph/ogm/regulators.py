@@ -177,6 +177,8 @@ class EdgeRegulator(ObjectRegulator):
         return returned_properties
 
     def validate_edge_origins(self, accepted_vertex_types, test_vertex, other_vertex, inbound):
+        if '*' in accepted_vertex_types:
+            return
         if inbound:
             if other_vertex in accepted_vertex_types:
                 return
