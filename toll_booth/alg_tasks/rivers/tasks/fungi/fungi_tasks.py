@@ -237,19 +237,22 @@ def _build_changed_targets(id_source, extracted_data, change_type):
     changed_target = []
     client_id = extracted_data.get('client_id', None)
     clientvisit_id = extracted_data.get('clientvisit_id', None)
+    change_date_utc = extracted_data['change_date_utc']
     if client_id and client_id != 0:
         changed_target.append({
             'id_source': id_source,
             'id_type': 'Clients',
             'id_name': 'client_id',
-            'id_value': Decimal(client_id)
+            'id_value': Decimal(client_id),
+            'change_date_utc': change_date_utc
         })
     if clientvisit_id and clientvisit_id != '0':
         changed_target.append({
             'id_source': id_source,
             'id_type': 'ClientVisit',
             'id_name': 'clientvisit_id',
-            'id_value': Decimal(clientvisit_id)
+            'id_value': Decimal(clientvisit_id),
+            'change_date_utc': change_date_utc
         })
     if extracted_data.get('record', None):
         record = extracted_data.get('record')
@@ -262,7 +265,8 @@ def _build_changed_targets(id_source, extracted_data, change_type):
                 'id_source': id_source,
                 'id_type': id_type,
                 'id_name': id_name,
-                'id_value': Decimal(record['record_id'])
+                'id_value': Decimal(record['record_id']),
+                'change_date_utc': change_date_utc
             })
         if id_type == 'unspecified':
             raise RuntimeError('could not determine the id_type and id_name for: %s' % extracted_data)

@@ -327,7 +327,7 @@
       ]
     },
     "vertex_held_edge_property": {
-      "description": "an edge property_source which takes it's value one of it's vertexes",
+      "description": "an edge property_source which takes it's value from one of it's vertexes",
       "type": "object",
       "properties": {
         "source_type": {
