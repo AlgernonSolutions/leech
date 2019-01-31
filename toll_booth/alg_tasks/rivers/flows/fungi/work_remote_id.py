@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import Signature, group, SubtaskSignature
+from toll_booth.alg_obj.aws.gentlemen.rafts import group, SubtaskSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 

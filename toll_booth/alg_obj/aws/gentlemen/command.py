@@ -13,6 +13,7 @@ from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action
     work_remote_id_change_type
 from toll_booth.alg_tasks.rivers.flows import fungus
 from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
+from toll_booth.alg_tasks.rivers.flows.posts import send_routine_reports
 
 
 class WorkHistoryRetrievalException(Exception):
@@ -132,7 +133,8 @@ class General:
 
     def _make_decisions(self, work_history: WorkflowHistory):
         flow_modules = [
-            command_fungi, work_remote_id, work_remote_id_change_type, work_remote_id_change_action, fungus, fungal_leech
+            command_fungi, work_remote_id, work_remote_id_change_type,
+            work_remote_id_change_action, fungus, fungal_leech, send_routine_reports
         ]
         if work_history:
             flow_type = work_history.flow_type
