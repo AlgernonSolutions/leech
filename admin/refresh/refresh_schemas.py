@@ -13,12 +13,9 @@ def refresh():
     logging.info('going to refresh the remote schema files')
     admin_file_name = os.path.dirname(__file__)
     admin_directory = os.path.dirname(admin_file_name)
-    top_level = os.path.dirname(admin_directory)
-    schema_path = ('tests', 'units', 'test_data', 'schemas', 'schema.json')
-    master_schema_path = ('tests', 'units', 'test_data', 'schemas', 'master_schema.json')
-    schema_file_path = os.path.join(top_level, *schema_path)
-    validation_file_path = os.path.join(top_level, *master_schema_path)
-    Schema.post(schema_file_path, validation_file_path)
+    schema_file_path = os.path.join(admin_directory, 'starters', 'graph_schemas', 'schema.json')
+    master_file_path = os.path.join(admin_directory, 'starters', 'validation_schemas', 'master_schema.json')
+    Schema.post(schema_file_path, master_file_path)
     logging.info('completed the update of the remote schema files')
 
 

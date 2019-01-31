@@ -10,7 +10,7 @@ from toll_booth.alg_obj.serializers import AlgDecoder
 class SchemaSnek:
     def __init__(self, bucket_name=None, folder_name=None):
         if not bucket_name:
-            bucket_name = os.getenv('SCHEMA_BUCKET', 'the-leech')
+            bucket_name = os.getenv('LEECH_BUCKET_NAME', 'the-leech')
         if not folder_name:
             folder_name = os.getenv('SCHEMA_FOLDER', 'schemas')
         self._bucket_name = bucket_name

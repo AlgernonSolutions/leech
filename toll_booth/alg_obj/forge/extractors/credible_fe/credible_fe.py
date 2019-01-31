@@ -69,14 +69,15 @@ class CredibleLoginCredentials(AlgObject):
         return cookie_jar
 
     @classmethod
-    def retrieve(cls, domain_name, session=None, username=None, password=None):
+    def retrieve(cls, id_source, session=None, username=None, password=None, domain_name=None):
         time_generated = datetime.datetime.now()
         if not session:
             session = requests.Session()
         if not username or not password:
-            credentials = Opossum.get_untrustworthy_credentials(domain_name)
+            credentials = Opossum.get_untrustworthy_credentials(id_source)
             username = credentials['username']
             password = credentials['password']
+            domain_name = credentials['domain_name']
         attempts = 0
         while attempts < 3:
             try:
@@ -414,6 +415,23 @@ class CredibleFrontEndDriver:
             change_details = self._strain_change_details(row_soup)
             changelog_data['change_details'] = change_details
         return changelog_data, page_number
+
+    @_login_required
+    def process_advanced_search(self, id_type, selected_fields, start_date=None, end_date=None):
+        credible_date_format = '%m/%d/%Y'
+        url = _base_stem + self._monitor_extract_stems[id_type]
+        data = {
+            'submitform': 'true',
+            'btn_export': ' Export ',
+        }
+        data.update(selected_fields)
+        if start_date:
+            data['start_date'] = start_date.strftime(credible_date_format)
+        if end_date:
+            data['end_date'] = end_date.strftime(credible_date_format)
+        response = self._session.post(url, data=data)
+        possible_objects = CredibleCsvParser.parse_csv_response(response.text)
+        return possible_objects
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
     @_login_required

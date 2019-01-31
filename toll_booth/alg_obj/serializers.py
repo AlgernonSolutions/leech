@@ -143,3 +143,21 @@ class TaskDecoder(json.JSONDecoder):
         return obj
 
 
+class ReportSchemaDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        self._functions = kwargs['functions']
+        self._provided = kwargs['provided']
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        if 'arg_type' not in obj:
+            return obj
+        arg_type = obj['arg_type']
+        if arg_type == 'static':
+            return obj['arg_value']
+        if arg_type == 'provided':
+            return self._provided.get(obj['arg_name'])
+        if arg_type == 'function':
+            fn = self._functions.get(obj['fn_name'])
+            return fn(**obj['fn_args'])
+        return obj

@@ -1,18 +1,58 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ReportSchema",
+  "title": "ReportsSchema",
   "description": "a configuration file for reports generated through the Algernon Leech",
-  "type": "object",
-  "properties": {
-    "report_name": {"type": "string"},
-    "sheets": {
-      "type": "array",
-      "sheets": [
-        {
-          "type": "object"
-        }
-      ]
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "report_name": {
+        "type": "string"
+      },
+      "default": {
+        "$ref": "#/definitions/query"
+      }
+    },
+    "required": ["default"],
+    "additionalProperties": {
+      "$ref": "#/definitions/query"
     }
   },
-  "additionalProperties": false
+  "definitions": {
+    "query": {
+        "type": "object",
+        "properties": {
+           "queries": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "query_name": {
+                      "type": "string"
+                    },
+                    "query_source": {
+                      "enum": [
+                        "retrieve_csv_file",
+                        "retrieve_credible_client_download",
+                        "retrieve_credible_employee_download",
+                        "retrieve_credible_visit_download"
+                      ]
+                    },
+                    "query_args": {
+                      "type": "object"
+                    },
+                    "overrides": {
+                      "type": "object"
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": ["query_name", "query_source", "query_args"]
+                }
+              ],
+              "minItems": 1
+           }
+        }
+      }
+  }
 }

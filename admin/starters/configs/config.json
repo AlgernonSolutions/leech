@@ -70,6 +70,23 @@
             "decision": "300"
           }
         }
+      },
+      {
+        "workflow_name": "send_routine_reports",
+        "workflow_description": "sends a set of reports based on the reports schema",
+        "workflow_config": {
+          "concurrency": 1,
+          "time_outs": {
+            "decision": "300"
+          },
+          "labor_task_lists": [
+            {
+              "list_name": "credible_query",
+              "number_threads": 1,
+              "is_vpc": false
+            }
+          ]
+        }
       }
     ],
     "tasks": [
@@ -186,6 +203,42 @@
         "task_description": "collects and formats the extracted data into a standard format recognizable by the Leech",
         "task_config": {
           "concurrency": 1
+        }
+      },
+      {
+        "task_name": "get_report_args",
+        "task_description": "retrieves, compiles, and then filters the report schema to get the arguments required to run the queries for said report",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "task_name": "query_data",
+        "task_description": "retrieves data from an internal resource",
+        "task_config": {
+          "concurrency": 10
+        }
+      },
+      {
+        "task_name": "query_credible_data",
+        "task_description": "retrieves information directly through a Credible Front End Driver",
+        "task_config": {
+          "concurrency": 1,
+          "task_list": "credible_query"
+        }
+      },
+      {
+        "task_name": "build_reports",
+        "task_description": "compiles, filters, and stores a set of generated reports into an S3 bucket for later download",
+        "task_config": {
+          "concurrency": 10
+        }
+      },
+      {
+        "task_name": "send_email",
+        "task_description": "fires an email through the AWS pinpoint service",
+        "task_config": {
+          "concurrency": 10
         }
       }
     ]

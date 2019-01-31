@@ -1,0 +1,66 @@
+[
+  {
+    "report_name": "Caseload Report",
+    "default": {
+
+    },
+    "DCDBH": {
+       "queries": [
+          {
+            "query_name": "tx_plans",
+            "query_source": "retrieve_credible_visit_download",
+            "query_args": {
+              "visittype_id": {
+                "arg_type": "static",
+                "arg_value": "3"
+              },
+              "non_billable1": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "start_date": {
+                "arg_type": "function",
+                "fn_name": "get_date",
+                "fn_args": {
+                  "now": true
+                }
+              },
+              "end_date": {
+                "arg_type": "function",
+                "fn_name": "get_date",
+                "fn_args": {
+                  "from_now": "180"
+                }
+              },
+              "id_source": {
+                "arg_type": "provided",
+                "arg_name": "id_source"
+              }
+            }
+          }
+        ]
+    },
+    "PSI": {
+       "queries":  [
+         {
+          "query_name": "caseloads",
+          "query_source": "retrieve_csv_file",
+          "query_args": {
+            "id_source": {
+              "arg_type": "static",
+              "arg_value": "PSI"
+            },
+            "file_name": {
+              "arg_type": "static",
+              "arg_value": "caseloads.csv"
+            },
+            "key_name": {
+              "arg_type": "static",
+              "arg_value": "MedicaidNumber"
+            }
+          }
+        }
+      ]
+    }
+  }
+]
