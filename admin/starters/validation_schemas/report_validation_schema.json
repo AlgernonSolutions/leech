@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReportSchema",
+  "description": "a configuration file for reports generated through the Algernon Leech",
+  "type": "object",
+  "properties": {
+    "report_name": {"type": "string"},
+    "sheets": {
+      "type": "array",
+      "sheets": [
+        {
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}
