@@ -112,7 +112,11 @@ class ReportQuery(AlgObject):
         populated_args = {}
         for arg_name, query_arg in self._query_args.items():
             populated_args[arg_name] = query_arg(**kwargs)
-        return populated_args
+        return {
+            'query_source': self._query_source,
+            'query_name': self._query_name,
+            'query_args': populated_args
+        }
 
 
 class ReportSchemaEntry(AlgObject):

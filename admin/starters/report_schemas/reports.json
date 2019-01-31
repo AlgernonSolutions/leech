@@ -1,9 +1,7 @@
 [
   {
     "report_name": "Caseload Report",
-    "default": {
-
-    },
+    "default": {},
     "DCDBH": {
        "queries": [
           {
