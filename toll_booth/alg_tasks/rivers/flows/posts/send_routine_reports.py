@@ -30,4 +30,3 @@ def _build_query_data_group(task_args, **kwargs):
     report_name = task_args.get_argument_value('report_name')
     report_tags = task_args.get_argument_value('report_tags')
     report_arg = report_args[report_name]
-
