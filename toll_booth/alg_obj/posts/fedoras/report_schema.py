@@ -1,6 +1,7 @@
 import os
 
 from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.posts.fedoras.filter_rules import FilteringRule
 from toll_booth.alg_obj.posts.fedoras.query_arguments import QueryArgument
 from toll_booth.alg_obj.posts.fedoras.recipient_rules import ReportRecipientRules
 
@@ -49,9 +50,10 @@ class ReportQuery(AlgObject):
 
 
 class ReportSchemaEntry(AlgObject):
-    def __init__(self, report_name, recipient_rules, queries):
+    def __init__(self, report_name, recipient_rules, filters, queries):
         self._report_name = report_name
         self._recipient_rules = recipient_rules
+        self._filters = filters
         self._queries = queries
 
     @property
@@ -68,22 +70,25 @@ class ReportSchemaEntry(AlgObject):
         report_name = schema_entry['report_name']
         queries = {}
         recipient_rules = {}
+        filters = {}
         for profile_name, query_profile in schema_entry.items():
             if profile_name == 'report_name':
                 continue
             collected_queries = []
             profile_queries = query_profile.get('queries', [])
             profile_rules = query_profile.get('recipient_rules', {})
+            filtering_rules = query_profile.get('filtering', {})
             for profile_query in profile_queries:
                 report_query = ReportQuery.parse_from_schema_entry(profile_query)
                 collected_queries.append(report_query)
             queries[profile_name] = collected_queries
             recipient_rules[profile_name] = ReportRecipientRules.parse_from_schema_entry(profile_rules)
-        return cls(report_name, recipient_rules, queries)
+            filters[profile_name] = FilteringRule.parse_from_schema_entry(filtering_rules)
+        return cls(report_name, recipient_rules, filters, queries)
 
     @classmethod
     def parse_json(cls, json_dict):
-        return cls(json_dict['report_name'], json_dict['recipient_rules'], json_dict['queries'])
+        return cls(json_dict['report_name'], json_dict['recipient_rules'], json_dict['filters'], json_dict['queries'])
 
     def __call__(self, *args, **kwargs):
         populated_queries = {}

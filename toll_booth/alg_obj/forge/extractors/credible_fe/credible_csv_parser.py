@@ -9,6 +9,7 @@ import pytz
 class CredibleCsvParser:
     _field_value_maps = {
         'Date': 'datetime',
+        'Service Date': 'datetime',
         'Service ID': 'number',
         'UTCDate': 'utc_datetime',
         'change_date': 'datetime',

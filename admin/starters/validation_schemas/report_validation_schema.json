@@ -68,6 +68,13 @@
             }
           },
           "required": ["direct_recipient_attributes"]
+        },
+        "filtering": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/function_filtering"
+            }
+          ]
         }
       }
     },
@@ -133,6 +140,17 @@
       },
       "required": ["shared_properties"],
       "additionalProperties": false
+    },
+    "function_filtering": {
+      "type": "object",
+      "properties": {
+        "filter_type": {
+          "enum": ["function"]
+        },
+        "fn_name": {
+          "type": "string"
+        }
+      }
     }
   }
 }

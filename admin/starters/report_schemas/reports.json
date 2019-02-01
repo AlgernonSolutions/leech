@@ -27,42 +27,158 @@
     },
     "DCDBH": {
        "queries": [
-          {
-            "query_name": "tx_plans",
+         {
+            "query_name": "service_based_assessments",
             "query_source": "retrieve_credible_visit_download",
             "query_args": {
               "visittype_id": {
                 "arg_type": "static",
-                "arg_value": "3"
+                "arg_value": ["3", "5", "313"]
               },
               "non_billable1": {
                 "arg_type": "static",
                 "arg_value": "3"
               },
-              "start_date": {
+              "end_date": {
                 "arg_type": "function",
                 "fn_name": "get_date",
                 "fn_args": {
                   "now": true
                 }
               },
-              "end_date": {
+              "start_date": {
                 "arg_type": "function",
                 "fn_name": "get_date",
                 "fn_args": {
-                  "from_now": "180"
+                  "from_now": "194"
                 }
+              },
+              "emp_int_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "client_int_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "clientvisit_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "timein": {
+                "arg_type": "static",
+                "arg_value": "1"
               },
               "id_source": {
                 "arg_type": "provided",
                 "arg_name": "id_source"
               }
             }
-          }
-        ]
+          },
+         {
+           "query_name": "clients",
+           "query_source": "retrieve_credible_client_download",
+           "query_args": {
+             "id_source": {
+                "arg_type": "provided",
+                "arg_name": "id_source"
+              },
+             "client_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+             "text28": {
+               "arg_type": "static",
+               "arg_value": "1"
+             },
+             "last_name": {
+               "arg_type": "static",
+               "arg_value": "1"
+             },
+             "first_name": {
+               "arg_type": "static",
+               "arg_value": "1"
+             }
+           }
+         },
+         {
+            "query_name": "employees",
+            "query_source": "retrieve_credible_employee_download",
+            "query_args": {
+              "id_source": {
+                "arg_type": "provided",
+                "arg_name": "id_source"
+              },
+              "emp_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "asgn_supervisees": {
+               "arg_type": "static",
+               "arg_value": "1"
+              },
+              "last_name": {
+               "arg_type": "static",
+               "arg_value": "1"
+              },
+              "first_name": {
+               "arg_type": "static",
+               "arg_value": "1"
+              }
+           }
+         },
+         {
+            "query_name": "encounters",
+            "query_source": "retrieve_credible_visit_download",
+            "query_args": {
+              "id_source": {
+                "arg_type": "provided",
+                "arg_name": "id_source"
+              },
+              "emp_int_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "client_int_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "end_date": {
+                "arg_type": "function",
+                "fn_name": "get_date",
+                "fn_args": {
+                  "now": true
+                }
+              },
+              "start_date": {
+                "arg_type": "function",
+                "fn_name": "get_date",
+                "fn_args": {
+                  "from_now": "194"
+                }
+              },
+              "clientvisit_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "timein": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "visittype_id": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "visittype": {
+                "arg_type": "static",
+                "arg_value": "1"
+              }
+            }
+         }
+       ]
     },
     "PSI": {
-       "queries":  [
+      "queries":  [
          {
           "query_name": "caseloads",
           "query_source": "retrieve_csv_file",
@@ -81,7 +197,11 @@
             }
           }
         }
-      ]
+      ],
+      "filtering": {
+        "filter_type": "function",
+        "fn_name": "filter_psi_caseload_report"
+      }
     }
   }
 ]
