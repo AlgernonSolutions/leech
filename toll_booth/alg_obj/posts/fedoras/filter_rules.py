@@ -17,6 +17,8 @@ class FilteringRule(AlgObject):
 
     @classmethod
     def parse_from_schema_entry(cls, schema_entry):
+        if not schema_entry:
+            return []
         return cls.parse_json(schema_entry)
 
 

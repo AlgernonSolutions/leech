@@ -55,7 +55,7 @@ class ReportRecipientRules(AlgObject):
     @classmethod
     def parse_from_schema_entry(cls, schema_entry):
         if not schema_entry:
-            return None
+            return []
         direct_recipient_data = schema_entry['direct_recipient_attributes']
         aggregation_chain_data = schema_entry.get('aggregation_chain', [])
         direct_rules = [RecipientRule.parse_from_schema_entry(x) for x in direct_recipient_data]
