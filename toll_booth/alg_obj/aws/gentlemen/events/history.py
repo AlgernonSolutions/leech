@@ -75,7 +75,7 @@ class WorkflowHistory:
                 input_data = json.loads(input_string, cls=AlgDecoder)
                 versions = input_data.get('versions', None)
                 config = input_data.get('config', None)
-                task_args = TaskArguments.for_starting_data(operation_name, input_data.get('task_args', {}))
+                task_args = TaskArguments.for_starting_data(operation_name, input_data)
                 parent_data = event.event_attributes.get('parentWorkflowExecution', {})
                 parent_flow_id = parent_data.get('workflowId', None)
                 parent_run_id = parent_data.get('runId', None)
