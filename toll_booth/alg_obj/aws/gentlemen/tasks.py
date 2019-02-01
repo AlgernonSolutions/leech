@@ -182,22 +182,19 @@ class TaskArguments(AlgObject):
         event_input = json.loads(event.event_attributes['input'], cls=AlgDecoder)
         return cls(event_input)
 
-    def add_argument_value(self, operation_name, arguments, identifier=None):
+    def add_argument_value(self, operation_name, arguments, identifier=None, overwrite=False):
         stored_name = operation_name
         if identifier:
             stored_name = f'{operation_name}{identifier}'
         stored_arguments = StoredData.from_object(stored_name, arguments, full_unpack=False)
-        if operation_name in self._arguments:
-            existing_arguments = self._arguments[operation_name]
-            if not isinstance(existing_arguments, list):
-                self._arguments[operation_name] = [existing_arguments]
-            self._arguments[operation_name].append(stored_arguments)
+        if operation_name in self._arguments and not overwrite:
+            self._arguments[operation_name].merge(stored_arguments)
             return
         self._arguments[operation_name] = stored_arguments
 
-    def add_argument_values(self, group_arguments):
+    def add_argument_values(self, group_arguments, overwrite=False):
         for operation_name, arguments in group_arguments.items():
-            self.add_argument_value(operation_name, arguments)
+            self.add_argument_value(operation_name, arguments, overwrite=overwrite)
 
     def replace_argument_value(self, operation_name, arguments, identifier=None):
         persisted_task_args = {x: y for x, y in self._arguments.items() if x != operation_name}
@@ -215,10 +212,10 @@ class TaskArguments(AlgObject):
                     return argument_value
         raise AttributeError(f'task arguments do not have argument value for key {name}')
 
-    def merge_other_task_arguments(self, other):
+    def merge_other_task_arguments(self, other, overwrite=False):
         if not isinstance(other, TaskArguments):
             raise NotImplementedError
-        self.add_argument_values(other.arguments)
+        self.add_argument_values(other.arguments, overwrite=overwrite)
 
     def __getitem__(self, item):
         return self._arguments[item]

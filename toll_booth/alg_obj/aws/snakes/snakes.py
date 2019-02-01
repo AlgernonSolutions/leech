@@ -115,3 +115,19 @@ class StoredData(AlgObject):
 
     def __str__(self):
         return self.pointer
+
+    def merge(self, other_stored_data):
+        current_data = self._data_string.copy()
+        for data_name, data_entry in other_stored_data.data_string.items():
+            if data_name in current_data:
+                current_data_entry = current_data[data_name]
+                if not isinstance(current_data_entry, list):
+                    current_data[data_name] = [current_data_entry]
+                current_data[data_name].append(data_entry)
+                continue
+            current_data[data_name] = data_entry
+        if current_data == self._data_string:
+            return False
+        self._data_string = current_data
+        self._overwrite_store()
+        return True

@@ -191,7 +191,7 @@ class SubtaskSignature(Signature):
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
-            task_args.merge_other_task_arguments(self._task_args)
+            task_args.merge_other_task_arguments(self._task_args, overwrite=True)
         return StartSubtask(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list, **kwargs)
 
     def _check_concurrency(self, **kwargs):
@@ -212,7 +212,7 @@ class ActivitySignature(Signature):
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
-            task_args.merge_other_task_arguments(self._task_args)
+            task_args.merge_other_task_arguments(self._task_args, overwrite=True)
         return StartActivity(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list)
 
     def _check_concurrency(self, **kwargs):
@@ -231,7 +231,7 @@ class LambdaSignature(Signature):
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
-            task_args.merge_other_task_arguments(self._task_args)
+            task_args.merge_other_task_arguments(self._task_args, overwrite=True)
         return StartLambda(*self.start_args, task_args=task_args, control=self._control)
 
     def _check_concurrency(self, **kwargs):

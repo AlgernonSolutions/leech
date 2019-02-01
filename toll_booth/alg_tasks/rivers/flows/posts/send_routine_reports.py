@@ -5,7 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import LambdaSignature, ActivitySign
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('send_routine_reports')
+# @xray_recorder.capture('send_routine_reports')
 @workflow('send_routine_reports')
 def send_routine_reports(**kwargs):
     execution_id = kwargs['execution_id']
@@ -32,7 +32,7 @@ def send_routine_reports(**kwargs):
 
 def _build_report_args_signature(**kwargs):
     names = kwargs['names']
-    return LambdaSignature(names['report_args'], 'get_report_args')
+    return LambdaSignature(names['report_args'], 'get_report_args', **kwargs)
 
 
 def _build_query_data_group(task_args, **kwargs):
