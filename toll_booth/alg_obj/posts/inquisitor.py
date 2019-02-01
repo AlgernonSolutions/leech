@@ -53,17 +53,15 @@ class Inquisitor:
 
     @classmethod
     def retrieve_credible_client_download(cls, id_source, **kwargs):
-        selected_fields = kwargs.get('selected_fields', {})
-        return cls._retrieve_credible_download(id_source, 'Clients', selected_fields)
+        return cls._retrieve_credible_download(id_source, 'Clients', kwargs)
 
     @classmethod
     def retrieve_credible_employee_download(cls, id_source, **kwargs):
-        selected_fields = kwargs.get('selected_fields', {})
-        return cls._retrieve_credible_download(id_source, 'Employees', selected_fields)
+        return cls._retrieve_credible_download(id_source, 'Employees', kwargs)
 
     @classmethod
     def retrieve_credible_visit_download(cls, id_source, **kwargs):
-        selected_fields = kwargs.get('selected_fields', {})
+        selected_fields = {x: y for x, y in kwargs.items() if x not in ['start_date', 'end_date']}
         start_date = kwargs.get('start_date', None)
         end_date = kwargs.get('end_date', None)
         return cls._retrieve_credible_download(id_source, 'ClientVisit', selected_fields, start_date, end_date)

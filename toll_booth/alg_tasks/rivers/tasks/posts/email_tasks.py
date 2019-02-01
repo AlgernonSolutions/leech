@@ -44,7 +44,7 @@ def query_credible_data(**kwargs):
 @xray_recorder.capture('get_report_args')
 @task('get_report_args')
 def get_report_args(**kwargs):
-    from toll_booth.alg_obj.posts.report_schema import ReportSchema
+    from toll_booth.alg_obj.posts.fedoras.report_schema import ReportSchema
 
     fns = {
         'get_date': _get_date

@@ -172,7 +172,6 @@ class Signature:
             results = json.loads(self._results, cls=AlgDecoder)
         signature_results = {self._fn_name: results}
         logging.info(f'after serializing and compiling the signature_results are: {signature_results}')
-        kwargs['task_args'].add_argument_values(signature_results)
         return signature_results
 
     def __str__(self):

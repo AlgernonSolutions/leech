@@ -12,7 +12,7 @@ class SchemaSnek:
         folder_name = kwargs.get('folder_name', None)
         if not bucket_name:
             bucket_name = os.getenv('LEECH_BUCKET_NAME', 'the-leech')
-        if folder_name:
+        if not folder_name:
             folder_name = os.getenv('SCHEMA_FOLDER', 'schemas')
         self._bucket_name = bucket_name
         self._folder_name = folder_name

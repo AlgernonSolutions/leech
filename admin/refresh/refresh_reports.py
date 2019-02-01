@@ -6,7 +6,7 @@ from jsonref import JsonRef
 from jsonschema import validate
 
 from admin.set_logging import set_logging
-from toll_booth.alg_obj.posts.report_schema import ReportSchema
+from toll_booth.alg_obj.posts.fedoras.report_schema import ReportSchema
 
 
 def refresh():

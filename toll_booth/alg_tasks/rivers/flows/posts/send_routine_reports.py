@@ -30,7 +30,7 @@ def send_routine_reports(**kwargs):
     decisions.append(CompleteWork(reports_results))
 
 
-def _build_report_args_signature(**kwargs):
+def _build_report_args_signature(task_args, **kwargs):
     names = kwargs['names']
     return LambdaSignature(names['report_args'], 'get_report_args', **kwargs)
 
@@ -47,7 +47,7 @@ def _build_query_data_group(task_args, **kwargs):
         signatures.append(signature)
     if not signatures:
         return None
-    return group(tuple(signatures))
+    return group(*tuple(signatures))
 
 
 def _build_send_reports_group(task_args, **kwargs):

@@ -276,10 +276,9 @@ class LeechConfig(AlgObject):
     @classmethod
     def post(cls, config_file_path, validation_file_path, **kwargs):
         from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
-        folder_name = kwargs.get('CONFIG_FOLDER', 'configs')
         config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
         validation_file_name = kwargs.get('MASTER_CONFIG_FILE', 'master_config.json')
-        snek = SchemaSnek(folder_name=folder_name, **kwargs)
+        snek = SchemaSnek(**kwargs)
         with open(config_file_path) as config_file, open(validation_file_path) as validation_file:
             working_config = jsonref.load(config_file)
             master_config = jsonref.load(validation_file)

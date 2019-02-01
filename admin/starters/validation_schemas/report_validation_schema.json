@@ -20,39 +20,120 @@
   },
   "definitions": {
     "query": {
-        "type": "object",
-        "properties": {
-           "queries": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "query_name": {
-                      "type": "string"
-                    },
-                    "query_source": {
-                      "enum": [
-                        "retrieve_csv_file",
-                        "retrieve_credible_client_download",
-                        "retrieve_credible_employee_download",
-                        "retrieve_credible_visit_download"
-                      ]
-                    },
-                    "query_args": {
-                      "type": "object"
-                    },
-                    "overrides": {
-                      "type": "object"
-                    }
+      "type": "object",
+      "properties": {
+        "queries": {
+            "type": "array",
+            "items": [
+              {
+                "type": "object",
+                "properties": {
+                  "query_name": {
+                    "type": "string"
                   },
-                  "additionalProperties": false,
-                  "required": ["query_name", "query_source", "query_args"]
-                }
-              ],
-              "minItems": 1
-           }
+                  "query_source": {
+                    "enum": [
+                      "retrieve_csv_file",
+                      "retrieve_credible_client_download",
+                      "retrieve_credible_employee_download",
+                      "retrieve_credible_visit_download"
+                    ]
+                  },
+                  "query_args": {
+                    "type": "object"
+                  },
+                  "overrides": {
+                    "type": "object"
+                  }
+                },
+                "additionalProperties": false,
+                "required": ["query_name", "query_source", "query_args"]
+              }
+            ],
+            "minItems": 1
+         },
+        "recipient_rules": {
+          "type": "object",
+          "properties": {
+            "direct_recipient_attributes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/recipient_attributes"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "aggregation_chain": {
+              "$ref": "#/definitions/aggregation_attributes"
+            }
+          },
+          "required": ["direct_recipient_attributes"]
         }
       }
+    },
+    "recipient_attributes": {
+      "type": "object",
+      "properties": {
+        "attribute_name": {
+          "type": "string"
+        },
+        "attribute_values": {
+          "type": "array",
+          "items": {
+            "oneOf": [{"type": "string"}, {"type": "number"}, {"type": "boolean"}]
+          },
+          "minLength": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["attribute_name", "attribute_values"]
+    },
+    "aggregation_attributes": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/shared_properties_aggregation_attributes"
+          },
+          {
+            "$ref": "#/definitions/supervisor_aggregation_attributes"
+          },
+          {
+            "$ref": "#/definitions/recipient_attributes"
+          }
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "supervisor_aggregation_attributes": {
+      "type": "object",
+      "properties": {
+        "primary_only": {
+          "type": "boolean"
+        },
+        "number_levels": {
+          "type": "number"
+        }
+      },
+      "required": ["primary_only", "number_levels"],
+      "additionalProperties": false
+    },
+    "shared_properties_aggregation_attributes": {
+      "type": "object",
+      "properties": {
+        "shared_properties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": ["shared_properties"],
+      "additionalProperties": false
+    }
   }
 }
+

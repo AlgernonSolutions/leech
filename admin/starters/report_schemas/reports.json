@@ -1,7 +1,30 @@
 [
   {
     "report_name": "Caseload Report",
-    "default": {},
+    "default": {
+      "recipient_rules": {
+        "direct_recipient_attributes":  [
+          {
+            "attribute_name": "emp_status",
+            "attribute_values": ["ACTIVE"]
+          },
+          {
+            "attribute_name": "emp_title",
+            "attribute_values": ["CSW"]
+          }
+        ],
+        "aggregation_chain": [
+          {
+            "primary_only": true,
+            "number_levels": 0
+          },
+          {
+            "attribute_name": "emp_status",
+            "attribute_values": ["ACTIVE"]
+          }
+        ]
+      }
+    },
     "DCDBH": {
        "queries": [
           {
@@ -14,7 +37,7 @@
               },
               "non_billable1": {
                 "arg_type": "static",
-                "arg_value": "1"
+                "arg_value": "3"
               },
               "start_date": {
                 "arg_type": "function",

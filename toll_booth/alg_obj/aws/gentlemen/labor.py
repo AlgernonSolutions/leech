@@ -8,6 +8,8 @@ from botocore.config import Config
 from toll_booth.alg_obj.aws.gentlemen.tasks import Task
 from toll_booth.alg_obj.serializers import AlgEncoder
 from toll_booth.alg_tasks.rivers.tasks.fungi import fungi_tasks
+from toll_booth.alg_tasks.rivers.tasks.leech import leech_tasks
+from toll_booth.alg_tasks.rivers.tasks.posts import email_tasks
 
 
 class Laborer:
@@ -77,7 +79,7 @@ class Laborer:
         return Task.parse_from_poll(response)
 
     def _run_task(self, task: Task):
-        task_modules = [fungi_tasks]
+        task_modules = [fungi_tasks, leech_tasks, email_tasks]
         task_name = task.activity_name
         for task_module in task_modules:
             task_fn = getattr(task_module, task_name, None)

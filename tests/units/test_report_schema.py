@@ -1,6 +1,6 @@
 import pytest
 
-from toll_booth.alg_obj.posts.report_schema import ReportSchemaEntry, ReportSchema
+from toll_booth.alg_obj.posts.fedoras.report_schema import ReportSchemaEntry, ReportSchema
 
 
 @pytest.mark.report_schema
