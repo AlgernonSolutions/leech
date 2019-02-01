@@ -165,9 +165,9 @@
                 "arg_type": "static",
                 "arg_value": "1"
               },
-              "visittype_id": {
+              "data_dict_ids": {
                 "arg_type": "static",
-                "arg_value": "1"
+                "arg_value": ["86", "87", "2166"]
               },
               "visittype": {
                 "arg_type": "static",

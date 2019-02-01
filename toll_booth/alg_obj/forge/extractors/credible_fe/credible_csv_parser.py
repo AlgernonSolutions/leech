@@ -10,6 +10,8 @@ class CredibleCsvParser:
     _field_value_maps = {
         'Date': 'datetime',
         'Service Date': 'date',
+        'Time In': 'datetime',
+        'Time Out': 'datetime',
         'Service ID': 'number',
         'UTCDate': 'utc_datetime',
         'change_date': 'datetime',
