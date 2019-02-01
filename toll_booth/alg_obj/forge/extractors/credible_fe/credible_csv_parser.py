@@ -9,7 +9,7 @@ import pytz
 class CredibleCsvParser:
     _field_value_maps = {
         'Date': 'datetime',
-        'Service Date': 'datetime',
+        'Service Date': 'date',
         'Service ID': 'number',
         'UTCDate': 'utc_datetime',
         'change_date': 'datetime',
@@ -58,6 +58,8 @@ class CredibleCsvParser:
             entry = str(entry)
         if data_type == 'datetime':
             entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
+        if data_type == 'date':
+            entry = datetime.datetime.strptime(entry, '%m/%d/%Y')
         if data_type == 'utc_datetime':
             try:
                 entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
