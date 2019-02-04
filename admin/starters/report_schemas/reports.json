@@ -113,6 +113,10 @@
                 "arg_type": "static",
                 "arg_value": "1"
               },
+              "email": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
               "asgn_supervisees": {
                "arg_type": "static",
                "arg_value": "1"

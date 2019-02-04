@@ -12,6 +12,7 @@ def send_email(**kwargs):
 @xray_recorder.capture('build_reports')
 @task('build_reports')
 def build_reports(**kwargs):
+
     raise NotImplementedError('you need to do this')
 
 
