@@ -59,7 +59,11 @@ class CredibleCsvParser:
         if data_type == 'string':
             entry = str(entry)
         if data_type == 'datetime':
-            entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
+            try:
+                entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
+            except ValueError:
+                entry = f'{entry} 12:00:00 AM'
+                entry = datetime.datetime.strptime(entry, '%m/%d/%Y %I:%M:%S %p')
         if data_type == 'date':
             entry = datetime.datetime.strptime(entry, '%m/%d/%Y')
         if data_type == 'utc_datetime':

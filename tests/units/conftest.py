@@ -23,7 +23,8 @@ pytest_plugins = [
     'tests.units.conftests.mock_boto',
     'tests.units.conftests.environments',
     'tests.units.conftests.mock_swf',
-    'tests.units.conftests.id_sources'
+    'tests.units.conftests.id_sources',
+    'tests.units.conftests.supervisor_tree'
 ]
 
 

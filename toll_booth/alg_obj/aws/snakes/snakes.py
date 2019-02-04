@@ -95,8 +95,8 @@ class StoredData(AlgObject):
     @classmethod
     def from_object(cls, data_name, alg_object, full_unpack=False):
         if isinstance(alg_object, StoredData):
-            logging.info(f'tried to store a StoredData object within another stored data object, that was naughty, '
-                         f'you will go to jail now. jk, we just bypassed the upload and handed the original back: {alg_object}')
+            logging.debug(f'tried to store a StoredData object within another stored data object, that was naughty, '
+                          f'you will go to jail now. jk, we just bypassed the upload and handed the original back: {alg_object}')
             return alg_object
         return cls(data_name, alg_object, full_unpack=full_unpack)
 
