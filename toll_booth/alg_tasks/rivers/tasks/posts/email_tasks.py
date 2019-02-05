@@ -21,9 +21,10 @@ def build_reports(**kwargs):
 def query_data(**kwargs):
     from toll_booth.alg_obj.posts.inquisitor import Inquisitor
 
-    query_args = kwargs['query_args']
-    query_name = kwargs['query_name']
-    query_source = kwargs['query_source']
+    queries = kwargs['queries']
+    query_args = queries['query_args']
+    query_name = queries['query_name']
+    query_source = queries['query_source']
 
     query_results = Inquisitor.query_data(query_source, query_args)
     return {'query_data': {'query_name': query_name,  'query_results': query_results}}
