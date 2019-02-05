@@ -96,9 +96,13 @@ class ReportSchemaEntry(AlgObject):
             profile_queries = {}
             for query in queries:
                 profile_queries[query.query_name] = query(**kwargs)
-            populated_queries[profile_name] = profile_queries
-        return {self._report_name: {
-            'queries': populated_queries, 'filters': self._filters, 'recipients': self._recipient_rules}}
+            populated_queries[profile_name] = {
+                'queries': profile_queries,
+                'filters': self._filters.get(profile_name, []),
+                'recipients': self._recipient_rules.get(profile_name, []),
+            }
+
+        return {self._report_name: populated_queries}
 
 
 class ReportSchema(AlgObject):
