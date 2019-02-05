@@ -13,8 +13,9 @@ def send_email(**kwargs):
 @xray_recorder.capture('build_reports')
 @task('build_reports')
 def build_reports(**kwargs):
-
-    raise NotImplementedError('you need to do this')
+    from toll_booth.alg_obj.posts.accountant.generator import ReportGenerator
+    reports = ReportGenerator.generate_report(kwargs['query_data'], kwargs['filter_rules'])
+    return {'reports': reports}
 
 
 @xray_recorder.capture('query_data')

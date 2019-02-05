@@ -8,8 +8,12 @@ def recursively_update(d, u):
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
             d[k] = recursively_update(d.get(k, {}), v)
-        elif isinstance(d[k], list):
-            d[k].append(v)
+        elif k in d and isinstance(d[k], list):
+            if v:
+                try:
+                    d[k].extend(v)
+                except AttributeError:
+                    d[k].append(v)
         else:
             d[k] = v
     return d
