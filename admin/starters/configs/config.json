@@ -235,7 +235,7 @@
         }
       },
       {
-        "task_name": "send_email",
+        "task_name": "send_reports",
         "task_description": "fires an email through the AWS pinpoint service",
         "task_config": {
           "concurrency": 10

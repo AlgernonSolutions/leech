@@ -29,6 +29,10 @@ class MockSwfEvent:
 
 _lambda_labor_params = [
     (
+        'build_reports',
+        '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"send_routine_reports": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/send_routine_reports!1549407740.291403.json"}}, "get_report_args": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_report_args!1549388009.19095.json"}}, "query_credible_data": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/query_credible_data!1549388220.351343.json"}}}}}'
+    ),
+    (
         'get_report_args',
         ' {"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"send_routine_reports": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/send_routine_reports!1549397502.225521.json"}}}}}'
     ),

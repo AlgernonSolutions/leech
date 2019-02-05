@@ -267,9 +267,8 @@ class LeechConfig(AlgObject):
     @classmethod
     def get(cls, **kwargs):
         from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
-        folder_name = kwargs.get('CONFIG_FOLDER', 'configs')
         config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
-        snek = SchemaSnek(folder_name=folder_name, **kwargs)
+        snek = SchemaSnek(**kwargs)
         current_config = snek.get_schema(config_file_name)
         return cls._build_config(current_config)
 

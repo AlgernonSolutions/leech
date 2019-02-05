@@ -8,9 +8,8 @@ from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 
 
 def refresh(domain_name, **kwargs):
-    folder_name = kwargs.get('CONFIG_FOLDER', 'configs')
     config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
-    snek = SchemaSnek(folder_name=folder_name, **kwargs)
+    snek = SchemaSnek(**kwargs)
     current_config = snek.get_schema(config_file_name)
     _refresh_domain(domain_name, current_config)
     _refresh_workflows(domain_name, current_config)

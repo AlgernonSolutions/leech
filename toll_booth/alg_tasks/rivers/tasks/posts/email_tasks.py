@@ -14,7 +14,10 @@ def send_reports(**kwargs):
 @task('build_reports')
 def build_reports(**kwargs):
     from toll_booth.alg_obj.posts.accountant.generator import ReportGenerator
-    reports = ReportGenerator.generate_report(kwargs['query_data'], kwargs['filter_rules'])
+    report_args = kwargs['report_args']
+    filter_rules = report_args['filters']
+    queries = kwargs['query_data']
+    reports = ReportGenerator.generate_report(queries, filter_rules)
     return {'reports': reports}
 
 

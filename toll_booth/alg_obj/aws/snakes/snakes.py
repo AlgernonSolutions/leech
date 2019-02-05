@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from copy import deepcopy
 from datetime import datetime
 
 import boto3
@@ -117,13 +118,14 @@ class StoredData(AlgObject):
         return self.pointer
 
     def merge(self, other_stored_data):
-        current_data = self._data_string.copy()
+        current_data = deepcopy(self._data_string)
         for data_name, data_entry in other_stored_data.data_string.items():
             if data_name in current_data:
                 current_data_entry = current_data[data_name]
                 if not isinstance(current_data_entry, list):
                     current_data[data_name] = [current_data_entry]
-                current_data[data_name].append(data_entry)
+                if data_entry not in current_data[data_name]:
+                    current_data[data_name].append(data_entry)
                 continue
             current_data[data_name] = data_entry
         if current_data == self._data_string:
