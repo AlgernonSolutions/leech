@@ -1,6 +1,16 @@
+import collections
 from datetime import datetime
 
 from dateutil.parser import parse
+
+
+def recursively_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = recursively_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 
 def convert_credible_fe_datetime_to_python(datetime_string, is_utc=False):

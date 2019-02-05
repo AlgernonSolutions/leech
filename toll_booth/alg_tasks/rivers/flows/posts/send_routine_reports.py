@@ -40,7 +40,7 @@ def _build_query_data_group(task_args, **kwargs):
     task_name = 'query_credible_data'
     report_args = task_args.get_argument_value('report_args')
     signatures = []
-    for query_name, query_args in report_args.items():
+    for query_name, query_args in report_args['queries'].items():
         activity_id = f'{query_name}-{execution_id}'
         new_task_args = task_args.replace_argument_value(task_name, query_args, activity_id)
         signature = ActivitySignature(activity_id, task_name, task_args=new_task_args, **kwargs)

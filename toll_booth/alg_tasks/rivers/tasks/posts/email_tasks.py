@@ -1,5 +1,6 @@
 from aws_xray_sdk.core import xray_recorder
 
+from toll_booth.alg_obj.utils import recursively_update
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
@@ -60,7 +61,7 @@ def get_report_args(**kwargs):
     report_args = report_arg_set['default']
     for tag in report_tags:
         specified_args = report_arg_set[tag]
-        report_args.update(specified_args)
+        report_args = recursively_update(report_args, specified_args)
     return {'report_args': report_args}
 
 
