@@ -4,9 +4,9 @@ from toll_booth.alg_obj.utils import recursively_update
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
-@xray_recorder.capture('send_email')
-@task('send_email')
-def send_email(**kwargs):
+@xray_recorder.capture('send_reports')
+@task('send_reports')
+def send_reports(**kwargs):
     raise NotImplementedError('you need to do this')
 
 
