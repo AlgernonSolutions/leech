@@ -72,6 +72,14 @@
               "id_source": {
                 "arg_type": "provided",
                 "arg_name": "id_source"
+              },
+              "visittype": {
+                "arg_type": "static",
+                "arg_value": "1"
+              },
+              "data_dict_ids": {
+                "arg_type": "static",
+                "arg_value": ["86", "87", "2166"]
               }
             }
           },
@@ -176,6 +184,10 @@
               "visittype": {
                 "arg_type": "static",
                 "arg_value": "1"
+              },
+              "non_billable1": {
+                "arg_type": "static",
+                "arg_value": "3"
               }
             }
          }
@@ -206,6 +218,111 @@
         "filter_type": "function",
         "fn_name": "filter_psi_caseload_report"
       }
+    },
+    "ICFS": {
+      "queries": []
     }
+  },
+  {
+    "report_name": "Unapproved Notes",
+    "default": {
+
+    },
+    "DCDBH": {
+      "queries": [
+        {
+          "query_name": ""
+        }
+      ]
+    },
+    "PSI": {
+      "queries": []
+    },
+    "ICFS": {
+      "queries": []
+    }
+  },
+  {
+    "report_name": "Unassigned Patients",
+    "default": {
+
+    },
+    "DCDBH": {
+      "queries": [
+
+      ]
+    }
+  },
+  {
+    "report_name": "Agency Care Plan Summary",
+    "default": {
+
+    },
+    "DCDBH": {
+      "queries": []
+    },
+    "PSI": {
+      "queries": []
+    },
+    "ICFS": {
+      "queries": []
+    }
+  },
+  {
+    "report_name": "Incentive Based Payroll",
+    "default": {
+
+    },
+    "DCDBH": {
+      "queries": [
+        {
+          "query_name": "encounters",
+          "query_source": "retrieve_credible_visit_download",
+          "query_args": {
+
+          }
+        }
+      ]
+    },
+    "PSI": {},
+    "ICFS": {
+      "queries": [
+        {
+          "query_name": "csw_levels",
+          "query_source": "retrieve_csv_file",
+          "query_args": {
+
+          }
+        }
+      ]
+    }
+  },
+  {
+    "report_name": "Agency Authorization Summary",
+    "default": {
+
+    },
+    "DCDBH": {
+      "queries": [
+        {
+          "query_name": "clients",
+          "query_source": "retrieve_credible_client_download",
+          "query_args": {
+
+          }
+        }
+      ]
+    },
+    "PSI": {},
+    "ICFS": {}
+  },
+  {
+    "report_name": "Agency Collision Report",
+    "default": {
+
+    },
+    "DCDBH": {},
+    "ICFS": {},
+    "PSI": {}
   }
 ]

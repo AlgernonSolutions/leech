@@ -23,15 +23,14 @@ def filter_caseload_report(**kwargs):
 
 
 def filter_psi_caseload_report(**kwargs):
-    reports = {}
-    missing = {'clients': [], 'providers': []}
-    duplicates = []
+    reports = {
+        'missing': {'clients': [], 'providers': []},
+        'duplicates': {'clients': [], 'providers': []}
+    }
+    caseload_reports = {}
     query_data = {x['query_name']: x['query_results'] for x in kwargs['query_data']}
-    caseloads = query_data['caseloads']
-    service_assessments = query_data['service_based_assessments']
-    clients = query_data['clients']
-    employees = query_data['employees']
-    encounters = query_data['encounters']
+    caseloads, service_assessments = query_data['caseloads'], query_data['service_based_assessments']
+    clients, employees, encounters = query_data['clients'], query_data['employees'], query_data['encounters']
     providers = {}
     caseloads = {x: y for x, y in caseloads.items() if y['Clinic Supervisor Name'] and y['CSW Name'] and y['Client Name']}
     for medicaid_number, caseload_entry in caseloads.items():
@@ -44,16 +43,18 @@ def filter_psi_caseload_report(**kwargs):
             supervisor_id = _find_supervisor(supervisor_name, employees, providers)
         except RecordMatchFailedException as e:
             if e.failure_type == 'duplicates':
-                duplicates.append({'provided': caseload_entry, 'found': e.duplicate_records})
+                reports['duplicates'][e.matched_type].append({'provided': caseload_entry, 'found': e.duplicate_records})
                 continue
-            missing[e.matched_type].append(caseload_entry)
+            reports['missing'][e.matched_type].append(caseload_entry)
             continue
         providers[provider_name] = provider_id
         providers[supervisor_name] = supervisor_id
-        if supervisor_id not in reports:
-            reports[supervisor_id] = {}
-        if provider_id not in reports:
-            reports[provider_id] = {}
+        if supervisor_id not in caseload_reports:
+            caseload_reports[supervisor_id] = {}
+        if provider_id not in caseload_reports[supervisor_id]:
+            caseload_reports[supervisor_id][provider_id] = []
+        if provider_id not in caseload_reports:
+            caseload_reports[provider_id] = []
         patient_assessments = _filter_encounter_records(patient_id, service_assessments)
         patient_encounters = _filter_encounter_records(patient_id, encounters)
         patient_report = {
@@ -62,11 +63,11 @@ def filter_psi_caseload_report(**kwargs):
             'encounters': patient_encounters,
             'assessments': patient_assessments
         }
-        provider_report = {patient_id: patient_report}
-        supervisor_report = {provider_id: provider_report, 'provider_name': provider_name}
-        reports[provider_id].update(provider_report)
-        reports[supervisor_id].update(supervisor_report)
-    raise NotImplementedError()
+        supervisor_report = {'caseload': patient_report, 'provider_id': provider_id, 'provider_name': provider_name}
+        caseload_reports[provider_id].append(patient_report)
+        caseload_reports[supervisor_id][provider_id].append(supervisor_report)
+    reports['caseloads'] = caseload_reports
+    return reports
 
 
 def _filter_encounter_records(patient_id, encounter_records):
