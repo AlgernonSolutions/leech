@@ -28,3 +28,7 @@ class ReportGenerator:
             except AttributeError:
                 pass
         raise NotImplementedError(f'could not find filter function for filter named: {filter_name}')
+
+    @classmethod
+    def generate_workbooks(cls, reports):
+        raise NotImplementedError('do this after you get the graph running')

@@ -33,37 +33,22 @@
       ],
       "indexes": [
         {
-          "index_name": "external_id_by_internal_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
           "index_name": "external_id_internal_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "0",
-            "key": [
-              "id_source",
-              "id_type",
-              "id_name"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+            "id_source",
+            "id_type",
+            "id_name"
+          ]
         },
         {
           "index_name": "external_id_id_value_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "id_value",
-            "key": [
+          "is_unique": false,
+          "key": [
               "id_source",
               "id_type",
               "id_name"
             ]
-          }
         }
       ],
       "rules": {
@@ -152,33 +137,18 @@
       ],
       "indexes": [
         {
-          "index_name": "change_by_internal_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
           "index_name": "change_detail_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "detail_id",
-            "key": [
+          "is_unique": false,
+          "key": [
               "id_source"
             ]
-          }
         },
         {
           "index_name": "change_internal_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "0",
-            "key": [
-              "id_source"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+           "id_source"
+          ]
         }
       ],
       "rules": {
@@ -295,33 +265,18 @@
       ],
       "indexes": [
         {
-          "index_name": "changelog_entry_by_internal_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
           "index_name": "changelog_entry_changelog_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "changelog_id",
-            "key": [
-              "id_source"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+            "id_source"
+          ]
         },
         {
           "index_name": "changelog_entry_internal_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "0",
-            "key": [
+          "is_unique": false,
+          "key": [
               "id_source"
             ]
-          }
         }
       ],
       "rules": {
@@ -499,33 +454,18 @@
       ],
       "indexes": [
         {
-          "index_name": "change_by_internal_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
           "index_name": "change_detail_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "detail_id",
-            "key": [
+          "is_unique": false,
+          "key": [
               "id_source"
             ]
-          }
         },
         {
           "index_name": "change_internal_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "0",
-            "key": [
-              "id_source"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+            "id_source"
+          ]
         }
       ],
       "rules": {
@@ -652,33 +592,18 @@
       ],
       "indexes": [
         {
-          "index_name": "changelog_entry_by_internal_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
           "index_name": "changelog_entry_changelog_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "changelog_id",
-            "key": [
-              "id_source"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+            "id_source"
+          ]
         },
         {
           "index_name": "changelog_entry_internal_id_range_by_source",
-          "index_type": "sorted_set",
-          "index_properties": {
-            "score": "0",
-            "key": [
-              "id_source"
-            ]
-          }
+          "is_unique": false,
+          "key": [
+            "id_source"
+          ]
         }
       ],
       "rules": {

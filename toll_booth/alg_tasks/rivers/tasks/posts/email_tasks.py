@@ -18,6 +18,7 @@ def build_reports(**kwargs):
     filter_rules = report_args['filters']
     queries = kwargs['query_data']
     reports = ReportGenerator.generate_report(queries, filter_rules)
+
     return {'reports': reports}
 
 

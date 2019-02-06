@@ -54,10 +54,16 @@ def assimilate(**kwargs):
 @xray_recorder.capture('index')
 @task('index')
 def index(**kwargs):
-    from toll_booth.alg_obj.graph.ogm.ogm import Ogm
+    from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
-    ogm = Ogm(**kwargs)
-    raise NotImplementedError('have not done the index operation you chuckle head')
+    schema_entry = kwargs['schema_entry']
+    assimilation_results = kwargs['assimilation']
+    source_vertex = kwargs['source_vertex']
+    index_manager = IndexManager.from_graph_schema(schema_entry, **kwargs)
+    index_manager.index_object(source_vertex)
+    for entry in assimilation_results:
+        index_manager.index_object(entry['edge'])
+        index_manager.index_object(entry['vertex'])
 
 
 @xray_recorder.capture('graph')

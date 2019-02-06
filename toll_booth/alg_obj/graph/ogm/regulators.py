@@ -6,6 +6,7 @@ from decimal import Decimal
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.sapper.secrets import SecretWhisperer
 from toll_booth.alg_obj.graph import InternalId
+from toll_booth.alg_obj.serializers import AlgEncoder
 
 
 class ObjectRegulator:
@@ -370,27 +371,28 @@ class GraphObject(AlgObject):
         return self._id_value_field
 
     @property
+    def graph_as_stub(self):
+        return self._graph_as_stub
+
+    @property
+    def for_index(self):
+        indexed_value = {
+            'sid_value': str(self._id_value),
+            'identifier_stem': str(self._identifier_stem),
+            'internal_id': str(self._internal_id),
+            'id_value': self._id_value,
+            'object_type': self._object_type,
+            'object_value': json.dumps(self, cls=AlgEncoder)
+        }
+        return indexed_value
+
+    @property
+    def for_stub_index(self):
+        return json.dumps(self, cls=AlgEncoder)
+
+    @property
     def is_edge(self):
         return '#edge#' in str(self._identifier_stem)
-
-    def __getitem__(self, item):
-        try:
-            return getattr(self, item)
-        except AttributeError:
-            return self._object_properties[item]
-
-
-class PotentialVertex(GraphObject):
-    def __init__(self, object_type, internal_id, object_properties, identifier_stem, id_value, id_value_field):
-        super().__init__(object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field)
-
-    @classmethod
-    def parse_json(cls, json_dict):
-        return cls(
-            json_dict['object_type'], json_dict.get('internal_id'),
-            json_dict.get('object_properties', {}), json_dict['identifier_stem'],
-            json_dict.get('id_value'), json_dict.get('id_value_field')
-        )
 
     @property
     def is_identifiable(self):
@@ -428,6 +430,25 @@ class PotentialVertex(GraphObject):
     @property
     def is_internal_id_set(self):
         return isinstance(self._internal_id, str)
+
+    def __getitem__(self, item):
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            return self._object_properties[item]
+
+
+class PotentialVertex(GraphObject):
+    def __init__(self, object_type, internal_id, object_properties, identifier_stem, id_value, id_value_field):
+        super().__init__(object_type, object_properties, internal_id, identifier_stem, id_value, id_value_field)
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['object_type'], json_dict.get('internal_id'),
+            json_dict.get('object_properties', {}), json_dict['identifier_stem'],
+            json_dict.get('id_value'), json_dict.get('id_value_field')
+        )
 
     @property
     def graphed_object_type(self):

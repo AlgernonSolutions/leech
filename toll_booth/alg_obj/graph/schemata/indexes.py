@@ -1,17 +1,15 @@
-from abc import ABC
-
 from toll_booth.alg_obj import AlgObject
 
 
-class SchemaIndexEntry(AlgObject, ABC):
-    def __init__(self, index_name, index_type, index_properties):
+class SchemaIndexEntry(AlgObject):
+    def __init__(self, index_name, is_unique, indexed_fields):
         self._index_name = index_name
-        self._index_type = index_type
-        self._index_properties = index_properties
+        self._is_unique = is_unique
+        self._indexed_fields = indexed_fields
 
     @classmethod
     def parse(cls, index_dict):
-        return cls(index_dict['index_name'], index_dict['index_type'], index_dict['index_properties'])
+        return cls(index_dict['index_name'], index_dict['is_unique'], index_dict['indexed_fields'])
 
     @classmethod
     def parse_json(cls, json_dict):
@@ -22,12 +20,12 @@ class SchemaIndexEntry(AlgObject, ABC):
         return self._index_name
 
     @property
-    def index_type(self):
-        return self._index_type
+    def is_unique(self):
+        return self._is_unique
 
     @property
-    def index_properties(self):
-        return self._index_properties
+    def indexed_fields(self):
+        return self._indexed_fields
 
 
 class SortedSetIndexEntry(SchemaIndexEntry):
