@@ -186,7 +186,7 @@
         "is_unique": {
           "type": "boolean"
         },
-        "key": {
+        "indexed_fields": {
           "description": "an array of vertex properties that will be concatenated together to form the index key",
           "type": "array",
           "items": {
@@ -201,8 +201,9 @@
       "required": [
         "index_name",
         "is_unique",
-        "key"
-      ]
+        "indexed_fields"
+      ],
+      "additionalProperties": false
     },
     "entry_property": {
       "description": "a object property containing a property name and a data type",
@@ -245,6 +246,7 @@
       },
       "maxProperties": 3,
       "minProperties": 3,
+      "required": ["property_name", "property_data_type", "is_id_value"],
       "additionalItems": false
     },
     "edge_entry_property": {

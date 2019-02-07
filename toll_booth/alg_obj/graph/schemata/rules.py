@@ -20,12 +20,12 @@ class VertexRules(AlgObject):
 
     @classmethod
     def parse(cls, rules):
-        linking_rules_list = rules['linking_rules']
+        linking_rules_list = rules.get('linking_rules', [])
         for entry in linking_rules_list:
             if isinstance(entry, VertexLinkRuleSet):
                 return cls(linking_rules_list)
         return cls([VertexLinkRuleSet.parse(
-            x['vertex_specifiers'], x['outbound'], x['inbound']) for x in rules['linking_rules']])
+            x['vertex_specifiers'], x['outbound'], x['inbound']) for x in linking_rules_list])
 
     @classmethod
     def parse_json(cls, json_dict):

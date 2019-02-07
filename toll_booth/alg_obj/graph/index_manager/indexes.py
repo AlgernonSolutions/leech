@@ -114,6 +114,21 @@ class UniqueIndex(Index):
             internal_id_field_name = os.getenv('OBJECT_INTERNAL_ID_KEY_NAME', 'internal_id')
         return cls(index_name, [internal_id_field_name], ['*'])
 
+    @classmethod
+    def for_identifier_stem_index(cls, **kwargs):
+        index_name = kwargs.get('index_name', None)
+        if not index_name:
+            index_name = os.getenv('IDENTIFIER_STEM_INDEX_NAME', 'identifier_stem_index')
+        return cls(index_name, ['identifier_stem', 'id_value'], ['*'])
+
+    @classmethod
+    def for_link_index(cls, **kwargs):
+        index_name = kwargs.get('index_name', None)
+        index_fields = ['id_source', 'object_type', 'utc_link_time']
+        if not index_name:
+            index_name = os.getenv('LINK_INDEX_NAME', 'link_index')
+        return cls(index_name, index_fields, [])
+
 
 class NonUniqueIndex(Index):
     def __init__(self, index_name, indexed_fields, indexed_object_types):

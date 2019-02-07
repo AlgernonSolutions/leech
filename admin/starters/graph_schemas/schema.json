@@ -1,6 +1,26 @@
 {
   "vertex": [
     {
+      "vertex_name": "IdSource",
+      "vertex_properties": [
+        {
+          "property_name": "id_source",
+          "property_data_type": "String",
+          "is_id_value": true
+        }
+      ],
+      "internal_id_key": [
+        "object_type",
+        "id_source"
+      ],
+      "identifier_stem": [
+        "id_source"
+      ],
+      "indexes": [],
+      "rules": {},
+      "extract": []
+    },
+    {
       "vertex_name": "ExternalId",
       "vertex_properties": [
         {
@@ -35,7 +55,7 @@
         {
           "index_name": "external_id_internal_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
             "id_source",
             "id_type",
             "id_name"
@@ -44,7 +64,7 @@
         {
           "index_name": "external_id_id_value_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
               "id_source",
               "id_type",
               "id_name"
@@ -139,14 +159,14 @@
         {
           "index_name": "change_detail_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
               "id_source"
             ]
         },
         {
           "index_name": "change_internal_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
            "id_source"
           ]
         }
@@ -267,14 +287,14 @@
         {
           "index_name": "changelog_entry_changelog_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
             "id_source"
           ]
         },
         {
           "index_name": "changelog_entry_internal_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
               "id_source"
             ]
         }
@@ -456,14 +476,14 @@
         {
           "index_name": "change_detail_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
               "id_source"
             ]
         },
         {
           "index_name": "change_internal_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
             "id_source"
           ]
         }
@@ -594,14 +614,14 @@
         {
           "index_name": "changelog_entry_changelog_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
             "id_source"
           ]
         },
         {
           "index_name": "changelog_entry_internal_id_range_by_source",
           "is_unique": false,
-          "key": [
+          "indexed_fields": [
             "id_source"
           ]
         }
@@ -714,6 +734,36 @@
   ],
   "edge": [
     {
+      "edge_label": "_fip_link_",
+      "from": ["ExternalId"],
+      "to": ["IdSource"],
+      "edge_properties": [
+        {
+          "property_name": "link_utc_timestamp",
+          "property_data_type": "DateTime",
+          "property_source": {
+            "source_type": "extraction",
+            "extraction_name": "link_utc_timestamp"
+          }
+        },
+        {
+          "property_name": "is_unlink",
+          "property_data_type": "Boolean",
+          "property_source": {
+            "source_type": "extraction",
+            "extraction_name": "is_unlink"
+          }
+        }
+      ],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id",
+        "link_utc_timestamp"
+      ],
+      "indexes": []
+    },
+    {
       "edge_label": "_changed_by_",
       "from": ["ExternalId"],
       "to": ["ChangeLogEntry", "ChangeLog"],
@@ -782,115 +832,6 @@
         "to.internal_id"
       ],
       "indexes": []
-    }
-  ],
-  "cluster": [
-    {
-      "cluster_name": "ChangeLogPlan",
-      "internal_id_key": [
-        "id_source",
-        "changelog_id"
-      ],
-      "vertex": [
-        {
-          "cluster_specific_name": "by_emp_ext_id",
-          "vertex_type": "ExternalId",
-          "inbound_edges": [],
-          "outbound_edges": [
-            {
-              "edge_type": "_changed_by_",
-              "to": "changelog_entry"
-            }
-          ]
-        },
-        {
-          "cluster_specific_name": "change_target",
-          "vertex_type": "ExternalId",
-          "inbound_edges": [
-            {
-              "edge_type": "_changed_",
-              "from": "changelog_entry"
-            },
-            {
-              "edge_type": "_changed_",
-              "from": "change"
-            }
-          ],
-          "outbound_edges": []
-        },
-        {
-          "cluster_specific_name": "generated_ext_id",
-          "vertex_type": "ExternalId",
-          "inbound_edges": [
-            {
-              "edge_type": "_generated_",
-              "from": "changelog_entry"
-            }
-          ],
-          "outbound_edges": []
-        },
-        {
-          "cluster_specific_name": "changelog_entry",
-          "vertex_type": "ChangeLogEntry",
-          "inbound_edges": [
-            {
-              "edge_type": "_changed_by_",
-              "from": "by_emp_ext_id"
-            }
-          ],
-          "outbound_edges": [
-            {
-              "edge_type": "_change_",
-              "to": "change"
-            },
-            {
-              "edge_type": "_changed_",
-              "to": "change_target"
-            },
-            {
-              "edge_type": "_generated_",
-              "to": "generated_ext_id"
-            }
-          ]
-        },
-        {
-          "cluster_specific_name": "change",
-          "vertex_type": "Change",
-          "inbound_edges": [
-            {
-              "edge_type": "_change_",
-              "from": "changelog_entry"
-            }
-          ],
-          "outbound_edges": [
-            {
-              "edge_type": "_changed_",
-              "to": "change_target"
-            }
-          ]
-        }
-      ],
-      "index": [
-        {
-          "index_name": "changelog_plan_by_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "internal_id"
-            ]
-          }
-        },
-        {
-          "index_name": "changelog_plan_by_hint_id",
-          "index_type": "unique",
-          "index_properties": {
-            "key": [
-              "obj_name",
-              "internal_id"
-            ]
-          }
-        }
-      ]
     }
   ],
   "commons": {

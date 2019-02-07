@@ -5,6 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import chain, LambdaSignature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
+@xray_recorder.capture('fungal_leech')
 @workflow('fungal_leech')
 def fungal_leech(**kwargs):
     decisions = kwargs['decisions']
@@ -12,7 +13,9 @@ def fungal_leech(**kwargs):
     names = {
         'transform': f'transform-{execution_id}',
         'index': f'index-{execution_id}',
+        'index_links': f'index_links-{execution_id}',
         'graph': f'graph-{execution_id}',
+        'graph_links': f'graph_links-{execution_id}'
     }
     kwargs['names'] = names
     transform_signature = _build_transform_signature(**kwargs)
@@ -23,9 +26,9 @@ def fungal_leech(**kwargs):
     assimilate_results = assimilate_group(**kwargs)
     if assimilate_results is None:
         return
-    index_signature = _build_index_signature(**kwargs)
-    graph_signature = _build_index_signature(**kwargs)
-    load_group = group(index_signature, graph_signature)
+    index_group = _build_index_group(**kwargs)
+    graph_chain = _build_graph_chain(**kwargs)
+    load_group = group(index_group, graph_chain)
     load_results = load_group(**kwargs)
     if load_results is None:
         return
@@ -56,15 +59,19 @@ def _build_assimilate_group(task_args, **kwargs):
     return group(*tuple_signatures)
 
 
-@xray_recorder.capture('fungal_leech_build_index_signature')
-def _build_index_signature(**kwargs):
+@xray_recorder.capture('fungal_leech_build_index_group')
+def _build_index_group(**kwargs):
     names = kwargs['names']
-    task_identifier = names['index']
-    return LambdaSignature(task_identifier, 'index', **kwargs)
+    index_task_identifier = names['index']
+    index_links_identifier = names['index_links']
+    index_signature = LambdaSignature(index_task_identifier, 'index', **kwargs)
+    index_link_signature = LambdaSignature(index_links_identifier, 'index_links', **kwargs)
+    return group(index_signature, index_link_signature)
 
 
-@xray_recorder.capture('fungal_leech_build_graph_signature')
-def _build_graph_signature(**kwargs):
+@xray_recorder.capture('fungal_leech_build_graph_chain')
+def _build_graph_chain(**kwargs):
     names = kwargs['names']
-    task_identifier = names['graph']
-    return LambdaSignature(task_identifier, 'graph', **kwargs)
+    graph_task_identifier = names['graph']
+    graph_links_identifier
+    graph_signature = LambdaSignature(graph_task_identifier, 'graph', **kwargs)

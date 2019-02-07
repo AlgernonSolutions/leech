@@ -1,5 +1,6 @@
 from aws_xray_sdk.core import xray_recorder
 
+from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
@@ -7,7 +8,7 @@ from toll_booth.alg_tasks.rivers.rocks import task
 @task('get_local_max_change_type_value')
 def get_local_max_change_type_value(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
-    from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver, EmptyIndexException
+    from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
     driving_identifier_stem = kwargs['driving_identifier_stem']
     id_value = kwargs['id_value']
@@ -18,9 +19,9 @@ def get_local_max_change_type_value(**kwargs):
     id_type = driving_identifier_stem.get('id_type')
     change_category = changelog_types.categories[category_id]
     change_stem = f'#{id_source}#{id_type}#{id_value}#{change_category}'
-    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
+    index_manager = IndexManager.from_graph_schema(kwargs['schema_entry'], **kwargs)
     try:
-        local_max_value = leech_driver.scan_index_value_max(change_stem)
+        local_max_value = index_manager.query_object_max(change_stem)
     except EmptyIndexException:
         local_max_value = None
     return {'local_max_value': local_max_value}
@@ -35,47 +36,40 @@ def pull_change_types(**kwargs):
     return {'changelog_types': change_types}
 
 
-@xray_recorder.capture('unlink_old_ids')
-@task('unlink_old_ids')
-def unlink_old_ids(**kwargs):
-    remote_id_values = kwargs['remote_id_values']
-    local_id_values = kwargs['local_id_values']
-    local_linked_values = local_id_values['linked']
-    unlinked_id_values = local_linked_values - remote_id_values
-    _set_changed_ids(change_type='unlink', id_values=unlinked_id_values, **kwargs)
+@xray_recorder.capture('unlink_old_id')
+@task('unlink_old_id')
+def unlink_old_id(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['unlink'] = True
+    index_manager.add_link_event(**tools)
 
 
-@xray_recorder.capture('link_new_ids')
-@task('link_new_ids')
-def link_new_ids(**kwargs):
-    remote_id_values = kwargs['remote_id_values']
-    local_id_values = kwargs['local_id_values']
-    local_linked_values = local_id_values['linked']
-    newly_linked_id_values = remote_id_values - local_linked_values
-    _set_changed_ids(change_type='link', id_values=newly_linked_id_values, **kwargs)
+@xray_recorder.capture('link_new_id')
+@task('link_new_id')
+def link_new_id(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['link'] = True
+    index_manager.add_link_event(**tools)
 
 
-@xray_recorder.capture('put_new_ids')
-@task('put_new_ids')
-def put_new_ids(**kwargs):
-    remote_id_values = kwargs['remote_id_values']
-    local_id_values = kwargs['local_id_values']
-    new_id_values = remote_id_values - local_id_values['all']
-    _set_changed_ids(change_type='new', id_values=new_id_values, **kwargs)
+@xray_recorder.capture('put_new_id')
+@task('put_new_id')
+def put_new_id(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['put'] = True
+    index_manager.add_link_event(**tools)
 
 
 @xray_recorder.capture('get_local_ids')
 @task('get_local_ids')
 def get_local_ids(**kwargs):
-    from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
-    from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
+    from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
     driving_identifier_stem = kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
-    driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
-    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
-    local_id_values = leech_driver.get_local_id_values(driving_identifier_stem, vertex_regulator=driving_vertex_regulator)
+    index_driver = IndexManager(kwargs['schema_entry'], **kwargs)
+    local_id_values = index_driver.get_local_id_values(driving_identifier_stem, by_linked=True)
     return {'local_id_values': local_id_values}
 
 
@@ -83,12 +77,15 @@ def get_local_ids(**kwargs):
 @task('get_remote_ids')
 def get_remote_ids(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
+    from datetime import datetime
+
+    link_utc_timestamp = datetime.utcnow()
 
     remote_id_extractor = _build_remote_id_extractor(**kwargs)
     with CredibleFrontEndDriver(remote_id_extractor['id_source']) as driver:
         remote_ids = driver.get_monitor_extraction(**remote_id_extractor)
         results = set(remote_ids)
-        return {'remote_id_values': results}
+        return {'remote_id_values': results, 'link_utc_timestamp': link_utc_timestamp}
 
 
 @xray_recorder.capture('work_remote_id_change_type')
@@ -298,6 +295,22 @@ def _build_remote_id_extractor(**kwargs):
     extractor_setup.update(driving_identifier_stem.for_extractor)
     extractor_setup.update(schema_entry.extract[extractor_setup['type']].extraction_properties)
     return extractor_setup
+
+
+def _generate_link_data(id_value, **kwargs):
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+    from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
+    from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
+
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+    driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
+    object_data = driving_identifier_stem.for_extractor
+    object_data['id_value'] = id_value
+    potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
+    return {
+        'potential_vertex': potential_vertex,
+        'link_utc_timestamp': kwargs['link_utc_timestamp']
+    }, IndexManager.from_graph_schema(**kwargs['schema_entry'])
 
 
 def _set_changed_ids(change_type, **kwargs):
