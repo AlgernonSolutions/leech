@@ -1,5 +1,6 @@
 from aws_xray_sdk.core import xray_recorder
 
+from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.rafts import LambdaSignature, ActivitySignature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
@@ -17,6 +18,10 @@ def work_fip_links(**kwargs):
     }
     kwargs['names'] = names
     index_group = _build_index_group(**kwargs)
+    index_results = index_group(**kwargs)
+    if index_results is None:
+        return
+    decisions.append(CompleteWork())
 
 
 def _build_index_group(task_args, **kwargs):

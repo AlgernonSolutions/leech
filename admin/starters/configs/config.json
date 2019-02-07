@@ -32,6 +32,23 @@
         }
       },
       {
+        "workflow_name": "work_fip_links",
+        "workflow_description": "generates, indexes, and graphs, the links needed by fungal data sources",
+        "workflow_config": {
+          "concurrency": 1,
+          "labor_task_lists": [
+            {
+              "list_name": "links",
+              "number_threads": 1,
+              "is_vpc": true
+            }
+          ],
+          "time_outs": {
+            "decision": "300"
+          }
+        }
+      },
+      {
         "workflow_name": "work_remote_id",
         "workflow_description": "workflow for driving vertex growth from a single remote_id",
         "workflow_config": {
@@ -105,22 +122,22 @@
         }
       },
       {
-        "task_name": "unlink_old_ids",
-        "task_description": "breaks the connection between ext_ids and a data source",
+        "task_name": "unlink_old_id",
+        "task_description": "breaks the connection between ext_id and a data source",
         "task_config": {
           "concurrency": 1
         }
       },
       {
-        "task_name": "link_new_ids",
-        "task_description": "creates connection between ext_ids and a data source",
+        "task_name": "link_new_id",
+        "task_description": "creates connection between ext_id and a data source",
         "task_config": {
           "concurrency": 1
         }
       },
       {
-        "task_name": "put_new_ids",
-        "task_description": "adds id objects to the data space",
+        "task_name": "put_new_id",
+        "task_description": "adds id object to the data space",
         "task_config": {
           "concurrency": 1
         }
