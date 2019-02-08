@@ -88,14 +88,13 @@ class IndexManager:
 
     def _get_local_id_values(self, identifier_stem, index_name=None):
         paginator = boto3.client('dynamodb').get_paginator('query')
-        if not index_name:
-            index_name = self._object_index.index_name
         query_args = {
             'TableName': self._table_name,
-            'IndexName': index_name,
             'KeyConditionExpression': 'identifier_stem = :id',
             'ExpressionAttributeValues': {':id': {'S': str(identifier_stem)}}
         }
+        if index_name:
+            query_args['IndexName'] = index_name
         pages = paginator.paginate(**query_args)
         results = set()
         for page in pages:
