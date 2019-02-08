@@ -47,7 +47,7 @@ def _build_chain(names, **kwargs):
     get_change_type = ActivitySignature(names['change_types'], 'pull_change_types', **kwargs)
     get_schema_entry = ActivitySignature(names['schema_entry'], 'pull_schema_entry', **kwargs)
     work_fip_links = SubtaskSignature(names['work_links'], 'work_fip_links', **kwargs)
-    great_chain = chain(get_ids_group, work_fip_links, get_change_type, get_schema_entry, generate_mapping)
+    great_chain = chain(get_schema_entry, get_ids_group, work_fip_links, get_change_type, generate_mapping)
     return great_chain
 
 
