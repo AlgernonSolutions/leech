@@ -275,7 +275,8 @@ class CredibleFrontEndDriver:
     @_login_required
     def get_monitor_extraction(self, **kwargs):
         mapping = kwargs['mapping']
-        id_type = kwargs['id_type']
+        identifier_stem = kwargs['driving_identifier_stem']
+        id_type = identifier_stem['id_type']
         source_mapping = mapping.get(self._id_source, mapping['default'])
         object_field_names = source_mapping['ExternalId'][id_type]
         data = {
