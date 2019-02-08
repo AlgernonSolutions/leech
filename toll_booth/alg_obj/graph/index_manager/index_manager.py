@@ -28,8 +28,8 @@ class IndexManager:
         if link_index is None:
             link_index = UniqueIndex.for_link_index(**kwargs)
         other_indexes_key_name = kwargs.get('index_key_name', os.getenv('INDEXES_KEY_NAME', 'indexes'))
-        indexes = kwargs.get('indexes', [])
-        indexes.extend([object_index, internal_id_index, identifier_stem_index])
+        other_indexes = kwargs.get('indexes', [])
+        indexes = [object_index, internal_id_index, identifier_stem_index]
         self._table_name = table_name
         self._object_index = object_index
         self._internal_id_index = internal_id_index
@@ -37,6 +37,7 @@ class IndexManager:
         self._link_index = link_index
         self._table = boto3.resource('dynamodb').Table(self._table_name)
         self._indexes = indexes
+        self._other_indexes = other_indexes
         self._other_indexes_key_name = other_indexes_key_name
 
     @classmethod
@@ -168,14 +169,14 @@ class IndexManager:
         args = {
             'Item': item
         }
-        condition_expressions = []
+        condition_expressions = set()
         unique_index_names = []
         for index in self._indexes:
             if index.is_unique:
-                condition_expressions.append(index.conditional_statement)
+                condition_expressions.update(index.conditional_statement)
                 unique_index_names.append(index.index_name)
         if condition_expressions:
-            args['ConditionExpression'] = all(condition_expressions)
+            args['ConditionExpression'] = ' AND '.join(condition_expressions)
         try:
             self._table.put_item(**args)
         except ClientError as e:

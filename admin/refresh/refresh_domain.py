@@ -41,7 +41,7 @@ def _refresh_workflows(domain_name, config):
     current_workflows = _get_workflows(domain_name)
     for workflow_config in workflow_configs:
         _refresh_workflow(domain_name, workflow_config, current_workflows)
-    for current_workflow_name, current_workflow in current_workflows.items():
+    for current_workflow_name, current_workflow in current_workflows['current'].items():
         if current_workflow_name not in workflow_config_names:
             for workflow_version in current_workflow:
                 _deprecate_workflow(domain_name, current_workflow_name, workflow_version)

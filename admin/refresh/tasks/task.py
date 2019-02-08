@@ -4,15 +4,23 @@ import boto3
 from botocore.exceptions import ClientError
 
 from admin.refresh.tasks import _compare_properties, _defaults
+from toll_booth.alg_obj.utils import recursively_update
 
 
 def _get_activities(domain_name):
+    activities = {}
+    recursively_update(activities, __get_activities(domain_name, 'DEPRECATED'))
+    recursively_update(activities, __get_activities(domain_name, 'REGISTERED'))
+    return activities
+
+
+def __get_activities(domain_name, activity_status):
     activities = {}
     client = boto3.client('swf')
     paginator = client.get_paginator('list_activity_types')
     iterator = paginator.paginate(
         domain=domain_name,
-        registrationStatus='REGISTERED'
+        registrationStatus=activity_status
     )
     for page in iterator:
         for entry in page['typeInfos']:

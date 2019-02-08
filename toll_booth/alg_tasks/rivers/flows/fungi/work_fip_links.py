@@ -11,9 +11,9 @@ def work_fip_links(**kwargs):
     decisions = kwargs['decisions']
     execution_id = kwargs['execution_id']
     names = {
-        'unlink_old_id': f'unlink_old_id-{execution_id}',
-        'link_new_id': f'link_new_id-{execution_id}',
-        'put_new_id': f'put_new_id-{execution_id}',
+        'unlink_old_ids': f'unlink_old_id-{execution_id}',
+        'link_new_ids': f'link_new_id-{execution_id}',
+        'put_new_ids': f'put_new_id-{execution_id}',
         'graph': f'graph_fip_links-{execution_id}'
     }
     kwargs['names'] = names
@@ -31,9 +31,9 @@ def _build_index_group(task_args, **kwargs):
     remote_id_values = task_args.get_argument_value('remote_id_values')
     local_linked_values = local_id_values['linked']
     operations = [
-        ('unlink_old_id', local_linked_values - remote_id_values),
-        ('link_new_id', remote_id_values - local_linked_values),
-        ('put_new_id', remote_id_values - local_id_values['all'])
+        ('unlink_old_ids', local_linked_values - remote_id_values),
+        ('link_new_ids', remote_id_values - local_linked_values),
+        ('put_new_ids', remote_id_values - local_id_values['all'])
     ]
     for operation in operations:
         operation_name = operation[0]
@@ -41,7 +41,7 @@ def _build_index_group(task_args, **kwargs):
         operation_identifier = names[operation_name]
         new_task_arg = {'id_values': id_values}
         new_task_args = task_args.replace_argument_value(operation_name, new_task_arg, operation_identifier)
-        operation_signature = LambdaSignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
+        operation_signature = ActivitySignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
         signatures.append(operation_signature)
     if not signatures:
         return None

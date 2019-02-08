@@ -85,3 +85,11 @@ class LinkHistory:
             'object_value': json.dumps(self._potential_vertex, cls=AlgEncoder)
         }
         return indexed
+
+    @property
+    def is_identifiable(self):
+        return True
+
+    @property
+    def object_properties(self):
+        return self.for_index

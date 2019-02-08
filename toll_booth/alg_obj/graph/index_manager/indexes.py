@@ -63,14 +63,15 @@ class Index:
 
     @property
     def conditional_statement(self):
-        return all([Attr(x).not_exists() for x in self._indexed_fields])
+        return [f'attribute_not_exists({x})' for x in self._indexed_fields]
 
     @property
     def is_unique(self):
         return self._index_type == 'unique'
 
     def check_for_missing_object_properties(self, graph_object):
-        properties_dict = graph_object.object_properties
+        properties_dict = graph_object.for_index
+        properties_dict.update(graph_object.object_properties)
         missing_properties = [x for x in self._indexed_fields if x not in properties_dict]
         if missing_properties:
             return missing_properties

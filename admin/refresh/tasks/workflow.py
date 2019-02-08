@@ -4,15 +4,29 @@ import boto3
 from botocore.exceptions import ClientError
 
 from admin.refresh.tasks import _compare_properties, _defaults
+from toll_booth.alg_obj.utils import recursively_update
 
 
 def _get_workflows(domain_name):
+    workflows = {
+        'all': {}
+    }
+    deprecated = __get_workflows(domain_name, 'DEPRECATED')
+    registered = __get_workflows(domain_name, 'REGISTERED')
+    recursively_update(workflows['all'], __get_workflows(domain_name, 'DEPRECATED'))
+    recursively_update(workflows['all'], __get_workflows(domain_name, 'REGISTERED'))
+    workflows['current'] = registered
+    workflows['deprecated'] = deprecated
+    return workflows
+
+
+def __get_workflows(domain_name, registration_status):
     workflows = {}
     client = boto3.client('swf')
     paginator = client.get_paginator('list_workflow_types')
     iterator = paginator.paginate(
         domain=domain_name,
-        registrationStatus='REGISTERED'
+        registrationStatus=registration_status
     )
     for page in iterator:
         for entry in page['typeInfos']:
@@ -63,7 +77,7 @@ def _refresh_workflow(domain_name, config_workflow, current_workflows):
     timeout_properties = ['workflow', 'task']
 
     try:
-        current_workflow = current_workflows[flow_name]
+        current_workflow = current_workflows['all'][flow_name]
     except KeyError:
         return _create_workflow(domain_name, config_workflow)
     max_version_number = max([int(x) for x in current_workflow.keys()])
