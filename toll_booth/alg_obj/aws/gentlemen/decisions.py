@@ -46,6 +46,7 @@ class StartLambda(Decision):
             lambda_attributes['control'] = kwargs['control']
         attributes_name = 'scheduleLambdaFunctionDecisionAttributes'
         super().__init__('ScheduleLambdaFunction', lambda_attributes, attributes_name)
+        self._fn_name = function_name
 
     @property
     def id(self):
@@ -54,6 +55,10 @@ class StartLambda(Decision):
     @property
     def name(self):
         return self.__getitem__('name')
+
+    @property
+    def type_name(self):
+        return self._fn_name
 
     @property
     def input_args(self):

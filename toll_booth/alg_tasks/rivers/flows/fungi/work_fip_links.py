@@ -37,12 +37,12 @@ def _build_index_group(task_args, **kwargs):
     ]
     for operation in operations:
         operation_name = operation[0]
-        for id_value in operation[1]:
-            operation_identifier = f'{id_value}-{names[operation_name]}'
-            new_task_arg = {'id_value': id_value}
-            new_task_args = task_args.replace_argument_value(operation_name, new_task_arg, id_value)
-            operation_signature = ActivitySignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
-            signatures.append(operation_signature)
+        id_values = operation[1]
+        operation_identifier = names[operation_name]
+        new_task_arg = {'id_values': id_values}
+        new_task_args = task_args.replace_argument_value(operation_name, new_task_arg, operation_identifier)
+        operation_signature = LambdaSignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
+        signatures.append(operation_signature)
     if not signatures:
         return None
     return group(*tuple(signatures))

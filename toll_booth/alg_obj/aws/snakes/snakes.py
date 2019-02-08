@@ -119,6 +119,9 @@ class StoredData(AlgObject):
 
     def merge(self, other_stored_data):
         current_data = deepcopy(self._data_string)
+        other_data_string = other_stored_data.data_string
+        if other_data_string is None:
+            return False
         for data_name, data_entry in other_stored_data.data_string.items():
             if data_name in current_data:
                 current_data_entry = current_data[data_name]

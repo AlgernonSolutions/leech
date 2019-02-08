@@ -73,9 +73,19 @@ class WorkflowHistory:
             if event.event_type == _starting_step:
                 input_string = event.event_attributes.get('input', '{}')
                 input_data = json.loads(input_string, cls=AlgDecoder)
-                versions = input_data.get('versions', None)
-                config = input_data.get('config', None)
-                task_args = TaskArguments.for_starting_data(operation_name, input_data['task_args'])
+                try:
+                    versions = input_data.get('versions', None)
+                except AttributeError:
+                    versions = None
+                try:
+                    config = input_data.get('config', None)
+                except AttributeError:
+                    config = None
+                try:
+                    task_args = input_data.get('task_args', input_data)
+                except AttributeError:
+                    task_args = input_data
+                task_args = TaskArguments.for_starting_data(operation_name, task_args)
                 parent_data = event.event_attributes.get('parentWorkflowExecution', {})
                 parent_flow_id = parent_data.get('workflowId', None)
                 parent_run_id = parent_data.get('runId', None)

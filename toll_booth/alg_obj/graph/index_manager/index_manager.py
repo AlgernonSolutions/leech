@@ -124,15 +124,22 @@ class IndexManager:
         return results
 
     def index_object(self, graph_object):
+        item = self._convert_graph_object(graph_object)
         for index in self._indexes:
+            if item is None:
+                raise AttemptedStubIndexException(index.index_name, graph_object)
             if index.check_object_type(graph_object):
                 missing_properties = index.check_for_missing_object_properties(graph_object)
                 if missing_properties:
                     raise MissingIndexedPropertyException(index.index_name, index.indexed_fields, missing_properties)
-                try:
-                    self._index_object(index, graph_object)
-                except AttemptedStubIndexException:
-                    self._index_stub(graph_object)
+        try:
+            self._index_object(graph_object)
+        except AttemptedStubIndexException:
+            self._index_stub(graph_object)
+
+    def add_link_events(self, link_utc_timestamp, potential_vertexes, **kwargs):
+        for vertex in potential_vertexes:
+            self.add_link_event(link_utc_timestamp, vertex, **kwargs)
 
     def add_link_event(self, link_utc_timestamp, potential_vertex, **kwargs):
         link_history = LinkHistory.for_first_link(potential_vertex, link_utc_timestamp)
@@ -156,21 +163,25 @@ class IndexManager:
             return None
         return graph_object.for_index
 
-    def _index_object(self, index, graph_object):
+    def _index_object(self, graph_object):
         item = self._convert_graph_object(graph_object)
-        if item is None:
-            raise AttemptedStubIndexException(index.index_name, graph_object)
         args = {
             'Item': item
         }
-        if index.is_unique:
-            args['ConditionExpression'] = index.conditional_statement
+        condition_expressions = []
+        unique_index_names = []
+        for index in self._indexes:
+            if index.is_unique:
+                condition_expressions.append(index.conditional_statement)
+                unique_index_names.append(index.index_name)
+        if condition_expressions:
+            args['ConditionExpression'] = all(condition_expressions)
         try:
             self._table.put_item(**args)
         except ClientError as e:
             if e.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise e
-            raise UniqueIndexViolationException(index.index_name, item)
+            raise UniqueIndexViolationException(', '.join(unique_index_names), item)
 
     def _index_stub(self, stub_graph_object):
         object_keys = self._object_index.indexed_fields

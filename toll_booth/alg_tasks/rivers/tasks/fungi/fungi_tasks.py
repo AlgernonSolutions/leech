@@ -44,6 +44,14 @@ def unlink_old_id(**kwargs):
     index_manager.add_link_event(**tools)
 
 
+@xray_recorder.capture('unlink_old_ids')
+@task('unlink_old_ids')
+def unlink_old_ids(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['unlink'] = True
+    index_manager.add_link_events(**tools)
+
+
 @xray_recorder.capture('link_new_id')
 @task('link_new_id')
 def link_new_id(**kwargs):
@@ -52,12 +60,28 @@ def link_new_id(**kwargs):
     index_manager.add_link_event(**tools)
 
 
+@xray_recorder.capture('link_new_ids')
+@task('link_new_ids')
+def link_new_ids(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['link'] = True
+    index_manager.add_link_events(**tools)
+
+
 @xray_recorder.capture('put_new_id')
 @task('put_new_id')
 def put_new_id(**kwargs):
     tools, index_manager = _generate_link_data(**kwargs)
     tools['put'] = True
     index_manager.add_link_event(**tools)
+
+
+@xray_recorder.capture('put_new_ids')
+@task('put_new_ids')
+def put_new_ids(**kwargs):
+    tools, index_manager = _generate_link_data(**kwargs)
+    tools['put'] = True
+    index_manager.add_link_events(**tools)
 
 
 @xray_recorder.capture('get_local_ids')
@@ -297,20 +321,39 @@ def _build_remote_id_extractor(**kwargs):
     return extractor_setup
 
 
-def _generate_link_data(id_value, **kwargs):
+def _generate_link_data(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
     from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
     from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
-    object_data = driving_identifier_stem.for_extractor
-    object_data['id_value'] = id_value
-    potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
-    return {
-        'potential_vertex': potential_vertex,
-        'link_utc_timestamp': kwargs['link_utc_timestamp']
-    }, IndexManager.from_graph_schema(kwargs['schema'])
+
+    id_value = kwargs.get('id_value', None)
+    id_values = kwargs.get('id_values', None)
+    if id_value is None and id_values is None:
+        raise RuntimeError(f'tried to build link data, but both id_value and id_values are None, kwargs: {kwargs}')
+    index_manager = IndexManager.from_graph_schema(kwargs['schema'])
+    if id_value:
+        object_data = driving_identifier_stem.for_extractor
+        object_data['id_value'] = id_value
+        potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
+        return {
+            'potential_vertex': potential_vertex,
+            'link_utc_timestamp': kwargs['link_utc_timestamp']
+        }, index_manager
+    if id_values:
+        vertexes = []
+        for id_value in id_values:
+            object_data = driving_identifier_stem.for_extractor
+            object_data['id_value'] = id_value
+            potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
+            vertexes.append(potential_vertex)
+
+        return {
+           'potential_vertexes': vertexes,
+           'link_utc_timestamp': kwargs['link_utc_timestamp']
+       }, index_manager
 
 
 def _set_changed_ids(change_type, **kwargs):

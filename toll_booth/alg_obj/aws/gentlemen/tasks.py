@@ -226,6 +226,7 @@ class TaskArguments(AlgObject):
         except KeyError:
             return default
 
+
 class LeechConfigEntry(AlgObject):
     def __init__(self, config_items=None):
         if not config_items:

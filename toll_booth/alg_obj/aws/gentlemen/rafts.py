@@ -235,7 +235,7 @@ class LambdaSignature(Signature):
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['lambdas']
-        operation_type = 'LambdaFunctionScheduled'
+        operation_type = 'ScheduleLambdaFunction'
         super()._check_concurrency(operations, operation_type, **kwargs)
 
 
@@ -331,11 +331,12 @@ class Group:
                     signature(**kwargs)
                 except ConcurrencyExceededException:
                     logging.warning(f'reached maximum concurrency running group, will retry as tasks finish')
-                    return
+                    break
+                    # return
                 group_started = False
-        if not group_started:
-            logging.info(f'not all the signatures in a group had been started, so no point checking the results yet')
-            return
+        # if not group_started:
+        #   logging.info(f'not all the signatures in a group had been started, so no point checking the results yet')
+        #   return
         for signature in self._signatures:
             if signature.is_failed:
                 logging.info(f'signature: {signature} in a group has failed, retry it')
@@ -346,11 +347,14 @@ class Group:
                 logging.info(f'signature: {signature} is not complete, nor failed, hopefully running, come back later')
                 group_finished = False
                 continue
-            results = signature.get_results(**kwargs)
-            task_args.add_argument_values(results)
-            group_results.update(results)
+            if signature.is_complete:
+                results = signature.get_results(**kwargs)
+                task_args.add_argument_values(results)
+                group_results.update(results)
         if not group_finished:
-            logging.info(f'some signatures in the group had not completed, do not check results yet')
+            completed = [x for x in self._signatures if x.is_complete]
+            pending = len(self._signatures) - len(completed)
+            logging.info(f'some signatures in the group had not completed: {pending}/{len(self._signatures)}, do not return results yet')
             return
         logging.info(f'all the signatures in this group are completed, return the results: {group_results}')
         return group_results
