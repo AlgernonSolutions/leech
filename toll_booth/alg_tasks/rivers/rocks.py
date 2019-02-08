@@ -72,6 +72,9 @@ def workflow(workflow_name):
             versions, version_decision = _get_versions(work_history)
             configs, config_decision = _get_config(work_history)
             task_args = work_history.task_args
+            workflow_args = task_args.get(workflow_name, {})
+            if workflow_args:
+                workflow_args = workflow_args.data_string
             context_kwargs = {
                 'task_args': task_args,
                 'decisions': made_decisions,
@@ -86,7 +89,7 @@ def workflow(workflow_name):
                 'versions': versions,
                 'configs': configs,
                 'workflow_name': workflow_name,
-                'workflow_args': task_args[workflow_name].data_string
+                'workflow_args': workflow_args
             }
             results = production_fn(**context_kwargs)
             made_decisions.extend(_disband_idle_ruffians(work_history))

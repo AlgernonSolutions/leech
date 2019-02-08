@@ -197,5 +197,5 @@ class IndexManager:
         self._table.update_item(
             Key=key_value,
             UpdateExpression="ADD link_entries :le",
-            ExpressionAttributeValues={':le': link_entry.for_index}
+            ExpressionAttributeValues={':le': {link_entry.for_index}}
         )

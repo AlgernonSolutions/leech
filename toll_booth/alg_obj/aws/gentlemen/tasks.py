@@ -220,6 +220,11 @@ class TaskArguments(AlgObject):
     def __getitem__(self, item):
         return self._arguments[item]
 
+    def get(self, item, default=None):
+        try:
+            return self.__getitem__(item)
+        except KeyError:
+            return default
 
 class LeechConfigEntry(AlgObject):
     def __init__(self, config_items=None):

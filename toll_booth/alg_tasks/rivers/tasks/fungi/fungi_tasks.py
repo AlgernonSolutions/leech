@@ -310,7 +310,7 @@ def _generate_link_data(id_value, **kwargs):
     return {
         'potential_vertex': potential_vertex,
         'link_utc_timestamp': kwargs['link_utc_timestamp']
-    }, IndexManager.from_graph_schema(**kwargs['schema_entry'])
+    }, IndexManager.from_graph_schema(kwargs['schema'])
 
 
 def _set_changed_ids(change_type, **kwargs):
