@@ -16,17 +16,13 @@ class SchemaPropertyEntry(AlgObject):
         self._is_id_value = is_id_value
 
     @classmethod
-    def parse(cls, property_dict):
-        return cls(
-            property_dict['property_name'],
-            property_dict['property_data_type'],
-            property_dict.get('sensitive', False),
-            property_dict.get('is_id_value', False)
-        )
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict)
+        return cls(
+            json_dict['property_name'],
+            json_dict['property_data_type'],
+            json_dict.get('sensitive', False),
+            json_dict.get('is_id_value', False)
+        )
 
     @property
     def sensitive(self):
@@ -51,9 +47,8 @@ class EdgePropertyEntry(SchemaPropertyEntry):
         self._property_source = property_source
 
     @classmethod
-    def parse(cls, property_dict):
-        return cls(
-            property_dict['property_name'], property_dict['property_data_type'], property_dict['property_source'])
+    def parse_json(cls, json_dict):
+        return cls(json_dict['property_name'], json_dict['property_data_type'], json_dict['property_source'])
 
     @property
     def property_source(self):

@@ -8,12 +8,8 @@ class SchemaIndexEntry(AlgObject):
         self._indexed_fields = indexed_fields
 
     @classmethod
-    def parse(cls, index_dict):
-        return cls(index_dict['index_name'], index_dict['is_unique'], index_dict['indexed_fields'])
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict)
+        return cls(json_dict['index_name'], json_dict['is_unique'], json_dict['indexed_fields'])
 
     @property
     def index_name(self):

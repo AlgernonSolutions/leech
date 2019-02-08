@@ -1,39 +1,22 @@
-from abc import ABC, abstractmethod
-
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.utils import get_subclasses
 
 
 class VertexRules(AlgObject):
-    def __init__(self, linking_rules):
+    def __init__(self, linking_rules=None):
+        if not linking_rules:
+            linking_rules = []
         self._linking_rules = linking_rules
 
     @classmethod
-    def retrieve(cls, vertex_type):
-        from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
-        snek = SchemaSnek()
-        schema = snek.get_schema()
-        for vertex_entry in schema['vertex']:
-            if vertex_type == vertex_entry['vertex_name']:
-                return cls.parse(['rules'])
-        raise RuntimeError('no rules returned for object type: %s' % vertex_type)
-
-    @classmethod
-    def parse(cls, rules):
-        linking_rules_list = rules.get('linking_rules', [])
-        for entry in linking_rules_list:
-            if isinstance(entry, VertexLinkRuleSet):
-                return cls(linking_rules_list)
-        return cls([VertexLinkRuleSet.parse(
-            x['vertex_specifiers'], x['outbound'], x['inbound']) for x in linking_rules_list])
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict)
+        return cls(json_dict['linking_rules'])
 
     @property
     def linking_rules(self):
         return self._linking_rules
+
+    def add_rule_set(self, rule_set):
+        self._linking_rules.append(rule_set)
 
 
 class VertexLinkRuleSet(AlgObject):
@@ -43,16 +26,8 @@ class VertexLinkRuleSet(AlgObject):
         self._inbound_rules = inbound_rules
 
     @classmethod
-    def parse(cls, vertex_specifiers, outbound_rules, inbound_rules):
-        return cls(
-            vertex_specifiers,
-            [VertexLinkRuleEntry.parse(x, inbound=False) for x in outbound_rules],
-            [VertexLinkRuleEntry.parse(x, inbound=True) for x in inbound_rules]
-        )
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(
+        return cls(
             json_dict['vertex_specifiers'],
             json_dict['outbound_rules'],
             json_dict['inbound_rules']
@@ -83,26 +58,15 @@ class VertexLinkRuleEntry(AlgObject):
         self._function_name = function_name
 
     @classmethod
-    def parse(cls, rule_dict, inbound):
-        try:
-            target_specifiers = _parse_link_specifiers(rule_dict['target_specifiers'])
-        except TypeError:
-            try:
-                target_specifiers = rule_dict['target_specifiers']
-            except TypeError:
-                return rule_dict
-        return cls(
-            rule_dict['target_type'],
-            rule_dict['edge_type'],
-            rule_dict['target_constants'],
-            target_specifiers,
-            rule_dict['if_absent'],
-            inbound
-        )
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict, json_dict['inbound'])
+        return cls(
+            json_dict['target_type'],
+            json_dict['edge_type'],
+            json_dict['target_constants'],
+            json_dict['target_specifiers'],
+            json_dict['if_absent'],
+            json_dict.get('inbound', False)
+        )
 
     @property
     def target_specifiers(self):
@@ -148,7 +112,7 @@ class VertexLinkRuleEntry(AlgObject):
         return self._edge_type
 
 
-class TargetSpecifier(AlgObject, ABC):
+class TargetSpecifier(AlgObject):
     def __init__(self, specifier_name, specifier_type):
         self._specifier_name = specifier_name
         self._specifier_type = specifier_type
@@ -161,7 +125,10 @@ class TargetSpecifier(AlgObject, ABC):
     def specifier_type(self):
         return self._specifier_type
 
-    @abstractmethod
+    @classmethod
+    def parse_json(cls, json_dict):
+        raise NotImplementedError()
+
     def generate_specifiers(self, **kwargs):
         raise NotImplementedError()
 
@@ -173,11 +140,7 @@ class SharedPropertySpecifier(TargetSpecifier):
 
     @classmethod
     def parse_json(cls, json_dict):
-        if json_dict['specifier_type'] != 'shared_property':
-            raise RuntimeError()
-        return cls(
-            json_dict['specifier_name'], json_dict['shared_properties']
-        )
+        return cls(json_dict['specifier_name'], json_dict['shared_properties'])
 
     @property
     def extracted_properties(self):
@@ -200,11 +163,7 @@ class ExtractionSpecifier(TargetSpecifier):
 
     @classmethod
     def parse_json(cls, json_dict):
-        if json_dict['specifier_type'] != 'extraction':
-            raise RuntimeError()
-        return cls(
-            json_dict['specifier_name'], json_dict['extracted_properties']
-        )
+        return cls(json_dict['specifier_name'], json_dict['extracted_properties'])
 
     def generate_specifiers(self, **kwargs):
         target_constants = kwargs['target_constants']
@@ -231,11 +190,7 @@ class FunctionSpecifier(TargetSpecifier):
 
     @classmethod
     def parse_json(cls, json_dict):
-        if json_dict['specifier_type'] != 'function':
-            raise RuntimeError()
-        return cls(
-            json_dict['specifier_name'], json_dict['function_name'], json_dict['extracted_properties']
-        )
+        return cls(json_dict['specifier_name'], json_dict['function_name'], json_dict['extracted_properties'])
 
     @property
     def function_name(self):
@@ -253,18 +208,3 @@ class FunctionSpecifier(TargetSpecifier):
         except AttributeError:
             raise NotImplementedError('specifier function named: %s is not registered with the system' % function_name)
         return specifier_function(**kwargs)
-
-
-def _parse_link_specifiers(specifiers):
-    specifier_types = get_subclasses(TargetSpecifier)
-    selected_specifiers = []
-    for specifier in specifiers:
-        for possible_specifier in specifier_types.values():
-            try:
-                selected_specifiers.append(possible_specifier.parse_json(specifier))
-                break
-            except RuntimeError:
-                continue
-        else:
-            raise NotImplementedError('could not generate a target specifier from the provided schema')
-    return selected_specifiers

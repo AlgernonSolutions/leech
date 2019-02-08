@@ -1,8 +1,4 @@
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
-from toll_booth.alg_obj.graph.schemata.entry_property import SchemaPropertyEntry, EdgePropertyEntry
-from toll_booth.alg_obj.graph.schemata.indexes import SchemaIndexEntry
-from toll_booth.alg_obj.graph.schemata.rules import VertexRules
 
 
 class SchemaEntry(AlgObject):
@@ -14,40 +10,18 @@ class SchemaEntry(AlgObject):
         self._rules = rules
 
     @classmethod
-    def parse(cls, entry_value):
-        raise NotImplementedError()
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict)
+        raise NotImplementedError
 
     @classmethod
     def retrieve(cls, entry_name):
-
-        schema_writer = SchemaSnek()
-        current_entries = schema_writer.get_schema()
-        for vertex_entry in current_entries['vertex']:
-            if entry_name == vertex_entry['vertex_name']:
-                return SchemaVertexEntry.parse(vertex_entry)
-        for edge_entry in current_entries['edge']:
-            if entry_name == edge_entry['edge_label']:
-                return SchemaEdgeEntry.parse(edge_entry)
-        raise RuntimeError(f'could not find an appropriate schema entry for: {entry_name}')
+        from toll_booth.alg_obj.graph.schemata.schema import Schema
+        schema = Schema.retrieve()
+        return schema[entry_name]
 
     @classmethod
     def get_for_index(cls, index_name):
         pass
-
-    @staticmethod
-    def _parse_indexes(object_dict):
-        indexes = {}
-        try:
-            for index_entry in object_dict['indexes']:
-                index = SchemaIndexEntry.parse_json(index_entry)
-                indexes[index.index_name] = index
-        except TypeError:
-            indexes = object_dict['indexes']
-        return indexes
 
     @property
     def entry_name(self):
@@ -78,55 +52,12 @@ class SchemaVertexEntry(SchemaEntry):
         self._extract = extract
         self._identifier_stem = identifier_stem
 
-    @staticmethod
-    def _parse_internal_id(vertex_dict):
-        internal_id_key = vertex_dict['internal_id_key']
-        try:
-            return SchemaInternalIdKey(internal_id_key)
-        except TypeError:
-            return internal_id_key
-
-    @staticmethod
-    def _parse_rules(vertex_dict):
-        try:
-            return VertexRules.parse(vertex_dict['rules'])
-        except TypeError:
-            return vertex_dict['rules']
-
-    @staticmethod
-    def _parse_extraction(vertex_dict):
-        extraction = {}
-        try:
-            for extract_entry in vertex_dict['extract']:
-                extraction_instructions = ExtractionInstruction.parse(extract_entry)
-                extraction[extraction_instructions.extraction_source] = extraction_instructions
-        except TypeError:
-            extraction = vertex_dict['extract']
-        return extraction
-
-    @staticmethod
-    def _parse_vertex_properties(vertex_dict):
-        vertex_properties = {}
-        vertex_property_list = vertex_dict['vertex_properties']
-        try:
-            for entry in vertex_property_list:
-                schema_property = SchemaPropertyEntry.parse(entry)
-                vertex_properties[schema_property.property_name] = schema_property
-        except TypeError:
-            vertex_properties = vertex_property_list
-        return vertex_properties
-
     @classmethod
-    def parse(cls, vertex_dict):
-        vertex_properties = cls._parse_vertex_properties(vertex_dict)
-        indexes = cls._parse_indexes(vertex_dict)
-        internal_id_key = cls._parse_internal_id(vertex_dict)
-        rules = cls._parse_rules(vertex_dict)
-        extraction = cls._parse_extraction(vertex_dict)
-        identifier_stem = vertex_dict['identifier_stem']
+    def parse_json(cls, json_dict):
         return cls(
-            vertex_dict['vertex_name'], vertex_properties, internal_id_key,
-            identifier_stem, indexes, rules, extraction)
+            json_dict['vertex_name'], json_dict['vertex_properties'], json_dict['internal_id_key'],
+            json_dict['identifier_stem'], json_dict['indexes'], json_dict['rules'], json_dict['extract']
+        )
 
     @property
     def vertex_name(self):
@@ -166,25 +97,11 @@ class SchemaEdgeEntry(SchemaEntry):
         self._from_type = from_type
         self._to_type = to_type
 
-    @staticmethod
-    def _parse_edge_properties(edge_dict):
-        edge_properties = {}
-        edge_property_list = edge_dict['edge_properties']
-        try:
-            for entry in edge_property_list:
-                schema_property = EdgePropertyEntry.parse(entry)
-                edge_properties[schema_property.property_name] = schema_property
-        except TypeError:
-            edge_properties = edge_property_list
-        return edge_properties
-
     @classmethod
-    def parse(cls, edge_dict):
-        edge_properties = cls._parse_edge_properties(edge_dict)
-        indexes = cls._parse_indexes(edge_dict)
-        internal_id_key = SchemaInternalIdKey(edge_dict['internal_id_key'])
+    def parse_json(cls, json_dict):
         return cls(
-            edge_dict['edge_label'], edge_dict['from'], edge_dict['to'], edge_properties, internal_id_key, indexes
+            json_dict['entry_name'], json_dict['from_type'], json_dict['to_type'],
+            json_dict['entry_properties'], json_dict['internal_id_key'], json_dict['indexes']
         )
 
     @property
@@ -245,12 +162,8 @@ class ExtractionInstruction(AlgObject):
         self._extraction_properties = extraction_properties
 
     @classmethod
-    def parse(cls, extract_dict):
-        return cls(extract_dict['extraction_source'], extract_dict['extraction_properties'])
-
-    @classmethod
     def parse_json(cls, json_dict):
-        return cls.parse(json_dict)
+        return cls(json_dict['extraction_source'], json_dict['extraction_properties'])
 
     @property
     def extraction_source(self):
