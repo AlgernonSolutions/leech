@@ -17,20 +17,20 @@ class TestCredibleFe:
 
     @pytest.mark.fe_monitor_extract
     def test_monitor_extraction(self, specified_identifier_stem):
-        schema_entry = SchemaVertexEntry.get(specified_identifier_stem.object_type)
-        driving_stem = IdentifierStem.from_raw(specified_identifier_stem.get('identifier_stem'))
+        schema_entry = SchemaVertexEntry.retrieve(specified_identifier_stem.object_type)
+        driving_stem = IdentifierStem.from_raw(specified_identifier_stem.retrieve('identifier_stem'))
         extraction_profile = schema_entry.extract['CredibleFrontEndExtractor'].extraction_properties
         extraction_profile.update(driving_stem.for_extractor)
         extraction_profile.update({
             'identifier_stems': [{'identifier_stem': specified_identifier_stem, 'id_value': None}],
-            'id_source': specified_identifier_stem.get('id_source')
+            'id_source': specified_identifier_stem.retrieve('id_source')
         })
         results = CredibleFrontEndExtractor.extract(**extraction_profile)
         print()
 
     @pytest.mark.get_emp_ext_id
     def test_get_emp_ext_id(self, employee_ext_id_identifier_stem):
-        with CredibleFrontEndDriver(employee_ext_id_identifier_stem.get('id_source')) as driver:
+        with CredibleFrontEndDriver(employee_ext_id_identifier_stem.retrieve('id_source')) as driver:
             results = driver.get_employee_ext_ids()
 
     @pytest.mark.full_change_logs
@@ -39,10 +39,10 @@ class TestCredibleFe:
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         id_value = monitored_object_identifier_stem[1]
         object_type = identifier_stem.object_type
-        schema_entry = SchemaVertexEntry.get(object_type)
+        schema_entry = SchemaVertexEntry.retrieve(object_type)
         kwargs = {
             'identifier_stems': [{'identifier_stem': identifier_stem, 'id_value': id_value}],
-            'id_source': identifier_stem.get('id_source')
+            'id_source': identifier_stem.retrieve('id_source')
         }
         extraction_profile = schema_entry.extract['CredibleFrontEndExtractor']
         kwargs.update(extraction_profile.extraction_properties)
@@ -53,7 +53,7 @@ class TestCredibleFe:
     def test_get_change_logs(self, monitored_object_identifier_stem):
         identifier_stem = monitored_object_identifier_stem[0]
         id_value = monitored_object_identifier_stem[1]
-        extractor = CredibleFrontEndDriver(identifier_stem.get('id_source'))
+        extractor = CredibleFrontEndDriver(identifier_stem.retrieve('id_source'))
         with extractor as extractor:
             field_values = extractor.get_change_logs(identifier_stem, id_value)
             print()
@@ -61,7 +61,7 @@ class TestCredibleFe:
     def test_get_change_details(self, monitored_object_identifier_stem):
         identifier_stem = monitored_object_identifier_stem[0]
         id_value = monitored_object_identifier_stem[1]
-        extractor = CredibleFrontEndDriver(identifier_stem.get('id_source'))
+        extractor = CredibleFrontEndDriver(identifier_stem.retrieve('id_source'))
         with extractor as extractor:
             field_values = extractor.get_change_details(identifier_stem, id_value)
             print()

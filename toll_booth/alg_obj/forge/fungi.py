@@ -31,7 +31,7 @@ class Spore:
         self._driving_identifier_stem = driving_identifier_stem
         self._leech_driver = LeechDriver(table_name='VdGraphObjects')
         self._extractor_setup = self._leech_driver.get_extractor_setup(driving_identifier_stem)
-        self._schema_entry = SchemaVertexEntry.get(driving_identifier_stem.object_type)
+        self._schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
         self._sample_size = kwargs.get('sample_size', 1000)
         self._extraction_profile = self._generate_extraction_profile()
         self._driving_vertex_regulator = VertexRegulator.get_for_object_type(driving_identifier_stem.object_type)
@@ -417,7 +417,7 @@ class Mushroom:
         if not self._driving_identifier_stem:
             self._driving_identifier_stem = IdentifierStem.from_raw(entry['driving_identifier_stem'])
         if not self._schema_entry:
-            self._schema_entry = SchemaVertexEntry.get(self._extracted_identifier_stem.object_type)
+            self._schema_entry = SchemaVertexEntry.retrieve(self._extracted_identifier_stem.object_type)
         if not self._mapping:
             self._mapping = self._generate_mapping()
         if not self._local_max_value:

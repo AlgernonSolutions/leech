@@ -8,7 +8,7 @@ class CommandGenerator:
 
     @classmethod
     def get_for_obj_type(cls, object_type):
-        schema_entry = SchemaEntry.get(object_type)
+        schema_entry = SchemaEntry.retrieve(object_type)
         if hasattr(schema_entry, 'edge_label'):
             return EdgeCommandGenerator(schema_entry)
         return VertexCommandGenerator(schema_entry)

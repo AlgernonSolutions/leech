@@ -32,7 +32,7 @@ class MockCredibleWS:
     def _build_table_entry(data_line):
         data_entries = []
         for entry in data_line:
-            data_entries.append(f'<{entry.get("data_name")}>{entry.get("data_value")}</{entry.get("data_name")}>')
+            data_entries.append(f'<{entry.retrieve("data_name")}>{entry.retrieve("data_value")}</{entry.retrieve("data_name")}>')
         return ''.join(data_entries)
 
     def _build_returned_tables(self):
@@ -52,7 +52,7 @@ class MockCredibleWS:
         for data_line in self._mocked_data:
             for entry in data_line:
                 elements.append(
-                    f'<xs:element name="{entry.get("data_name")}" type="xs:{entry.get("data_type")}" minOccurs="0" />'
+                    f'<xs:element name="{entry.retrieve("data_name")}" type="xs:{entry.retrieve("data_type")}" minOccurs="0" />'
                 )
             return ''.join(elements)
 

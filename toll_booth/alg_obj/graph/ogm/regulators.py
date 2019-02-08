@@ -18,7 +18,7 @@ class ObjectRegulator:
     @classmethod
     def get_for_object_type(cls, object_type):
         from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
-        target_schema_entry = SchemaEntry.get(object_type)
+        target_schema_entry = SchemaEntry.retrieve(object_type)
         try:
             getattr(target_schema_entry, 'edge_label')
             return EdgeRegulator(target_schema_entry)

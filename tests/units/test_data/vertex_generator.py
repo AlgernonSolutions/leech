@@ -6,7 +6,7 @@ from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry, Sc
 
 
 def generate_potential_vertex(object_type, missing_properties=False):
-    schema_entry = SchemaVertexEntry.get(object_type)
+    schema_entry = SchemaVertexEntry.retrieve(object_type)
     vertex_regulator = VertexRegulator(schema_entry)
     vertex_properties = {}
     object_properties = schema_entry.vertex_properties
@@ -21,7 +21,7 @@ def generate_potential_vertex(object_type, missing_properties=False):
 
 
 def generate_potential_edge(source_vertex, other_vertex, edge_type):
-    schema_entry = SchemaEdgeEntry.get(edge_type)
+    schema_entry = SchemaEdgeEntry.retrieve(edge_type)
     edge_regulator = EdgeRegulator(schema_entry)
     inbound = source_vertex.object_type in schema_entry.to_types
     extracted_data = _generate_extracted_data(schema_entry.edge_properties)

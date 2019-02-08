@@ -16,7 +16,7 @@ class MonitorLizard:
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         self._identifier_stem = identifier_stem
         self._object_type = identifier_stem.object_type
-        self._schema_entry = SchemaVertexEntry.get(self._object_type)
+        self._schema_entry = SchemaVertexEntry.retrieve(self._object_type)
         self._leech_driver = LeechDriver()
         self._extractor_setup = self._leech_driver.get_extractor_setup(identifier_stem)
         self._extraction_profile = self._generate_extraction_profile()

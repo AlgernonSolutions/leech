@@ -9,7 +9,7 @@ class VertexRules(AlgObject):
         self._linking_rules = linking_rules
 
     @classmethod
-    def get(cls, vertex_type):
+    def retrieve(cls, vertex_type):
         from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
         snek = SchemaSnek()
         schema = snek.get_schema()

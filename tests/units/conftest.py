@@ -180,7 +180,7 @@ def extraction_order(request):
 
     params = request.param
     identifier_stem = IdentifierStem.from_raw(params[1])
-    schema_entry = SchemaEntry.get(params[0])
+    schema_entry = SchemaEntry.retrieve(params[0])
     extraction_properties = identifier_stem.for_extractor
     schema_extraction_properties = schema_entry.extract[params[3]]
     extraction_properties.update(schema_extraction_properties.extraction_properties)

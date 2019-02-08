@@ -32,8 +32,8 @@ class Schema(AlgObject):
             return SchemaEdgeEntry.parse(self._edge_entries[item])
 
     @classmethod
-    def get(cls):
-        schema_writer = SchemaSnek()
+    def retrieve(cls, **kwargs):
+        schema_writer = SchemaSnek(**kwargs)
         current_entries = schema_writer.get_schema()
         return cls(current_entries['vertex'], current_entries['edge'])
 

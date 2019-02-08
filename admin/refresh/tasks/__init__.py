@@ -20,7 +20,7 @@ def _get_property(target_object, *args):
     for arg in args:
         if target_object is None:
             return None
-        target_object = target_object.get(arg, None)
+        target_object = target_object.retrieve(arg, None)
     return target_object
 
 

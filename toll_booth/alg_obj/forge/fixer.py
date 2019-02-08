@@ -85,7 +85,7 @@ class Fixer:
         identifier_stem = stalled_object['identifier_stem']
         identifier_stem = IdentifierStem.from_raw(identifier_stem)
         extractor_names = self._driver.get_extractor_function_names(identifier_stem)
-        schema_entry = SchemaVertexEntry.get(stalled_object['object_type'])
+        schema_entry = SchemaVertexEntry.retrieve(stalled_object['object_type'])
         schema_extraction_properties = schema_entry.extract[extractor_names['type']]
         extraction_properties = identifier_stem.for_extractor
         extraction_properties.update(schema_extraction_properties.extraction_properties)

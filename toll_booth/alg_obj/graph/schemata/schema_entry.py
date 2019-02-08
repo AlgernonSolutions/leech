@@ -22,7 +22,7 @@ class SchemaEntry(AlgObject):
         return cls.parse(json_dict)
 
     @classmethod
-    def get(cls, entry_name):
+    def retrieve(cls, entry_name):
 
         schema_writer = SchemaSnek()
         current_entries = schema_writer.get_schema()

@@ -33,13 +33,13 @@ def spike():
             new_item = {
                 'sid_value': identifier_stem.for_dynamo,
                 'identifier_stem': str(identifier_stem),
-                'change_category': entry.get('category_name', None),
-                'change_action': entry.get('action', None),
-                'has_details': entry.get('has_details', None),
-                'category_id': entry.get('category_id'),
-                'action_id': entry.get('changelogtype_id'),
-                'id_name': entry.get('primarykey_name'),
-                'id_type': entry.get('record_type')
+                'change_category': entry.retrieve('category_name', None),
+                'change_action': entry.retrieve('action', None),
+                'has_details': entry.retrieve('has_details', None),
+                'category_id': entry.retrieve('category_id'),
+                'action_id': entry.retrieve('changelogtype_id'),
+                'id_name': entry.retrieve('primarykey_name'),
+                'id_type': entry.retrieve('record_type')
             }
             if new_item['change_action'] == '':
                 new_item['change_action'] = 'unspecified'

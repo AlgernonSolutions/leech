@@ -24,7 +24,7 @@ def get_open_workflows(domain_name, workflow_type, workflow_version):
     for page in iterator:
         for entry in page['executionInfos']:
             execution = entry['execution']
-            parent_info = entry.get('parent', None)
+            parent_info = entry.retrieve('parent', None)
             flow_info = {
                 'run_id': execution['runId'],
                 'flow_id': execution['workflowId']
@@ -54,7 +54,7 @@ def get_completed_workflows(domain_name, workflow_type, workflow_version):
     for page in iterator:
         for entry in page['executionInfos']:
             execution = entry['execution']
-            parent_info = entry.get('parent', None)
+            parent_info = entry.retrieve('parent', None)
             flow_info = {
                 'run_id': execution['runId'],
                 'flow_id': execution['workflowId']
@@ -160,7 +160,7 @@ def recurse_attach(target_key_value, attaching_obj, dict_obj):
 def update(d, u):
     for k, v in u.items():
         if isinstance(v, collections.Mapping):
-            d[k] = update(d.get(k, {}), v)
+            d[k] = update(d.retrieve(k, {}), v)
         else:
             d[k] = v
     return d

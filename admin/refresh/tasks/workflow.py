@@ -37,20 +37,20 @@ def _get_workflow(domain_name, workflow_name, workflow_version):
     flow_info = response['typeInfo']
     flow_type = flow_info['workflowType']
     flow_config = response['configuration']
-    task_list = flow_config.get('defaultTaskList', {})
-    workflow_timeout = flow_config.get('defaultExecutionStartToCloseTimeout', _defaults['workflow_timeout'])
-    task_timeout = flow_config.get('defaultTaskStartToCloseTimeout', _defaults['workflow_task_timeout'])
+    task_list = flow_config.retrieve('defaultTaskList', {})
+    workflow_timeout = flow_config.retrieve('defaultExecutionStartToCloseTimeout', _defaults['workflow_timeout'])
+    task_timeout = flow_config.retrieve('defaultTaskStartToCloseTimeout', _defaults['workflow_task_timeout'])
     return {
         'workflow_name': flow_type['name'],
-        'workflow_description': flow_info.get('description', None),
+        'workflow_description': flow_info.retrieve('description', None),
         'workflow_config': {
-            'decision_task_list': task_list.get('name', None),
+            'decision_task_list': task_list.retrieve('name', None),
             'time_outs': {
                 'workflow': workflow_timeout,
                 'task': task_timeout
             },
-            'lambda_role': flow_config.get('defaultLambdaRole', None),
-            'child_policy': flow_config.get('defaultChildPolicy', None)
+            'lambda_role': flow_config.retrieve('defaultLambdaRole', None),
+            'child_policy': flow_config.retrieve('defaultChildPolicy', None)
         }
     }
 
@@ -85,18 +85,18 @@ def _refresh_workflow(domain_name, config_workflow, current_workflows):
 def _create_workflow(domain_name, flow_config, version='1'):
     client = boto3.client('swf')
     config = flow_config['workflow_config']
-    time_outs = config.get('time_outs', {})
+    time_outs = config.retrieve('time_outs', {})
     register_args = {
         'domain': domain_name,
         'name': flow_config['workflow_name'],
         'version': str(version),
         'description': flow_config['workflow_description'],
-        'defaultTaskStartToCloseTimeout': str(time_outs.get('decision', _defaults['workflow_task_timeout'])),
-        'defaultExecutionStartToCloseTimeout': str(time_outs.get('workflow', _defaults['workflow_timeout'])),
-        'defaultLambdaRole': config.get('lambda_role', _defaults['lambda_role']),
-        'defaultChildPolicy': config.get('child_policy', _defaults['child_policy'])
+        'defaultTaskStartToCloseTimeout': str(time_outs.retrieve('decision', _defaults['workflow_task_timeout'])),
+        'defaultExecutionStartToCloseTimeout': str(time_outs.retrieve('workflow', _defaults['workflow_timeout'])),
+        'defaultLambdaRole': config.retrieve('lambda_role', _defaults['lambda_role']),
+        'defaultChildPolicy': config.retrieve('child_policy', _defaults['child_policy'])
     }
-    if config.get('decision_task_list', None):
+    if config.retrieve('decision_task_list', None):
         register_args['defaultTaskList'] = {'name': config['decision_task_list']}
     try:
         client.register_workflow_type(**register_args)

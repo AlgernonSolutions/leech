@@ -68,7 +68,7 @@ def get_local_ids(**kwargs):
 
     driving_identifier_stem = kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
-    index_driver = IndexManager(kwargs['schema_entry'], **kwargs)
+    index_driver = IndexManager.from_graph_schema(kwargs['schema'], **kwargs)
     local_id_values = index_driver.get_local_id_values(driving_identifier_stem, by_linked=True)
     return {'local_id_values': local_id_values}
 
@@ -158,7 +158,7 @@ def build_mapping(**kwargs):
 
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
-    schema_entry = SchemaVertexEntry.get(driving_identifier_stem.object_type)
+    schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
     fungal_extractor = schema_entry.extract['CredibleFrontEndExtractor']
     extraction_properties = fungal_extractor.extraction_properties
     mapping = extraction_properties['mapping']
@@ -289,7 +289,7 @@ def _build_remote_id_extractor(**kwargs):
 
     driving_identifier_stem = kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
-    schema_entry = SchemaVertexEntry.get(driving_identifier_stem.object_type)
+    schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
     leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
     extractor_setup = leech_driver.get_extractor_setup(driving_identifier_stem)
     extractor_setup.update(driving_identifier_stem.for_extractor)

@@ -1,17 +1,19 @@
 from aws_xray_sdk.core import xray_recorder
 
+
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
 @xray_recorder.capture('pull_schema_entry')
 @task('pull_schema_entry')
 def pull_schema_entry(**kwargs):
+    from toll_booth.alg_obj.graph.schemata.schema import Schema
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
-    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
 
     identifier_stem = IdentifierStem.from_raw(kwargs['identifier_stem'])
-    schema_entry = SchemaEntry.get(identifier_stem.object_type)
-    return {'schema_entry': schema_entry}
+    schema = Schema.retrieve(**kwargs)
+    schema_entry = schema[identifier_stem.object_type]
+    return {'schema_entry': schema_entry, 'schema': schema}
 
 
 @xray_recorder.capture('transform')
