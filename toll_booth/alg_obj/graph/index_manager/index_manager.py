@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException, UniqueIndex, \
     UniqueIndexViolationException, MissingIndexedPropertyException, AttemptedStubIndexException, Index
 from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry
+from toll_booth.alg_obj.graph.schemata.schema import Schema
 
 
 class IndexManager:
@@ -39,16 +40,16 @@ class IndexManager:
         self._other_indexes_key_name = other_indexes_key_name
 
     @classmethod
-    def from_graph_schema(cls, graph_schema, **kwargs):
+    def from_graph_schema(cls, graph_schema: Schema, **kwargs):
         indexes = []
-        for vertex_entry in graph_schema.vertex_entries:
+        for vertex_entry in graph_schema.vertex_entries.values():
             for index_name, index_entry in vertex_entry.indexes.items():
                 index_type = 'non_unique'
                 if index_entry.is_unique:
                     index_type = 'unique'
                 index = Index(index_name, index_entry.indexed_fields, index_type, vertex_entry.object_type)
                 indexes.append(index)
-        for edge_entry in graph_schema.edge_entries:
+        for edge_entry in graph_schema.edge_entries.values():
             for index_name, index_entry in edge_entry.indexes.items():
                 index_type = 'non_unique'
                 if index_entry.is_unique:
