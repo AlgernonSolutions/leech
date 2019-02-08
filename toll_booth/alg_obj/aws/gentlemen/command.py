@@ -10,7 +10,7 @@ from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.events.markers import MarkerHistory
 from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action, command_fungi, work_remote_id, \
-    work_remote_id_change_type
+    work_remote_id_change_type, work_fip_links
 from toll_booth.alg_tasks.rivers.flows import fungus
 from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
 from toll_booth.alg_tasks.rivers.flows.posts import send_routine_reports
@@ -134,7 +134,8 @@ class General:
     def _make_decisions(self, work_history: WorkflowHistory):
         flow_modules = [
             command_fungi, work_remote_id, work_remote_id_change_type,
-            work_remote_id_change_action, fungus, fungal_leech, send_routine_reports
+            work_remote_id_change_action, fungus, fungal_leech, send_routine_reports,
+            work_fip_links
         ]
         if work_history:
             flow_type = work_history.flow_type

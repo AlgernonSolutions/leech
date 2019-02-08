@@ -7,7 +7,6 @@ from jsonschema import validate
 
 from admin.set_logging import set_logging
 from toll_booth.alg_obj.aws.gentlemen.tasks import LeechConfig
-from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 
 
 def refresh():
