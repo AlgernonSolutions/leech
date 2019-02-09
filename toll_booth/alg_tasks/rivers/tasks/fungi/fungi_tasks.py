@@ -342,18 +342,17 @@ def _generate_link_data(**kwargs):
             'potential_vertex': potential_vertex,
             'link_utc_timestamp': kwargs['link_utc_timestamp']
         }, index_manager
-    if id_values:
-        vertexes = []
-        for id_value in id_values:
-            object_data = driving_identifier_stem.for_extractor
-            object_data['id_value'] = id_value
-            potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
-            vertexes.append(potential_vertex)
+    vertexes = []
+    for id_value in id_values:
+        object_data = driving_identifier_stem.for_extractor
+        object_data['id_value'] = id_value
+        potential_vertex = driving_vertex_regulator.create_potential_vertex(object_data)
+        vertexes.append(potential_vertex)
 
-        return {
-           'potential_vertexes': vertexes,
-           'link_utc_timestamp': kwargs['link_utc_timestamp']
-       }, index_manager
+    return {
+       'potential_vertexes': vertexes,
+       'link_utc_timestamp': kwargs['link_utc_timestamp']
+    }, index_manager
 
 
 def _set_changed_ids(change_type, **kwargs):
