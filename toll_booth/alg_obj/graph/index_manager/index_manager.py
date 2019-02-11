@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -8,7 +9,9 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException, UniqueIndex, \
     UniqueIndexViolationException, MissingIndexedPropertyException, AttemptedStubIndexException, Index
 from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.graph.schemata.schema import Schema
+from toll_booth.alg_obj.serializers import ExplosionDecoder
 
 
 class IndexManager:
@@ -77,14 +80,17 @@ class IndexManager:
 
     def get_links_iterator(self, linked_object_identifier_stem):
         paginator = boto3.client('dynamodb').get_paginator('query')
+        paired_identifiers = linked_object_identifier_stem.paired_identifiers
+        link_identifier_stem = IdentifierStem('edge', '_fip_link_', paired_identifiers)
         query_args = {
             'TableName': self._table_name,
             'KeyConditionExpression': 'identifier_stem = :id',
-            'ExpressionAttributeValues': {':id': {'S': str(linked_object_identifier_stem)}}
+            'ExpressionAttributeValues': {':id': {'S': str(link_identifier_stem)}}
         }
         pages = paginator.paginate(**query_args)
         for page in pages:
-            for item in page['Items']:
+            items = json.loads(json.dumps(page['Items']), cls=ExplosionDecoder)
+            for item in items:
                 yield LinkHistory.parse_from_table_entry(item)
 
     def _get_local_id_values(self, identifier_stem, index_name=None):

@@ -114,6 +114,8 @@ class ExplosionDecoder(json.JSONDecoder):
                 return Decimal(obj['N'])
             if 'L' in obj:
                 return list(obj['L'])
+            if 'SS' in obj:
+                return set(obj['SS'])
             return obj
         return obj
 

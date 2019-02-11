@@ -3,7 +3,7 @@ from datetime import datetime
 
 from toll_booth.alg_obj.graph import InternalId
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex
-from toll_booth.alg_obj.serializers import AlgEncoder
+from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class LinkEntry:
@@ -15,7 +15,7 @@ class LinkEntry:
     def parse_from_history_value(cls, history_value):
         link_utc_str, link_type = history_value.split('!')
         is_unlink = link_type == 'unlink'
-        link_utc_timestamp = datetime.utcfromtimestamp(link_utc_str)
+        link_utc_timestamp = datetime.utcfromtimestamp(float(link_utc_str))
         return cls(link_utc_timestamp, is_unlink)
 
     @property
@@ -44,8 +44,8 @@ class LinkHistory:
 
     @classmethod
     def parse_from_table_entry(cls, table_entry):
-        potential_vertex = PotentialVertex.parse_json(table_entry['object_value'])
-        link_entries = {LinkEntry.parse_from_history_value(x) for x in table_entry['link_history']}
+        potential_vertex = json.loads(table_entry['object_value'], cls=AlgDecoder)
+        link_entries = {LinkEntry.parse_from_history_value(x) for x in table_entry['link_entries']}
         return cls(potential_vertex, link_entries)
 
     @classmethod
@@ -58,8 +58,14 @@ class LinkHistory:
         return self._id_value
 
     @property
+    def most_recent_link(self):
+        links = sorted([x for x in self._link_entries], key=lambda x: x.link_utc_timestamp, reverse=True)
+        for link in links:
+            return link
+
+    @property
     def currently_linked(self):
-        return 'unlinked' not in self._link_entries[:-1]
+        return not self.most_recent_link.is_unlink
 
     @property
     def internal_id(self):

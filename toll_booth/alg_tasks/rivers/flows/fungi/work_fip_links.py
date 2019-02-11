@@ -11,9 +11,9 @@ def work_fip_links(**kwargs):
     decisions = kwargs['decisions']
     execution_id = kwargs['execution_id']
     names = {
-        'unlink_old_ids': f'unlink_old_id-{execution_id}',
-        'link_new_ids': f'link_new_id-{execution_id}',
-        'put_new_ids': f'put_new_id-{execution_id}',
+        'unlink_old_ids': f'unlink_old_ids-{execution_id}',
+        'link_new_ids': f'link_new_ids-{execution_id}',
+        'put_new_ids': f'put_new_ids-{execution_id}',
         'graph': f'graph_fip_links-{execution_id}'
     }
     kwargs['names'] = names
