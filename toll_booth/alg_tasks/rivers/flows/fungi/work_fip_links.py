@@ -53,6 +53,7 @@ def _build_index_group(task_args, **kwargs):
 
 
 def _build_graph_signature(task_args, **kwargs):
+    operation_name = 'graph'
     names = kwargs['names']
     identifier = names['graph']
-    return ActivitySignature(identifier, 'graph', **kwargs)
+    return ActivitySignature(identifier, operation_name, **kwargs)

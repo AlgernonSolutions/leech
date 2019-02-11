@@ -49,7 +49,8 @@ def unlink_old_id(**kwargs):
 def unlink_old_ids(**kwargs):
     tools, index_manager = _generate_link_data(**kwargs)
     tools['unlink'] = True
-    index_manager.add_link_events(**tools)
+    new_unlinks = index_manager.add_link_events(**tools)
+    return {'new_unlinks': new_unlinks}
 
 
 @xray_recorder.capture('link_new_id')
@@ -65,7 +66,8 @@ def link_new_id(**kwargs):
 def link_new_ids(**kwargs):
     tools, index_manager = _generate_link_data(**kwargs)
     tools['link'] = True
-    index_manager.add_link_events(**tools)
+    new_link_entries = index_manager.add_link_events(**tools)
+    return {'new_links': new_link_entries}
 
 
 @xray_recorder.capture('put_new_id')
@@ -82,6 +84,24 @@ def put_new_ids(**kwargs):
     tools, index_manager = _generate_link_data(**kwargs)
     tools['put'] = True
     index_manager.add_link_events(**tools)
+    return kwargs
+
+
+@xray_recorder.capture('graph_links')
+@task('graph_links')
+def graph_links(**kwargs):
+    from toll_booth.alg_obj.graph.ogm.ogm import Ogm
+
+    vertexes = []
+    edges = []
+    potential_vertexes = kwargs['potential_vertexes']
+    new_links = kwargs['new_links']
+    new_unlinks = kwargs['new_unlinks']
+    vertexes.extend(potential_vertexes)
+    edges.extend(x[0].generate_edge(x[1]) for x in new_links)
+    edges.extend(x[0].generate_edge(x[1]) for x in new_unlinks)
+    ogm = Ogm(**kwargs)
+    ogm.graph_objects(vertexes, edges)
 
 
 @xray_recorder.capture('get_local_ids')

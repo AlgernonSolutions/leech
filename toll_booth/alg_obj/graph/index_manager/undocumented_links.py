@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 
 from toll_booth.alg_obj.graph import InternalId
-from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex, PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
@@ -99,3 +99,17 @@ class LinkHistory:
     @property
     def object_properties(self):
         return self.for_index
+
+    def add_link_entry(self, link_entry):
+        self._link_entries.add(link_entry)
+
+    def generate_edge(self, link_entry):
+        edge_internal_id = InternalId([self.internal_id, link_entry.link_utc_timestamp])
+        edge_properties = {
+            'is_unlink': link_entry.is_unlink,
+            'link_time': link_entry.link_utc_timestamp
+        }
+        from_id = self._potential_vertex.internal_id
+        to_id = InternalId(['IdSource', self._potential_vertex['id_source']]).id_value
+        edge = PotentialEdge('edge', edge_internal_id.id_value, edge_properties, from_id, to_id)
+        return edge

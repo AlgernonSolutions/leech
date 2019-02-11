@@ -145,23 +145,26 @@ class IndexManager:
             self._index_stub(graph_object)
 
     def add_link_events(self, link_utc_timestamp, potential_vertexes, **kwargs):
+        event_results = []
         for vertex in potential_vertexes:
-            self.add_link_event(link_utc_timestamp, vertex, **kwargs)
+            event_result = self.add_link_event(link_utc_timestamp, vertex, **kwargs)
+            event_results.append(event_result)
+        return event_results
 
     def add_link_event(self, link_utc_timestamp, potential_vertex, **kwargs):
         link_history = LinkHistory.for_first_link(potential_vertex, link_utc_timestamp)
         if 'put' in kwargs:
             self.index_object(potential_vertex)
             self.index_object(link_history)
-            return
+            return link_history
         if 'unlink' in kwargs:
             link_entry = LinkEntry(link_utc_timestamp, is_unlink=True)
             self._perform_link_operation(link_history, link_entry)
-            return
+            return link_history, link_entry
         if 'link' in kwargs:
             link_entry = LinkEntry(link_utc_timestamp, is_unlink=False)
             self._perform_link_operation(link_history, link_entry)
-            return
+            return link_history, link_entry
         raise NotImplementedError(f'could not find link operation for {kwargs}')
 
     @classmethod

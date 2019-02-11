@@ -14,6 +14,17 @@ class Ogm:
         results = self._trident_driver.execute(query, False)
         return results
 
+    def graph_objects(self, vertexes=None, edges=None):
+        logging.info(f'')
+        if not vertexes:
+            vertexes = []
+        if not edges:
+            edges = []
+        vertex_commands = {self._generate_vertex_command(x) for x in vertexes}
+        edge_commands = {self._generate_edge_command(x) for x in edges}
+        logging.info(f'generated graph commands: {vertex_commands, edge_commands} for vertexes/edges: {vertexes}/{edges}')
+        return self._graph_objects(vertex_commands, edge_commands)
+
     def graph_object(self, object_entry):
         vertex_commands = set()
         edge_commands = set()
