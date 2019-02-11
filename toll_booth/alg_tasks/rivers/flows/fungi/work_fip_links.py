@@ -21,6 +21,10 @@ def work_fip_links(**kwargs):
     index_results = index_group(**kwargs)
     if index_results is None:
         return
+    graph_signature = _build_graph_signature(**kwargs)
+    graph_results = graph_signature(**kwargs)
+    if graph_results is None:
+        return
     decisions.append(CompleteWork())
 
 
@@ -46,3 +50,9 @@ def _build_index_group(task_args, **kwargs):
     if not signatures:
         return None
     return group(*tuple(signatures))
+
+
+def _build_graph_signature(task_args, **kwargs):
+    names = kwargs['names']
+    identifier = names['graph']
+    return ActivitySignature(identifier, 'graph', **kwargs)
