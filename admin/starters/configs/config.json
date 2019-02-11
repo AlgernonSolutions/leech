@@ -132,7 +132,8 @@
         "task_name": "unlink_old_ids",
         "task_description": "breaks the connection between ext_id and a data source",
         "task_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "task_list": "links"
         }
       },
       {
@@ -146,7 +147,8 @@
         "task_name": "link_new_ids",
         "task_description": "creates connection between ext_id and a data source",
         "task_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "task_list": "links"
         }
       },
       {
@@ -160,7 +162,8 @@
         "task_name": "put_new_ids",
         "task_description": "adds id object to the data space",
         "task_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "task_list": "links"
         }
       },
       {

@@ -19,7 +19,7 @@ def get_local_max_change_type_value(**kwargs):
     id_type = driving_identifier_stem.get('id_type')
     change_category = changelog_types.categories[category_id]
     change_stem = f'#{id_source}#{id_type}#{id_value}#{change_category}'
-    index_manager = IndexManager.from_graph_schema(kwargs['schema_entry'], **kwargs)
+    index_manager = IndexManager.from_graph_schema(kwargs['schema'], **kwargs)
     try:
         local_max_value = index_manager.query_object_max(change_stem)
     except EmptyIndexException:
