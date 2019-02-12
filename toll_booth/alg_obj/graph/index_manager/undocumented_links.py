@@ -63,6 +63,10 @@ class LinkHistory(AlgObject):
         return cls(potential_vertex, link_entries)
 
     @property
+    def potential_vertex(self):
+        return self._potential_vertex
+
+    @property
     def id_value(self):
         return self._id_value
 

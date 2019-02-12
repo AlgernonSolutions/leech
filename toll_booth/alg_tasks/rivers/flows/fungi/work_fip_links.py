@@ -37,7 +37,7 @@ def _build_index_group(task_args, **kwargs):
     operations = [
         ('unlink_old_ids', local_linked_values - remote_id_values),
         ('link_new_ids', remote_id_values - local_linked_values),
-        ('put_new_ids', remote_id_values - local_id_values['all'])
+        ('put_new_ids', remote_id_values - local_id_values['all']),
     ]
     for operation in operations:
         operation_name = operation[0]
@@ -53,7 +53,7 @@ def _build_index_group(task_args, **kwargs):
 
 
 def _build_graph_signature(task_args, **kwargs):
-    operation_name = 'graph'
+    operation_name = 'graph_links'
     names = kwargs['names']
     identifier = names['graph']
     return ActivitySignature(identifier, operation_name, **kwargs)

@@ -83,8 +83,8 @@ def put_new_id(**kwargs):
 def put_new_ids(**kwargs):
     tools, index_manager = _generate_link_data(**kwargs)
     tools['put'] = True
-    index_manager.add_link_events(**tools)
-    return kwargs
+    new_objects = index_manager.add_link_events(**tools)
+    return {'new_link_histories': new_objects}
 
 
 @xray_recorder.capture('graph_links')
@@ -94,10 +94,12 @@ def graph_links(**kwargs):
 
     vertexes = []
     edges = []
-    potential_vertexes = kwargs.get('potential_vertexes', [])
+    link_histories = kwargs.get('new_link_histories', [])
     new_links = kwargs.get('new_links', [])
     new_unlinks = kwargs.get('new_unlinks', [])
-    vertexes.extend(potential_vertexes)
+    for entry in link_histories:
+        vertexes.append(entry.potential_vertex)
+        edges.append(entry.generate_edge(entry.most_recent_link))
     edges.extend(x[0].generate_edge(x[1]) for x in new_links)
     edges.extend(x[0].generate_edge(x[1]) for x in new_unlinks)
     ogm = Ogm(**kwargs)
