@@ -73,15 +73,18 @@ class TridentNotary:
         self._session = session
         self._neptune_endpoint = neptune_endpoint
         self._uri = '/gremlin/'
-        self._method = 'GET'
+        self._method = 'POST'
         self._host = neptune_endpoint + ':8182'
         self._signed_headers = 'host;x-amz-date'
         self._algorithm = 'AWS4-HMAC-SHA256'
-        access_key, secret_key = Opossum.get_trident_user_key()
+        access_key = os.getenv('AWS_ACCESS_KEY_ID', None)
+        secret_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
+        if access_key is None or secret_key is None:
+            access_key, secret_key = Opossum.get_trident_user_key()
         self._access_key = access_key
         self._secret_key = secret_key
         self._credentials = f"Credentials={self._access_key}"
-        self._request_url = f'http://{neptune_endpoint}:8182{self._uri}'
+        self._request_url = f'https://{neptune_endpoint}:8182{self._uri}'
 
     @classmethod
     def get_for_writer(cls, **kwargs):
@@ -102,7 +105,7 @@ class TridentNotary:
         string_to_sign = self._generate_string_to_sign(canonical_request, amz_date, credential_scope)
         signature = self._generate_signature(string_to_sign, date_stamp)
         headers = self._generate_headers(credential_scope, signature, amz_date)
-        get_results = self._session.get(self._request_url, headers=headers, verify=False, params=request_parameters)
+        get_results = self._session.post(self._request_url, headers=headers, data=request_parameters)
         if get_results.status_code != 200:
             raise RuntimeError(f'error passing command to remote database: {get_results.text}, command: {command}')
         response_json = json.loads(get_results.text)
@@ -111,12 +114,12 @@ class TridentNotary:
         return results
 
     def _generate_canonical_request(self, amz_date, command):
-        payload = {'gremlin': command}
-        request_parameters = urllib.parse.urlencode(payload, quote_via=urllib.parse.quote)
+        payload = json.dumps({'gremlin': command})
         canonical_headers = f'host:{self._host}\nx-amz-date:{amz_date}\n'
-        payload_hash = hashlib.sha256(''.encode('utf-8')).hexdigest()
-        canonical_request = f"{self._method}\n{self._uri}\n{request_parameters}\n{canonical_headers}\n{self._signed_headers}\n{payload_hash}"
-        return canonical_request, request_parameters
+        payload_hash = hashlib.sha256(payload.encode('utf-8')).hexdigest()
+        query_string = ''
+        canonical_request = f"{self._method}\n{self._uri}\n{query_string}\n{canonical_headers}\n{self._signed_headers}\n{payload_hash}"
+        return canonical_request, payload
 
     def _generate_string_to_sign(self, canonical_request, amz_date, scope):
         hash_request = hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()

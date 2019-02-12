@@ -113,12 +113,13 @@ class LinkHistory(AlgObject):
         self._link_entries.add(link_entry)
 
     def generate_edge(self, link_entry):
-        edge_internal_id = InternalId([self.internal_id, link_entry.link_utc_timestamp])
+        internal_id_values = ''.join([self.internal_id.id_value, str(link_entry.link_utc_timestamp.timestamp())])
+        edge_internal_id = InternalId(internal_id_values)
         edge_properties = {
             'is_unlink': link_entry.is_unlink,
             'link_time': link_entry.link_utc_timestamp
         }
         from_id = self._potential_vertex.internal_id
-        to_id = InternalId(['IdSource', self._potential_vertex['id_source']]).id_value
+        to_id = InternalId(''.join(['IdSource', self._potential_vertex['id_source']])).id_value
         edge = PotentialEdge('edge', edge_internal_id.id_value, edge_properties, from_id, to_id)
         return edge

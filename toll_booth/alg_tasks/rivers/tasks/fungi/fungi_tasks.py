@@ -94,9 +94,9 @@ def graph_links(**kwargs):
 
     vertexes = []
     edges = []
-    potential_vertexes = kwargs['potential_vertexes']
-    new_links = kwargs['new_links']
-    new_unlinks = kwargs['new_unlinks']
+    potential_vertexes = kwargs.get('potential_vertexes', [])
+    new_links = kwargs.get('new_links', [])
+    new_unlinks = kwargs.get('new_unlinks', [])
     vertexes.extend(potential_vertexes)
     edges.extend(x[0].generate_edge(x[1]) for x in new_links)
     edges.extend(x[0].generate_edge(x[1]) for x in new_unlinks)
