@@ -11,7 +11,7 @@ from toll_booth.alg_obj.serializers import AlgEncoder
 
 class RuffianRoost:
     @classmethod
-    def conscript_ruffians(cls, decider_list, work_lists, domain_name, **kwargs):
+    def conscript_ruffians(cls, decider_list, work_lists, domain_name, config, **kwargs):
         default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
         default_vpc_machine_arn = os.getenv('VPC_RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:vpc_ruffians')
         default_deciding_machine_arn = os.getenv('DECIDING_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
@@ -25,7 +25,7 @@ class RuffianRoost:
             if work_list.get('is_vpc', False) is True:
                 list_machine_arn = vpc_ruffian_machine_arn
             execution_arns.append(
-                cls._start_machine(list_machine_arn, work_list, domain_name, client)
+                cls._start_machine(list_machine_arn, work_list, domain_name, config, client)
             )
         return execution_arns
 
@@ -73,13 +73,14 @@ class RuffianRoost:
         return machine_name
 
     @classmethod
-    def _start_machine(cls, machine_arn, work_list, domain_name, client=None):
+    def _start_machine(cls, machine_arn, work_list, domain_name, config, client=None):
         if not client:
             client = boto3.client('stepfunctions')
         machine_input = json.dumps({
             'work_list': work_list,
-            'domain_name': domain_name
-        })
+            'domain_name': domain_name,
+            'config': config
+        }, cls=AlgEncoder)
         machine_name = cls._build_machine_name(work_list)
         response = client.start_execution(
             stateMachineArn=machine_arn,
@@ -99,19 +100,20 @@ class RuffianRoost:
 
 
 class Ruffian:
-    def __init__(self, domain_name, work_list, warn_level, context):
+    def __init__(self, domain_name, work_list, config, warn_level, context):
         self._domain_name = domain_name
         self._work_list = work_list
+        self._config = config
         self._warn_level = warn_level
         self._context = context
         self._pending_tasks = {}
         self._connections = []
 
     @classmethod
-    def build(cls, context, domain_name, work_list, **kwargs):
+    def build(cls, context, domain_name, work_list, config, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 120)
         warn_level = (warn_seconds * 1000)
-        return cls(domain_name, work_list, warn_level, context)
+        return cls(domain_name, work_list, config, warn_level, context)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
@@ -217,9 +219,14 @@ class Ruffian:
         poll_response = kwargs['poll_response']
         task_name = poll_response['activityType']['name']
         task_args = poll_response['input']
+        lambda_fn_name = os.getenv('LABOR_FUNCTION', 'leech-lambda-labor')
+        config = self._config[('task', task_name)]
+        is_vpc = config.get('is_vpc', False)
+        if is_vpc:
+            lambda_fn_name = os.getenv('VPC_LABOR_FUNCTION', 'leech-vpc-labor')
         logging.info(f'firing a controlled activity for {task_list}, named {task_name} with args: {task_args}')
         response = client.invoke(
-            FunctionName=os.getenv('LABOR_FUNCTION', 'leech-lambda-labor'),
+            FunctionName=lambda_fn_name,
             InvocationType='RequestResponse',
             Payload=task_args
         )

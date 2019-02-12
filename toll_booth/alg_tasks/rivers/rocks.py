@@ -15,7 +15,7 @@ def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
         return
     workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)
     labor_task_lists = workflow_config.get('labor_task_lists', [])
-    execution_arns = RuffianRoost.conscript_ruffians(workflow_id, labor_task_lists, work_history.domain_name)
+    execution_arns = RuffianRoost.conscript_ruffians(workflow_id, labor_task_lists, work_history.domain_name, leech_config)
     return [RecordMarker.for_ruffian(workflow_id, x) for x in execution_arns]
 
 
