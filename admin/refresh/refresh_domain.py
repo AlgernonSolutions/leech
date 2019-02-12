@@ -1,3 +1,5 @@
+import logging
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -56,7 +58,10 @@ def _refresh_activities(domain_name, config):
     for current_task_name, current_task in current_activities.items():
         if current_task_name not in task_config_names:
             for task_version in current_task:
-                _deprecate_activity(domain_name, current_task_name, task_version)
+                try:
+                    _deprecate_activity(domain_name, current_task_name, task_version)
+                except ClientError as e:
+                    logging.warning(f'could not perform deprecation for {current_task_name}, {e.response}')
 
 
 if __name__ == '__main__':

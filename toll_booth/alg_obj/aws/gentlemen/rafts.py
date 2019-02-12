@@ -224,14 +224,16 @@ class LambdaSignature(Signature):
     def __init__(self, lambda_identifier, task_type, task_args: TaskArguments = None, **kwargs):
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
+        is_vpc = config.get('is_vpc', False)
         cls_kwargs = self.generate_signature_status(lambda_identifier, kwargs['lambdas'], **kwargs)
         super().__init__(task_type, version, config, lambda_identifier, task_args, **cls_kwargs)
         self._control = kwargs.get('control', None)
+        self._is_vpc = is_vpc
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        return StartLambda(*self.start_args, task_args=task_args, control=self._control)
+        return StartLambda(*self.start_args, task_args=task_args, control=self._control, is_vpc=self._is_vpc)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['lambdas']

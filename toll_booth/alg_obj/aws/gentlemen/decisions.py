@@ -30,9 +30,13 @@ class Decision:
 
 class StartLambda(Decision):
     def __init__(self, lambda_id, function_name, task_args=None, **kwargs):
+        is_vpc = kwargs['is_vpc']
+        lambda_fn_name = os.getenv('LABOR_FUNCTION', 'leech-lambda-labor')
+        if is_vpc:
+            lambda_fn_name = os.getenv('VPC_LABOR_FUNCTION', 'leech-vpc-labor')
         lambda_attributes = {
             'id': lambda_id,
-            'name': os.getenv('LABOR_FUNCTION', 'leech-lambda-labor')
+            'name': lambda_fn_name
         }
         if task_args:
             lambda_attributes['input'] = json.dumps({

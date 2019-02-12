@@ -115,6 +115,9 @@
             },
             "time_outs": {
               "$ref": "#/definitions/task_timeouts"
+            },
+            "is_vpc": {
+              "type": "boolean"
             }
           },
           "required": ["concurrency"],

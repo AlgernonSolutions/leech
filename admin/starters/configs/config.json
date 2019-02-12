@@ -167,6 +167,14 @@
         }
       },
       {
+        "task_name": "graph_links",
+        "task_description": "adds new links objects to the graph",
+        "task_config": {
+          "is_vpc": true,
+          "concurrency": 1
+        }
+      },
+      {
         "task_name": "get_local_ids",
         "task_description": "queries id values in the data space",
         "task_config": {
