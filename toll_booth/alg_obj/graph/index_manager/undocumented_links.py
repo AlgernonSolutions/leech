@@ -1,15 +1,20 @@
 import json
 from datetime import datetime
 
+from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.graph import InternalId
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex, PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
-class LinkEntry:
+class LinkEntry(AlgObject):
     def __init__(self, link_utc_timestamp: datetime, is_unlink=False):
         self._link_utc_timestamp = link_utc_timestamp
         self._is_unlink = is_unlink
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['link_utc_timestamp'], json_dict.get('is_unlink', False))
 
     @classmethod
     def parse_from_history_value(cls, history_value):
@@ -34,13 +39,17 @@ class LinkEntry:
         return f'{self._link_utc_timestamp.timestamp()}!{link_type}'
 
 
-class LinkHistory:
+class LinkHistory(AlgObject):
     def __init__(self, potential_vertex: PotentialVertex, link_entries=None):
         if not link_entries:
             link_entries = set()
         self._potential_vertex = potential_vertex
         self._id_value = potential_vertex.id_value
         self._link_entries = link_entries
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(json_dict['potential_vertex'], json_dict.get('link_entries'))
 
     @classmethod
     def parse_from_table_entry(cls, table_entry):
