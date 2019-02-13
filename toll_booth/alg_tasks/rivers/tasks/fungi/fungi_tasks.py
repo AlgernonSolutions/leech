@@ -115,7 +115,7 @@ def get_local_ids(**kwargs):
     driving_identifier_stem = kwargs['driving_identifier_stem']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
     index_driver = IndexManager.from_graph_schema(kwargs['schema'], **kwargs)
-    local_id_values = index_driver.get_local_id_values(driving_identifier_stem, by_linked=True)
+    local_id_values = index_driver.get_local_id_values(driving_identifier_stem)
     return {'local_id_values': local_id_values}
 
 
