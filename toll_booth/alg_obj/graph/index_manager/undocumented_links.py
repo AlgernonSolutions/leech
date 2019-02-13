@@ -125,5 +125,5 @@ class LinkHistory(AlgObject):
         }
         from_id = self._potential_vertex.internal_id
         to_id = InternalId(''.join(['IdSource', self._potential_vertex['id_source']])).id_value
-        edge = PotentialEdge('edge', edge_internal_id.id_value, edge_properties, from_id, to_id)
+        edge = PotentialEdge('_fip_link_', edge_internal_id.id_value, edge_properties, from_id, to_id)
         return edge

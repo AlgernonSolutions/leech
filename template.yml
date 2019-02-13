@@ -35,8 +35,8 @@ Globals:
         ASSIMILATE_URL: https://sqs.us-east-1.amazonaws.com/803040539655/assimilate
         LOAD_URL:  https://sqs.us-east-1.amazonaws.com/803040539655/load
         LINK_URL: https://sqs.us-east-1.amazonaws.com/803040539655/link
-        NEPTUNE_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-        GRAPH_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+        GRAPH_DB_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+        GRAPH_DB_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
 
 Resources:
   work:

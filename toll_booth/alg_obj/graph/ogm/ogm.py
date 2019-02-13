@@ -2,12 +2,13 @@ import logging
 
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentEdgeConnection
-from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator
+from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator, VertexCommandGenerator, EdgeCommandGenerator
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
 
 
 class Ogm:
     def __init__(self, **kwargs):
+        self._schema = kwargs['schema']
         self._trident_driver = kwargs.get('trident_driver', TridentDriver())
 
     def execute(self, query):
@@ -36,15 +37,15 @@ class Ogm:
         logging.info(f'generated graph commands: {vertex_commands, edge_commands} for potential object: {object_entry}')
         return self._graph_objects(vertex_commands, edge_commands)
 
-    @classmethod
-    def _generate_vertex_command(cls, potential_vertex):
-        command_generator = CommandGenerator.get_for_obj_type(potential_vertex.object_type)
+    def _generate_vertex_command(self, potential_vertex):
+        schema_entry = self._schema.get(potential_vertex.object_type)
+        command_generator = VertexCommandGenerator(schema_entry)
         graph_command = command_generator.create_command(potential_vertex)
         return graph_command
 
-    @classmethod
-    def _generate_edge_command(cls, potential_edge):
-        command_generator = CommandGenerator.get_for_obj_type(potential_edge.object_type)
+    def _generate_edge_command(self, potential_edge):
+        schema_entry = self._schema.get(potential_edge.object_type)
+        command_generator = EdgeCommandGenerator(schema_entry)
         graph_command = command_generator.create_command(potential_edge)
         return graph_command
 
