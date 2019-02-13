@@ -252,7 +252,7 @@ class LeechConfigEntry(AlgObject):
 
     def get(self, item, default=None):
         try:
-            return  self._config_items[item]
+            return self._config_items[item]
         except KeyError:
             return default
 
@@ -271,7 +271,7 @@ class LeechConfig(AlgObject):
         return cls(json_dict['workflow_configs'], json_dict['task_configs'])
 
     @classmethod
-    def get(cls, **kwargs):
+    def retrieve(cls, **kwargs):
         from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
         config_file_name = kwargs.get('CONFIG_FILE', 'config.json')
         snek = SchemaSnek(**kwargs)

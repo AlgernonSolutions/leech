@@ -44,7 +44,7 @@ def _get_config(work_history):
     marker = work_history.marker_history.config_marker
     if config is None:
         if marker is None:
-            configs = LeechConfig.get()
+            configs = LeechConfig.retrieve()
             return configs, RecordMarker.for_config(configs)
         return marker.marker_details, None
     return config, None

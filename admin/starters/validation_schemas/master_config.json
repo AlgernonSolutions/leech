@@ -117,6 +117,7 @@
               "$ref": "#/definitions/task_timeouts"
             },
             "is_vpc": {
+              "description": "when launched, will this task need to run within a vpc",
               "type": "boolean"
             }
           },
@@ -137,13 +138,10 @@
           "description": "how many workers should be generated to this list",
           "type": "integer",
           "minimum": 1
-        },
-        "is_vpc":{
-          "description": "whether or not the workers launched to this task list need VPC access",
-          "type": "boolean"
         }
       },
-      "required": ["list_name", "number_threads", "is_vpc"]
+      "required": ["list_name", "number_threads"],
+      "additionalProperties": false
     },
     "workflow_timeouts": {
       "description": "collection of time out values for a workflow",

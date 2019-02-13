@@ -13,19 +13,14 @@ class RuffianRoost:
     @classmethod
     def conscript_ruffians(cls, decider_list, work_lists, domain_name, config, **kwargs):
         default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
-        default_vpc_machine_arn = os.getenv('VPC_RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:vpc_ruffians')
         default_deciding_machine_arn = os.getenv('DECIDING_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
         ruffian_machine_arn = kwargs.get('machine_arn', default_machine_arn)
-        vpc_ruffian_machine_arn = kwargs.get('vpc_machine_arn', default_vpc_machine_arn)
         deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
         client = boto3.client('stepfunctions')
         execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, client)]
         for work_list in work_lists:
-            list_machine_arn = ruffian_machine_arn
-            if work_list.get('is_vpc', False) is True:
-                list_machine_arn = vpc_ruffian_machine_arn
             execution_arns.append(
-                cls._start_machine(list_machine_arn, work_list, domain_name, config, client)
+                cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, client)
             )
         return execution_arns
 

@@ -22,8 +22,7 @@
           "labor_task_lists": [
             {
               "list_name": "credible",
-              "number_threads": 1,
-              "is_vpc": false
+              "number_threads": 1
             }
           ],
           "time_outs": {
@@ -39,8 +38,7 @@
           "labor_task_lists": [
             {
               "list_name": "links",
-              "number_threads": 5,
-              "is_vpc": true
+              "number_threads": 5
             }
           ],
           "time_outs": {
@@ -99,8 +97,7 @@
           "labor_task_lists": [
             {
               "list_name": "credible_query",
-              "number_threads": 1,
-              "is_vpc": false
+              "number_threads": 1
             }
           ]
         }
@@ -171,7 +168,8 @@
         "task_description": "adds new links objects to the graph",
         "task_config": {
           "is_vpc": true,
-          "concurrency": 1
+          "concurrency": 1,
+          "task_list": "links"
         }
       },
       {
