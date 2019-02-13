@@ -30,6 +30,11 @@ class CommandGenerator:
         property_data_type = self._schema_entry.entry_properties[property_name].property_data_type
         if property_data_type in ['String', 'DateTime']:
             property_value = f"'{property_value}'"
+        if property_data_type == 'Boolean':
+            if property_value is True:
+                property_value = 'true'
+            if property_value is False:
+                property_value = 'false'
         return property_value
 
     def _derive_object_check(self, potential_object, is_edge=False):
