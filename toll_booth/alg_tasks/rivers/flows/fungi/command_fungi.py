@@ -40,7 +40,7 @@ def command_fungi(**kwargs):
 
 # @xray_recorder.capture('command_fungi_build_chain')
 def _build_chain(names, **kwargs):
-    get_local_ids = LambdaSignature(names['local'], 'get_local_ids', **kwargs)
+    get_local_ids = ActivitySignature(names['local'], 'get_local_ids', **kwargs)
     get_remote_ids = ActivitySignature(names['remote'], 'get_remote_ids', **kwargs)
     generate_mapping = ActivitySignature(names['map'], 'build_mapping', **kwargs)
     get_ids_group = group(get_local_ids, get_remote_ids)

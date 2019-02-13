@@ -56,4 +56,4 @@ def _build_graph_signature(task_args, **kwargs):
     operation_name = 'graph_links'
     names = kwargs['names']
     identifier = names['graph']
-    return LambdaSignature(identifier, operation_name, **kwargs)
+    return ActivitySignature(identifier, operation_name, **kwargs)
