@@ -82,7 +82,7 @@ Resources:
   vpclabor:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: toll_booth/alg_tasks/ruffians.labor
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
       FunctionName: leech-vpc-labor
       Role:
         Ref: LambdaRoleArn
