@@ -210,7 +210,7 @@ class IndexManager:
             raise e
 
     def _perform_link_operation(self, link_history: LinkHistory, link_entry: LinkEntry):
-        partition_key_name, hash_key_name = self._object_index.indexed_fields
+        hash_key_name, partition_key_name = self._object_index.indexed_fields
         key_value = {
             partition_key_name: str(link_history.identifier_stem),
             hash_key_name: str(link_history.id_value)

@@ -17,7 +17,7 @@ class RuffianRoost:
         ruffian_machine_arn = kwargs.get('machine_arn', default_machine_arn)
         deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
         client = boto3.client('stepfunctions')
-        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, client)]
+        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, client)]
         for work_list in work_lists:
             execution_arns.append(
                 cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, client)
