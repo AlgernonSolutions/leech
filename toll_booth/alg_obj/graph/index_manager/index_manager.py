@@ -11,7 +11,7 @@ from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException, 
 from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.graph.schemata.schema import Schema
-from toll_booth.alg_obj.serializers import ExplosionDecoder
+from toll_booth.alg_obj.serializers import ExplosionDecoder, AlgDecoder
 
 
 class IndexManager:
@@ -93,7 +93,7 @@ class IndexManager:
             for item in items:
                 yield LinkHistory.parse_from_table_entry(item)
 
-    def _get_local_id_values(self, identifier_stem, index_name=None):
+    def _get_link_histories(self, identifier_stem, index_name=None):
         paginator = boto3.client('dynamodb').get_paginator('query')
         query_args = {
             'TableName': self._table_name,
@@ -105,23 +105,21 @@ class IndexManager:
         pages = paginator.paginate(**query_args)
         results = set()
         for page in pages:
-            items = page['Items']
+            items = json.loads(json.dumps(page['Items']), cls=ExplosionDecoder)
             total = len(items)
             progress = 0
             for item in items:
-                id_value = item['id_value']['N']
-                results.add(id_value)
+                link_history = LinkHistory.parse_from_table_entry(item)
+                results.add(link_history)
                 progress += 1
                 logging.debug(f'{progress}/{total}')
         return results
 
-    def get_local_id_values(self, identifier_stem, index_name=None, by_linked=None):
-        local_id_values = self._get_local_id_values(identifier_stem, index_name)
-        if not by_linked:
-            return local_id_values
-        links = self.get_links_iterator(identifier_stem)
+    def get_local_id_values(self, identifier_stem, index_name=None):
+        link_histories = self._get_link_histories(identifier_stem, index_name)
+        local_id_values = set(x.id_value for x in link_histories)
         results = {'all': local_id_values, 'linked': set(), 'unlinked': set()}
-        for link_history in links:
+        for link_history in link_histories:
             id_value = link_history.id_value
             is_linked = link_history.currently_linked
             results_category = 'unlinked'
@@ -130,8 +128,8 @@ class IndexManager:
             results[results_category].add(id_value)
         return results
 
-    def index_object(self, graph_object):
-        item = self._convert_graph_object(graph_object)
+    def index_object(self, graph_object, link_values=None):
+        item = self._convert_graph_object(graph_object, link_values)
         for index in self._indexes:
             if item is None:
                 raise AttemptedStubIndexException(index.index_name, graph_object)
@@ -154,8 +152,8 @@ class IndexManager:
     def add_link_event(self, link_utc_timestamp, potential_vertex, **kwargs):
         link_history = LinkHistory.for_first_link(potential_vertex, link_utc_timestamp)
         if 'put' in kwargs:
-            self.index_object(potential_vertex)
-            self.index_object(link_history)
+            link_values = {x.for_index for x in link_history.link_entries}
+            self.index_object(potential_vertex, link_values=link_values)
             return link_history
         if 'unlink' in kwargs:
             link_entry = LinkEntry(link_utc_timestamp, is_unlink=True)
@@ -168,13 +166,16 @@ class IndexManager:
         raise NotImplementedError(f'could not find link operation for {kwargs}')
 
     @classmethod
-    def _convert_graph_object(cls, graph_object):
+    def _convert_graph_object(cls, graph_object, link_values=None):
         if not graph_object.is_identifiable:
             return None
-        return graph_object.for_index
+        index_object = graph_object.for_index
+        if link_values:
+            index_object['links'] = link_values
+        return index_object
 
-    def _index_object(self, graph_object):
-        item = self._convert_graph_object(graph_object)
+    def _index_object(self, graph_object, link_values=None):
+        item = self._convert_graph_object(graph_object, link_values)
         args = {
             'Item': item
         }

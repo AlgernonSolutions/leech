@@ -7,6 +7,11 @@ from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVer
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
+class NonFungalObjectLinkingException(Exception):
+    def __init__(self, object_data):
+        self._object_data = object_data
+
+
 class LinkEntry(AlgObject):
     def __init__(self, link_utc_timestamp: datetime, is_unlink=False):
         self._link_utc_timestamp = link_utc_timestamp
@@ -53,6 +58,8 @@ class LinkHistory(AlgObject):
 
     @classmethod
     def parse_from_table_entry(cls, table_entry):
+        if 'links' not in table_entry:
+            raise NonFungalObjectLinkingException(table_entry)
         potential_vertex = json.loads(table_entry['object_value'], cls=AlgDecoder)
         link_entries = {LinkEntry.parse_from_history_value(x) for x in table_entry['link_entries']}
         return cls(potential_vertex, link_entries)
@@ -113,6 +120,10 @@ class LinkHistory(AlgObject):
     def object_properties(self):
         return self.for_index
 
+    @property
+    def link_entries(self):
+        return self._link_entries
+
     def add_link_entry(self, link_entry):
         self._link_entries.add(link_entry)
 
@@ -121,7 +132,7 @@ class LinkHistory(AlgObject):
         edge_internal_id = InternalId(internal_id_values)
         edge_properties = {
             'is_unlink': link_entry.is_unlink,
-            'link_time': link_entry.link_utc_timestamp
+            'link_utc_timestamp': link_entry.link_utc_timestamp
         }
         from_id = self._potential_vertex.internal_id
         to_id = InternalId(''.join(['IdSource', self._potential_vertex['id_source']])).id_value

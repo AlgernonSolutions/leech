@@ -1,5 +1,8 @@
+import logging
+
 import boto3
 
+from admin.set_logging import set_logging
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
@@ -10,7 +13,7 @@ def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
         TableName=table_name,
         KeyConditionExpression='#id=:id',
         ExpressionAttributeNames={
-            '#id': 'sid_value'
+            '#id': 'identifier_stem'
         },
         ExpressionAttributeValues={
             ':id': {'S': str(identifier_stem)}
@@ -26,5 +29,9 @@ def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
 
 
 if __name__ == '__main__':
-    identifier_stem = IdentifierStem.from_raw('#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#')
-    clear_dynamo_identifier_stem(identifier_stem)
+    set_logging()
+    identifier_string = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    target_identifier_stem = IdentifierStem.from_raw(identifier_string)
+    logging.info(f'started a clear dynamo identifier stem operation: {target_identifier_stem}')
+    clear_dynamo_identifier_stem(target_identifier_stem)
+    logging.info(f'completed clearing identifier stem: {target_identifier_stem}')

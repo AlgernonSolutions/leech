@@ -4,11 +4,12 @@ from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
 from toll_booth.alg_obj.aws.trident.trident_obj import TridentEdgeConnection
 from toll_booth.alg_obj.graph.ogm.generator import CommandGenerator, VertexCommandGenerator, EdgeCommandGenerator
 from toll_booth.alg_obj.graph.ogm.pages import PaginationToken
+from toll_booth.alg_obj.graph.schemata.schema import Schema
 
 
 class Ogm:
     def __init__(self, **kwargs):
-        self._schema = kwargs['schema']
+        self._schema = kwargs.get('schema', Schema.retrieve(**kwargs))
         self._trident_driver = kwargs.get('trident_driver', TridentDriver())
 
     def execute(self, query):

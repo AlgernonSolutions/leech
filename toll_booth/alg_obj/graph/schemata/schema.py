@@ -29,6 +29,12 @@ class Schema(AlgObject):
         except KeyError:
             return self._edge_entries[item]
 
+    def get(self,  item, default=None):
+        try:
+            return self[item]
+        except KeyError:
+            return default
+
     @classmethod
     def retrieve(cls, **kwargs):
         schema_writer = SchemaSnek(**kwargs)
