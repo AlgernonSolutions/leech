@@ -79,6 +79,7 @@ class TridentNotary:
         self._algorithm = 'AWS4-HMAC-SHA256'
         access_key = os.getenv('AWS_ACCESS_KEY_ID', None)
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY', None)
+        self._session_token = os.getenv('AWS_SESSION_TOKEN', None)
         if access_key is None or secret_key is None:
             access_key, secret_key = Opossum.get_trident_user_key()
         self._access_key = access_key
@@ -145,7 +146,10 @@ class TridentNotary:
         headers_entry = f'SignedHeaders={self._signed_headers}'
         signature_entry = f'Signature={signature}'
         authorization_header = f"{self._algorithm} {credentials_entry}, {headers_entry}, {signature_entry}"
-        return {'x-amz-date': amz_date, 'Authorization': authorization_header}
+        headers = {'x-amz-date': amz_date, 'Authorization': authorization_header}
+        if self._session_token:
+            headers['x-amz-security-token'] = self._session_token
+        return headers
 
     @classmethod
     def _generate_request_parameters(cls, command):
