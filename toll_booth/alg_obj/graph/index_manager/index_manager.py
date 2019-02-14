@@ -64,19 +64,17 @@ class IndexManager:
         return cls(**kwargs)
 
     def query_object_max(self, identifier_stem):
-        index_name = self._object_index.index_name
         query_args = {
             'Limit': 1,
             'ScanIndexForward': False,
             'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
             'TableName': self._table_name,
-            'IndexName': index_name
         }
         results = self._table.query(**query_args)
         try:
             return int(results['Items'][0]['id_value'])
         except IndexError:
-            raise EmptyIndexException(index_name)
+            raise EmptyIndexException(self._object_index.index_name)
 
     def get_links_iterator(self, linked_object_identifier_stem):
         paginator = boto3.client('dynamodb').get_paginator('query')
