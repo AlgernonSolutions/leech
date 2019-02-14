@@ -5,7 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import LambdaSignature, ActivitySign
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('work_fip_links')
+# @xray_recorder.capture('work_fip_links')
 @workflow('work_fip_links')
 def work_fip_links(**kwargs):
     decisions = kwargs['decisions']

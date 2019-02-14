@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException
@@ -130,7 +132,7 @@ def get_remote_ids(**kwargs):
     remote_id_extractor = _build_remote_id_extractor(**kwargs)
     with CredibleFrontEndDriver(remote_id_extractor['id_source']) as driver:
         remote_ids = driver.get_monitor_extraction(**remote_id_extractor)
-        results = set(remote_ids)
+        results = set([Decimal(x) for x in remote_ids])
         return {'remote_id_values': results, 'link_utc_timestamp': link_utc_timestamp}
 
 
