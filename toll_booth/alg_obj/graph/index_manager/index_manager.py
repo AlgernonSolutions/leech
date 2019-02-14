@@ -101,14 +101,14 @@ class IndexManager:
         if index_name:
             query_args['IndexName'] = index_name
         pages = paginator.paginate(**query_args)
-        results = set()
+        results = []
         for page in pages:
             items = json.loads(json.dumps(page['Items']), cls=ExplosionDecoder)
             total = len(items)
             progress = 0
             for item in items:
                 link_history = LinkHistory.parse_from_table_entry(item)
-                results.add(link_history)
+                results.append(link_history)
                 progress += 1
                 logging.debug(f'{progress}/{total}')
         return results
