@@ -68,7 +68,7 @@ def _build_change_data_signatures(task_args, **kwargs):
         remote_change_identifier = hash(json.dumps(remote_change, cls=AlgEncoder))
         new_task_args = task_args.replace_argument_value(subtask_name, {'remote_change': remote_change}, remote_change_identifier)
         lambda_identifier = f'{remote_change_identifier}-{fn_identifier}'
-        signature = LambdaSignature(lambda_identifier, subtask_name, task_args=new_task_args, **kwargs)
+        signature = ActivitySignature(lambda_identifier, subtask_name, task_args=new_task_args, **kwargs)
         signatures.append(signature)
     if not signatures:
         return None
