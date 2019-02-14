@@ -80,7 +80,7 @@ class SchemaParer:
         json_specifiers = json_rule['target_specifiers']
         target_specifiers = [cls.parse_target_specifier(x) for x in json_specifiers]
         target_constants = json_rule['target_constants']
-        args = (edge_type, target_type, target_specifiers, target_constants, if_absent, is_inbound)
+        args = (edge_type, target_type, target_constants, target_specifiers, if_absent, is_inbound)
         return VertexLinkRuleEntry(*args)
 
     @classmethod
