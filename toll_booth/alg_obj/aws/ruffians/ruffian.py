@@ -5,6 +5,7 @@ from queue import Queue
 from threading import Thread
 
 import boto3
+from retrying import retry
 
 from toll_booth.alg_obj.serializers import AlgEncoder
 
@@ -206,6 +207,7 @@ class Ruffian:
             swf_client.respond_activity_task_completed(**swf_payload)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
     def _fire_task(self, **kwargs):
         from toll_booth.alg_obj.serializers import AlgDecoder
 
