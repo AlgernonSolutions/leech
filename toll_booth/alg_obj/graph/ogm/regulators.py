@@ -16,14 +16,23 @@ class ObjectRegulator:
         self._entry_properties_schema = schema_entry.entry_properties
 
     @classmethod
-    def get_for_object_type(cls, object_type):
-        from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
-        target_schema_entry = SchemaEntry.retrieve(object_type)
+    def get_for_schema_entry(cls, schema_entry):
         try:
-            getattr(target_schema_entry, 'edge_label')
-            return EdgeRegulator(target_schema_entry)
+            getattr(schema_entry, 'edge_label')
+            return EdgeRegulator(schema_entry)
         except AttributeError:
-            return VertexRegulator(target_schema_entry)
+            return VertexRegulator(schema_entry)
+
+    @classmethod
+    def get_for_object_type(cls, object_type, schema_entry=None):
+        from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaEntry
+        if not schema_entry:
+            schema_entry = SchemaEntry.retrieve(object_type)
+        try:
+            getattr(schema_entry, 'edge_label')
+            return EdgeRegulator(schema_entry)
+        except AttributeError:
+            return VertexRegulator(schema_entry)
 
     @property
     def schema_entry(self):

@@ -2,14 +2,19 @@ from toll_booth.alg_obj.graph.ogm.regulators import ObjectRegulator
 
 
 class RuleArbiter:
-    def __init__(self, source_vertex, schema_entry):
+    def __init__(self, source_vertex, schema, schema_entry):
         self._schema_entry = schema_entry
+        self._schema = schema
         self._rules = schema_entry.rules
         self._source_vertex = source_vertex
 
     @property
     def source_vertex(self):
         return self._source_vertex
+
+    @property
+    def schema(self):
+        return self._schema
 
     @property
     def schema_entry(self):
@@ -34,12 +39,13 @@ class RuleArbiter:
 
 
 class ArbiterExecutor:
-    def __init__(self, rule_arbiter, rule_entry):
+    def __init__(self, rule_arbiter: RuleArbiter, rule_entry):
         self._rule_arbiter = rule_arbiter
         self._source_vertex = rule_arbiter.source_vertex
         self._rule_entry = rule_entry
         self._target_type = rule_entry.target_type
-        self._regulator = ObjectRegulator.get_for_object_type(rule_entry.target_type)
+        rule_schema_entry = rule_arbiter.schema[self._target_type]
+        self._regulator = ObjectRegulator.get_for_schema_entry(rule_schema_entry)
 
     @property
     def is_stub(self):
