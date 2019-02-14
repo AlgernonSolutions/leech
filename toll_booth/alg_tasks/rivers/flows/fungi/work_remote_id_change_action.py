@@ -58,6 +58,8 @@ def _build_change_data_signatures(task_args, **kwargs):
     workflow_args = kwargs['workflow_args']
     fn_identifier = names['change']
     change_actions = task_args.get_argument_value('change_actions')
+    if isinstance(change_actions, list):
+        change_actions = change_actions[0]
     changelog_types = task_args.get_argument_value('changelog_types')
     action_id = workflow_args['action_id']
     change_action = changelog_types[str(action_id)]
