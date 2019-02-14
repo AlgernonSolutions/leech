@@ -61,7 +61,7 @@ class LinkHistory(AlgObject):
         if 'links' not in table_entry:
             raise NonFungalObjectLinkingException(table_entry)
         potential_vertex = json.loads(table_entry['object_value'], cls=AlgDecoder)
-        link_entries = {LinkEntry.parse_from_history_value(x) for x in table_entry['link_entries']}
+        link_entries = {LinkEntry.parse_from_history_value(x) for x in table_entry['links']}
         return cls(potential_vertex, link_entries)
 
     @classmethod
