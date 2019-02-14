@@ -30,7 +30,7 @@ def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
 
 if __name__ == '__main__':
     set_logging()
-    identifier_string = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    identifier_string = '#edge#_fip_link_#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
     target_identifier_stem = IdentifierStem.from_raw(identifier_string)
     logging.info(f'started a clear dynamo identifier stem operation: {target_identifier_stem}')
     clear_dynamo_identifier_stem(target_identifier_stem)

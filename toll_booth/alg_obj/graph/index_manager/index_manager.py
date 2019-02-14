@@ -138,7 +138,7 @@ class IndexManager:
                 if missing_properties:
                     raise MissingIndexedPropertyException(index.index_name, index.indexed_fields, missing_properties)
         try:
-            self._index_object(graph_object)
+            self._index_object(graph_object, link_values=link_values)
         except AttemptedStubIndexException:
             self._index_stub(graph_object)
 
