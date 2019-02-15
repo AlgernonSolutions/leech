@@ -259,7 +259,8 @@
         "task_description": "plots the generated vertex and it's edges into the graph database",
         "task_config": {
           "concurrency": 1,
-          "task_list": "work_change_action"
+          "task_list": "work_change_action",
+          "is_vpc": true
         }
       },
       {

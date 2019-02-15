@@ -66,8 +66,12 @@ def index(**kwargs):
     index_manager = IndexManager.from_graph_schema(schema, **kwargs)
     index_manager.index_object(source_vertex)
     for entry in assimilation_results:
-        index_manager.index_object(entry['edge'])
-        index_manager.index_object(entry['vertex'])
+        edge = entry.get('edge')
+        vertex = entry.get('vertex')
+        if edge:
+            index_manager.index_object(entry['edge'])
+        if vertex:
+            index_manager.index_object(entry['vertex'])
 
 
 @xray_recorder.capture('graph')
