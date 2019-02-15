@@ -58,7 +58,14 @@ def _build_group(task_args, **kwargs):
     category_id = workflow_args['category_id']
     changelog_types = task_args.get_argument_value('changelog_types')
     change_category = changelog_types.categories[category_id]
+    change_actions = task_args.get_argument_value('change_actions')
+    if isinstance(change_actions, list):
+        change_actions = change_actions[0]
     for action_id, change_action in change_category.change_types.items():
+        change_action = changelog_types[str(action_id)]
+        remote_actions = change_actions.get(change_action.action, {})
+        if not remote_actions:
+            continue
         new_task_args = task_args.replace_argument_value(subtask_name, {'action_id': action_id}, action_id)
         subtask_identifier = f'work_action-{change_action}-{execution_id}'
         change_type_signature = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
