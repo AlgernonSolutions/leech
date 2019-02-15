@@ -126,7 +126,7 @@ class ObjectRegulator:
             id_value_properties = vertex_properties[self._schema_entry.id_value_field]
             if id_value_properties.property_data_type == 'DateTime':
                 remade_date_value = dateutil.parser.parse(id_value)
-                id_value = remade_date_value.timestamp()
+                id_value = Decimal(remade_date_value.timestamp())
             return id_value
         except KeyError:
             return self._schema_entry.id_value_field
