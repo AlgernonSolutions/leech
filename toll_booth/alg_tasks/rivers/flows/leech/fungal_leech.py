@@ -13,9 +13,7 @@ def fungal_leech(**kwargs):
     names = {
         'transform': f'transform-{execution_id}',
         'index': f'index-{execution_id}',
-        'index_links': f'index_links-{execution_id}',
         'graph': f'graph-{execution_id}',
-        'graph_links': f'graph_links-{execution_id}'
     }
     kwargs['names'] = names
     transform_signature = _build_transform_signature(**kwargs)
@@ -26,9 +24,9 @@ def fungal_leech(**kwargs):
     assimilate_results = assimilate_group(**kwargs)
     if assimilate_results is None:
         return
-    index_group = _build_index_group(**kwargs)
+    index_signature = _build_index_signature(**kwargs)
     graph_signature = _build_graph_signature(**kwargs)
-    load_group = group(index_group, graph_signature)
+    load_group = group(index_signature, graph_signature)
     load_results = load_group(**kwargs)
     if load_results is None:
         return
@@ -60,13 +58,11 @@ def _build_assimilate_group(task_args, **kwargs):
 
 
 @xray_recorder.capture('fungal_leech_build_index_group')
-def _build_index_group(**kwargs):
+def _build_index_signature(**kwargs):
     names = kwargs['names']
     index_task_identifier = names['index']
-    index_links_identifier = names['index_links']
     index_signature = ActivitySignature(index_task_identifier, 'index', **kwargs)
-    index_link_signature = ActivitySignature(index_links_identifier, 'index_links', **kwargs)
-    return group(index_signature, index_link_signature)
+    return index_signature
 
 
 @xray_recorder.capture('fungal_leech_build_graph_chain')
