@@ -92,7 +92,8 @@ class GqlDecoder(json.JSONDecoder):
         obj_class = getattr(host_module, alg_class, None)
         if obj_class is None:
             return obj
-        return obj_class.from_json(obj_value)
+        alg_obj = obj_class.from_json(obj_value)
+        return alg_obj.to_gql
 
 
 class ExplosionDecoder(json.JSONDecoder):
