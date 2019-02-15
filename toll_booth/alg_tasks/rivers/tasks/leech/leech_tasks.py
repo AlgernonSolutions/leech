@@ -85,7 +85,7 @@ def graph(**kwargs):
         if edge:
             edges[edge.internal_id] = edge
     ogm = Ogm(**kwargs)
-    results = ogm.graph_objects(vertexes=vertexes, edges=edges)
+    results = ogm.graph_objects(vertexes=[x for x in vertexes.values()], edges=[x for x in edges.values()])
     return {'graph': results}
 
 
