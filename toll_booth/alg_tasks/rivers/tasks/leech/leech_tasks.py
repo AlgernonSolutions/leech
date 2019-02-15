@@ -64,23 +64,24 @@ def index(**kwargs):
     from toll_booth.alg_obj.graph.index_manager.indexes import UniqueIndexViolationException
 
     schema = kwargs['schema']
-    assimilation_results = kwargs['assimilation']
+    vertexes, edges = _standardize_assimilation_results(**kwargs)
     source_vertex = kwargs['source_vertex']
     index_manager = IndexManager.from_graph_schema(schema, **kwargs)
-    index_manager.index_object(source_vertex)
-    for entry in assimilation_results:
-        edge = entry.get('edge')
-        vertex = entry.get('vertex')
-        if edge:
-            try:
-                index_manager.index_object(entry['edge'])
-            except UniqueIndexViolationException as e:
-                logging.warning(f'edge {edge} has already been set to the index, so violated {e.index_name}, just so you know')
-        if vertex:
-            try:
-                index_manager.index_object(entry['vertex'])
-            except UniqueIndexViolationException as e:
-                logging.warning(f'vertex {vertex} has already been set to the index, so violated {e.index_name}, just so you know')
+    try:
+        index_manager.index_object(source_vertex)
+    except UniqueIndexViolationException as e:
+        logging.warning(
+            f'vertex {source_vertex} has already been set to the index, so violated {e.index_name}, just so you know')
+    for edge in edges:
+        try:
+            index_manager.index_object(edge)
+        except UniqueIndexViolationException as e:
+            logging.warning(f'edge {edge} has already been set to the index, so violated {e.index_name}, just so you know')
+    for vertex in vertexes:
+        try:
+            index_manager.index_object(vertex)
+        except UniqueIndexViolationException as e:
+            logging.warning(f'vertex {vertex} has already been set to the index, so violated {e.index_name}, just so you know')
 
 
 @xray_recorder.capture('graph')
@@ -88,6 +89,13 @@ def index(**kwargs):
 def graph(**kwargs):
     from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 
+    vertexes, edges = _standardize_assimilation_results(**kwargs)
+    ogm = Ogm(**kwargs)
+    results = ogm.graph_objects(vertexes=vertexes, edges=edges)
+    return {'graph': results}
+
+
+def _standardize_assimilation_results(**kwargs):
     vertexes = {}
     edges = {}
     assimilation_results = _recurse(kwargs['assimilation'])
@@ -97,9 +105,7 @@ def graph(**kwargs):
             vertexes[vertex.internal_id] = vertex
         if edge:
             edges[edge.internal_id] = edge
-    ogm = Ogm(**kwargs)
-    results = ogm.graph_objects(vertexes=[x for x in vertexes.values()], edges=[x for x in edges.values()])
-    return {'graph': results}
+    return [x for x in vertexes.values()], [x for x in edges.values()]
 
 
 def _recurse(obj):

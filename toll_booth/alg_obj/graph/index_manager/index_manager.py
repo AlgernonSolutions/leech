@@ -69,10 +69,11 @@ class IndexManager:
             'ScanIndexForward': False,
             'KeyConditionExpression': Key('identifier_stem').eq(str(identifier_stem)),
             'TableName': self._table_name,
+            'IndexName': self._identifier_stem_index.index_name
         }
         results = self._table.query(**query_args)
         try:
-            return int(results['Items'][0]['id_value'])
+            return results['Items'][0]['numeric_id_value']
         except IndexError:
             raise EmptyIndexException(self._object_index.index_name)
 

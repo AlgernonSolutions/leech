@@ -402,6 +402,8 @@ class GraphObject(AlgObject):
             'object_value': json.dumps(self, cls=AlgEncoder),
             'object_properties': self._object_properties
         }
+        if isinstance(self._id_value, int) or isinstance(self._id_value, Decimal):
+            indexed_value['numeric_id_value'] = self._id_value
         return indexed_value
 
     @property
