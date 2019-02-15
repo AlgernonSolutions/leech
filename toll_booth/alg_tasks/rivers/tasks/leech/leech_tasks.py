@@ -1,3 +1,5 @@
+import logging
+
 from aws_xray_sdk.core import xray_recorder
 
 
@@ -59,6 +61,7 @@ def assimilate(**kwargs):
 @task('index')
 def index(**kwargs):
     from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
+    from toll_booth.alg_obj.graph.index_manager.indexes import UniqueIndexViolationException
 
     schema = kwargs['schema']
     assimilation_results = kwargs['assimilation']
@@ -69,9 +72,15 @@ def index(**kwargs):
         edge = entry.get('edge')
         vertex = entry.get('vertex')
         if edge:
-            index_manager.index_object(entry['edge'])
+            try:
+                index_manager.index_object(entry['edge'])
+            except UniqueIndexViolationException as e:
+                logging.warning(f'edge {edge} has already been set to the index, so violated {e.index_name}, just so you know')
         if vertex:
-            index_manager.index_object(entry['vertex'])
+            try:
+                index_manager.index_object(entry['vertex'])
+            except UniqueIndexViolationException as e:
+                logging.warning(f'vertex {vertex} has already been set to the index, so violated {e.index_name}, just so you know')
 
 
 @xray_recorder.capture('graph')

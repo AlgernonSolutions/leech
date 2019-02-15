@@ -19,6 +19,14 @@ class UniqueIndexViolationException(Exception):
         self._index_name = index_name
         self._indexed_object = indexed_object
 
+    @property
+    def index_name(self):
+        return self._index_name
+
+    @property
+    def indexed_object(self):
+        return self._indexed_object
+
 
 class MissingIndexException(Exception):
     def __init__(self, index_name):
