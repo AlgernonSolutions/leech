@@ -38,7 +38,7 @@ class StartLambda(Decision):
         lambda_attributes = {
             'id': lambda_id,
             'name': lambda_fn_name,
-            'startToCloseTimeout': running_time
+            'startToCloseTimeout': str(running_time)
         }
         if task_args:
             lambda_attributes['input'] = json.dumps({
@@ -151,7 +151,7 @@ class StartActivity(Decision):
             },
             'taskList': {'name': kwargs.get('task_list', 'Leech')},
             'activityId': activity_id,
-            'startToCloseTimeout': running_time
+            'startToCloseTimeout': str(running_time)
         }
         if task_args:
             activity_attributes['input'] = json.dumps({

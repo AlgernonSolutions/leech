@@ -214,7 +214,7 @@ class ActivitySignature(Signature):
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        running_time = self._timeouts.get('running', None)
+        running_time = self._timeouts.get('running', 300)
         start_kwargs = {
             'task_args': task_args, 'running_time': running_time,
             'version': self.fn_version, 'task_list': self._task_list
@@ -242,7 +242,7 @@ class LambdaSignature(Signature):
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        running_time = self._timeouts.get('running', None)
+        running_time = self._timeouts.get('running', 300)
         start_kwargs = {
             'task_args': task_args, 'control': self._control, 'is_vpc': self._is_vpc, 'running_time': running_time
         }
