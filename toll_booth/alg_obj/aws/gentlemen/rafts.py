@@ -202,17 +202,24 @@ class SubtaskSignature(Signature):
 class ActivitySignature(Signature):
     def __init__(self, task_identifier, task_type, task_args: TaskArguments = None, task_list=None, **kwargs):
         config = kwargs['configs'][('task', task_type)]
+        time_outs = config.get('time_outs', {})
         if not task_list:
             task_list = config.get('task_list', kwargs['work_history'].flow_id)
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         cls_kwargs = self.generate_signature_status(task_identifier, kwargs['activities'], **kwargs)
         super().__init__(task_type, version, config, task_identifier, task_args, **cls_kwargs)
         self._task_list = task_list
+        self._timeouts = time_outs
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        return StartActivity(*self.start_args, task_args=task_args, version=self.fn_version, task_list=self._task_list)
+        running_time = self._timeouts.get('running', None)
+        start_kwargs = {
+            'task_args': task_args, 'running_time': running_time,
+            'version': self.fn_version, 'task_list': self._task_list
+        }
+        return StartActivity(*self.start_args, **start_kwargs)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['activities']
@@ -225,15 +232,21 @@ class LambdaSignature(Signature):
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
         config = kwargs['configs'][('task', task_type)]
         is_vpc = config.get('is_vpc', False)
+        time_outs = config.get('time_outs', {})
         cls_kwargs = self.generate_signature_status(lambda_identifier, kwargs['lambdas'], **kwargs)
         super().__init__(task_type, version, config, lambda_identifier, task_args, **cls_kwargs)
         self._control = kwargs.get('control', None)
         self._is_vpc = is_vpc
+        self._timeouts = time_outs
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        return StartLambda(*self.start_args, task_args=task_args, control=self._control, is_vpc=self._is_vpc)
+        running_time = self._timeouts.get('running', None)
+        start_kwargs = {
+            'task_args': task_args, 'control': self._control, 'is_vpc': self._is_vpc, 'running_time': running_time
+        }
+        return StartLambda(*self.start_args, **start_kwargs)
 
     def _check_concurrency(self, **kwargs):
         operations = kwargs['lambdas']

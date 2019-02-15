@@ -31,12 +31,14 @@ class Decision:
 class StartLambda(Decision):
     def __init__(self, lambda_id, function_name, task_args=None, **kwargs):
         is_vpc = kwargs['is_vpc']
+        running_time = kwargs.get('running_time', 300)
         lambda_fn_name = os.getenv('LABOR_FUNCTION', 'leech-lambda-labor')
         if is_vpc:
             lambda_fn_name = os.getenv('VPC_LABOR_FUNCTION', 'leech-vpc-labor')
         lambda_attributes = {
             'id': lambda_id,
-            'name': lambda_fn_name
+            'name': lambda_fn_name,
+            'startToCloseTimeout': running_time
         }
         if task_args:
             lambda_attributes['input'] = json.dumps({
@@ -141,13 +143,15 @@ class StartSubtask(Decision):
 
 class StartActivity(Decision):
     def __init__(self, activity_id, activity_name, task_args=None, **kwargs):
+        running_time = kwargs.get('running_time', 300)
         activity_attributes = {
             'activityType': {
                 'name': activity_name,
                 'version': kwargs.get('version', '1')
             },
             'taskList': {'name': kwargs.get('task_list', 'Leech')},
-            'activityId': activity_id
+            'activityId': activity_id,
+            'startToCloseTimeout': running_time
         }
         if task_args:
             activity_attributes['input'] = json.dumps({

@@ -205,7 +205,10 @@
         "task_description": "extract all the remote entries for a given change type for a given emp_id in Credible",
         "task_config": {
           "concurrency": 1,
-          "task_list": "credible"
+          "task_list": "credible",
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
@@ -213,14 +216,20 @@
         "task_description": "if by_emp_id or change_details are needed for a given change_type, extract them",
         "task_config": {
           "concurrency": 1,
-          "task_list": "credible"
+          "task_list": "credible",
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
         "task_name": "pull_schema_entry",
         "task_description": "query and build the leech schema for a given object type",
         "task_config": {
-          "concurrency": 1
+          "concurrency": 1,
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
@@ -243,7 +252,10 @@
         "task_description": "checks potential vertexes against the existing data space and arbitrates the linking and generation of new vertexes",
         "task_config": {
           "concurrency": 1,
-          "task_list": "work_change_action"
+          "task_list": "work_change_action",
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
@@ -251,7 +263,10 @@
         "task_description": "uploads generated vertexes and edges into DynamoDB for indexing",
         "task_config": {
           "concurrency": 1,
-          "task_list": "work_change_action"
+          "task_list": "work_change_action",
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
@@ -260,7 +275,10 @@
         "task_config": {
           "concurrency": 1,
           "task_list": "work_change_action",
-          "is_vpc": true
+          "is_vpc": true,
+          "time_outs": {
+            "running": 300
+          }
         }
       },
       {
