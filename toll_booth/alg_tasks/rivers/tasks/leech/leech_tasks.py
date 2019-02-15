@@ -59,10 +59,10 @@ def assimilate(**kwargs):
 def index(**kwargs):
     from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
-    schema_entry = kwargs['schema_entry']
+    schema = kwargs['schema']
     assimilation_results = kwargs['assimilation']
     source_vertex = kwargs['source_vertex']
-    index_manager = IndexManager.from_graph_schema(schema_entry, **kwargs)
+    index_manager = IndexManager.from_graph_schema(schema, **kwargs)
     index_manager.index_object(source_vertex)
     for entry in assimilation_results:
         index_manager.index_object(entry['edge'])
