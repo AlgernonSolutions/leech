@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException, UniqueIndex, \
     UniqueIndexViolationException, MissingIndexedPropertyException, AttemptedStubIndexException, Index
 from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry
-from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex
 from toll_booth.alg_obj.graph.schemata.schema import Schema
 from toll_booth.alg_obj.serializers import ExplosionDecoder, AlgDecoder
 
@@ -163,6 +163,15 @@ class IndexManager:
             return link_history, link_entry
         raise NotImplementedError(f'could not find link operation for {kwargs}')
 
+    def find_potential_vertexes(self, object_type, vertex_properties):
+        potential_vertexes, token = self._scan_vertexes(object_type, vertex_properties)
+        while token:
+            more_vertexes, token = self._scan_vertexes(object_type, vertex_properties, token)
+            potential_vertexes.extend(more_vertexes)
+        logging.info('completed a scan of the data space to find potential vertexes with properties: %s '
+                     'returned the raw values of: %s' % (vertex_properties, potential_vertexes))
+        return [PotentialVertex.from_json(x) for x in potential_vertexes]
+
     @classmethod
     def _convert_graph_object(cls, graph_object, link_values=None):
         if not graph_object.is_identifiable:
@@ -219,3 +228,28 @@ class IndexManager:
             UpdateExpression="ADD link_entries :le",
             ExpressionAttributeValues={':le': {link_entry.for_index}}
         )
+
+    def _scan_vertexes(self, object_type, vertex_properties, token=None):
+        filter_properties = [f'(begins_with(identifier_stem, :is) OR begins_with(identifier_stem, :stub))']
+        expression_names = {}
+        expression_values = {
+            ':is': f'#vertex#{object_type}#',
+            ':stub': '#vertex#stub#',
+        }
+        pointer = 1
+        for property_name, vertex_property in vertex_properties.items():
+            if hasattr(vertex_property, 'is_missing'):
+                continue
+            filter_properties.append(f'object_properties.#{pointer} = :property{pointer}')
+            expression_names[f'#{pointer}'] = property_name
+            expression_values[f':property{pointer}'] = vertex_property
+            pointer += 1
+        scan_kwargs = {
+            'FilterExpression': ' AND '.join(filter_properties),
+            'ExpressionAttributeNames': expression_names,
+            'ExpressionAttributeValues': expression_values
+        }
+        if token:
+            scan_kwargs['ExclusiveStartKey'] = token
+        results = self._table.scan(**scan_kwargs)
+        return results['Items'], results.get('LastEvaluatedKey', None)

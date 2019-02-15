@@ -37,16 +37,17 @@ def transform(**kwargs):
 @task('assimilate')
 def assimilate(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import EdgeRegulator
-    from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
+    from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
+    schema = kwargs['schema']
     extracted_data = kwargs['extracted_data']
     rule_entry = kwargs['rule_entry']
     source_vertex = kwargs['source_vertex']
     potential_vertex = kwargs['potential_vertex']
-    leech_driver = LeechDriver(**kwargs)
-    assimilation_results = []
-    edge_regulator = EdgeRegulator.get_for_object_type(rule_entry.edge_type)
-    identified_vertexes, exist = _derive_vertexes(potential_vertex, rule_entry, leech_driver)
+    index_manager = IndexManager.from_graph_schema(schema, **kwargs)
+    assimilation_results = [{'vertex': source_vertex}]
+    edge_regulator = EdgeRegulator(schema[rule_entry.edge_type])
+    identified_vertexes, exist = _derive_vertexes(potential_vertex, rule_entry, index_manager)
     for vertex in identified_vertexes:
         edge_args = (source_vertex, potential_vertex, extracted_data, rule_entry.inbound)
         edge = edge_regulator.generate_potential_edge(*edge_args)
@@ -74,8 +75,28 @@ def index(**kwargs):
 def graph(**kwargs):
     from toll_booth.alg_obj.graph.ogm.ogm import Ogm
 
+    vertexes = {}
+    edges = {}
+    assimilation_results = _recurse(kwargs['assimilation'])
+    for result in assimilation_results:
+        vertex, edge = result.get('vertex'), result.get('edge')
+        if vertex:
+            vertexes[vertex.internal_id] = vertex
+        if edge:
+            edges[edge.internal_id] = edge
     ogm = Ogm(**kwargs)
-    raise NotImplementedError('have not done the graph operation you chuckle head')
+    results = ogm.graph_objects(vertexes=vertexes, edges=edges)
+    return {'graph': results}
+
+
+def _recurse(obj):
+    results = []
+    if isinstance(obj, dict):
+        results.append(obj)
+    if isinstance(obj, list):
+        for entry in obj:
+            results.extend(_recurse(entry))
+    return results
 
 
 def _derive_vertexes(potential_vertex, rule_entry, leech_driver):

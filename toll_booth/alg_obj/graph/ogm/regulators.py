@@ -3,6 +3,8 @@ import re
 from collections import OrderedDict
 from decimal import Decimal
 
+import dateutil
+
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.sapper.secrets import SecretWhisperer
 from toll_booth.alg_obj.graph import InternalId
@@ -119,7 +121,13 @@ class ObjectRegulator:
 
     def _create_id_value(self, potential_object):
         try:
-            return potential_object[self._schema_entry.id_value_field]
+            id_value = potential_object[self._schema_entry.id_value_field]
+            vertex_properties = self._schema_entry.vertex_properties
+            id_value_properties = vertex_properties[self._schema_entry.id_value_field]
+            if id_value_properties.property_data_type == 'DateTime':
+                remade_date_value = dateutil.parser.parse(id_value)
+                id_value = remade_date_value.timestamp()
+            return id_value
         except KeyError:
             return self._schema_entry.id_value_field
 
@@ -391,7 +399,8 @@ class GraphObject(AlgObject):
             'internal_id': str(self._internal_id),
             'id_value': self._id_value,
             'object_type': self._object_type,
-            'object_value': json.dumps(self, cls=AlgEncoder)
+            'object_value': json.dumps(self, cls=AlgEncoder),
+            'object_properties': self._object_properties
         }
         return indexed_value
 
