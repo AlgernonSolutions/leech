@@ -64,7 +64,7 @@ class SchemaParer:
         for rule_entry in linking_rules:
             rule_set = VertexLinkRuleSet(
                 rule_entry['vertex_specifiers'],
-                [cls.parse_vertex_rule(x, is_inbound=False) for x in rule_entry['inbound']],
+                [cls.parse_vertex_rule(x, is_inbound=False) for x in rule_entry['outbound']],
                 [cls.parse_vertex_rule(x, is_inbound=True) for x in rule_entry['inbound']]
             )
             vertex_rules.add_rule_set(rule_set)
