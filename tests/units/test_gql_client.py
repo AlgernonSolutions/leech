@@ -66,4 +66,13 @@ class TestGqlClient:
             'username': 'AIDAJ6FECTLRA3JWBFVLU'
         }
         second_results = aphid(second_event, mock_context)
+        third_event = {
+            'source': None,
+            'context': {
+                'token': second_results['page_info']['token']
+            },
+            'object_type': 'EdgeConnection',
+            'username': 'AIDAJ6FECTLRA3JWBFVLU'
+        }
+        third_results = aphid(third_event, mock_context)
         print(second_event)

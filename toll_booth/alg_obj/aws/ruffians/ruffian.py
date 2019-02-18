@@ -5,6 +5,7 @@ from queue import Queue
 from threading import Thread
 
 import boto3
+from botocore.config import Config
 from retrying import retry
 
 from toll_booth.alg_obj.serializers import AlgEncoder
@@ -196,8 +197,13 @@ class Ruffian:
         logging.info(f'task thread started: {kwargs}')
         swf_client = boto3.client('swf')
         task_token = kwargs['poll_response']['taskToken']
-        results = self._fire_task(**kwargs)
         swf_payload = {'taskToken': task_token}
+        try:
+            results = self._fire_task(**kwargs)
+        except Exception as e:
+            swf_payload.update({'reason': e.args[0], 'details': ','.join(e.args)})
+            swf_client.respond_activity_task_failed(**swf_payload)
+            return
         try:
             if results['fail'] is True:
                 swf_payload.update({'reason': results['reason'], 'details': results['details']})
@@ -211,7 +217,7 @@ class Ruffian:
     def _fire_task(self, **kwargs):
         from toll_booth.alg_obj.serializers import AlgDecoder
 
-        client = boto3.client('lambda')
+        client = boto3.client('lambda', config=Config(connect_timeout=600, read_timeout=600))
         task_list = self._work_list['list_name']
         poll_response = kwargs['poll_response']
         task_name = poll_response['activityType']['name']
