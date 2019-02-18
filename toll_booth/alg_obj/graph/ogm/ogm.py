@@ -94,10 +94,12 @@ class OgmReader:
         token_json = {
             'username': kwargs['username'],
             'token': function_args.get('token', None),
+            'context': function_args,
+            'source': source,
             'page_size': function_args.get('page_size', 10)
         }
         token = function_args.get('pagination_token', PaginationToken.from_json(token_json))
-        internal_id = source['internal_id']
+        internal_id = token.source.get('internal_id', token.context.get('internal_id'))
         edges, more = self._get_connected_edges(internal_id, token, function_args)
         token.increment()
         return TridentEdgeConnection(edges, token, more)

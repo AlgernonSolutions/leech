@@ -318,9 +318,11 @@ def mock_context():
 def silence_x_ray():
     patch(patches.x_ray_patch_begin).start()
     patch(patches.x_ray_patch_end).start()
+    patch(patches.x_ray_patch_all).start()
     yield
     patch(patches.x_ray_patch_begin).stop()
     patch(patches.x_ray_patch_end).stop()
+    patch(patches.x_ray_patch_all).stop()
 
 
 @pytest.fixture

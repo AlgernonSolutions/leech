@@ -8,5 +8,5 @@ def generate_signed_url(bucket_name, file_key):
 
 if __name__ == '__main__':
     target_bucket_name = 'algernonsolutions-leech'
-    target_file_key = 'PSI/PSITxPlan_20190211.xlsx'
+    target_file_key = 'ICFS/ICFS_master_report_20180215.xlsx'
     print(generate_signed_url(target_bucket_name, target_file_key))
