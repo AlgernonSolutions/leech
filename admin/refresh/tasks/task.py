@@ -101,10 +101,10 @@ def _create_activity(domain_name, task_config, version='1'):
         'name': task_config['task_name'],
         'version': str(version),
         'description': task_config['task_description'],
-        'defaultTaskStartToCloseTimeout': time_outs.get('running', _defaults['task_run_timeout']),
-        'defaultTaskHeartbeatTimeout': time_outs.get('heartbeat', _defaults['task_heart_timeout']),
-        'defaultTaskScheduleToStartTimeout': time_outs.get('waiting', _defaults['task_waiting_timeout']),
-        'defaultTaskScheduleToCloseTimeout': time_outs.get('total', _defaults['task_total_timeout']),
+        'defaultTaskStartToCloseTimeout': str(time_outs.get('running', _defaults['task_run_timeout'])),
+        'defaultTaskHeartbeatTimeout': str(time_outs.get('heartbeat', _defaults['task_heart_timeout'])),
+        'defaultTaskScheduleToStartTimeout': str(time_outs.get('waiting', _defaults['task_waiting_timeout'])),
+        'defaultTaskScheduleToCloseTimeout': str(time_outs.get('total', _defaults['task_total_timeout'])),
     }
     if config.get('task_list', None):
         register_args['defaultTaskList'] = {'name': config['task_list']}

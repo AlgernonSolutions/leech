@@ -215,6 +215,56 @@ def build_mapping(**kwargs):
     return {'mapping': object_mapping}
 
 
+@xray_recorder.capture('batch_generate_remote_id_change_data')
+@task('batch_generate_remote_id_change_data')
+def batch_generate_remote_id_change_data(**kwargs):
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+
+    change_data = []
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+    remote_changes = kwargs['remote_changes']
+    changelog_types = kwargs['changelog_types']
+    action_id = kwargs['action_id']
+    change_action = changelog_types[str(action_id)]
+    enriched_data = kwargs['enriched_data']
+    id_source = driving_identifier_stem.get('id_source')
+    for remote_change in remote_changes:
+        change_date_utc = remote_change['UTCDate']
+        by_emp_id = enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
+        extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
+
+        source_data = {
+            'change_date_utc': extracted_data['change_date_utc'],
+            'change_description': extracted_data['change_description'],
+            'change_date': extracted_data['change_date'],
+            'action': extracted_data['action'],
+            'action_id': str(action_id),
+            'id_source': id_source,
+            'id_type': 'ChangeLog',
+            'id_name': 'change_date_utc',
+            'by_emp_id': by_emp_id
+        }
+        returned_data = {
+            'source': source_data,
+            'by_emp_id_target': [{
+                'id_source': id_source,
+                'id_type': 'Employees',
+                'id_value': by_emp_id
+            }],
+            'change_target': [],
+            'changed_target': []
+        }
+        changed_targets = _build_changed_targets(id_source, extracted_data, change_action)
+        if changed_targets:
+            returned_data['changed_target'].extend(changed_targets)
+        change_details = enriched_data.get('change_detail', {})
+        change_detail_target = change_details.get(change_date_utc, None)
+        if change_detail_target is not None:
+            returned_data['change_target'].extend(change_detail_target)
+        change_data.append(returned_data)
+    return {'change_data': change_data}
+
+
 @xray_recorder.capture('generate_remote_id_change_data')
 @task('generate_remote_id_change_data')
 def generate_remote_id_change_data(**kwargs):

@@ -282,6 +282,14 @@
         }
       },
       {
+        "task_name": "batch_generate_remote_id_change_data",
+        "task_description": "batch collects and formats the extracted data into a standard format recognizable by the Leech",
+        "task_config": {
+          "concurrency": 1,
+          "task_list": "work_change_action"
+        }
+      },
+      {
         "task_name": "generate_remote_id_change_data",
         "task_description": "collects and formats the extracted data into a standard format recognizable by the Leech",
         "task_config": {
