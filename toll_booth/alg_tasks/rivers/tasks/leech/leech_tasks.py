@@ -58,7 +58,7 @@ def assimilate(**kwargs):
         for vertex in identified_vertexes:
             edge_args = (source_vertex, potential_vertex, extracted_data, rule_entry.inbound)
             edge = edge_regulator.generate_potential_edge(*edge_args)
-            entry_results.append({'edge': edge, 'vertex': vertex})
+            entry_results.append({'edge': edge, 'vertex': vertex, 'source_vertex': source_vertex})
         assimilation_results.append(entry_results)
     return {'assimilation': assimilation_results}
 
