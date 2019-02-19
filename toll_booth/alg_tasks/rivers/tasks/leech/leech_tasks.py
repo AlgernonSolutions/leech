@@ -34,7 +34,7 @@ def transform(**kwargs):
         source_vertex = vertex_regulator.create_potential_vertex(entry['source'])
         arbiter = RuleArbiter(source_vertex, schema, schema_entry)
         potentials = arbiter.process_rules(entry)
-        transform_results.append({'potentials': potentials, 'source_vertex': source_vertex})
+        transform_results.append({'potentials': potentials, 'source_vertex': source_vertex, 'extracted_data': entry})
     return {'transform': transform_results}
 
 
@@ -45,18 +45,21 @@ def assimilate(**kwargs):
     from toll_booth.alg_obj.graph.index_manager.index_manager import IndexManager
 
     schema = kwargs['schema']
-    extracted_data = kwargs['extracted_data']
-    rule_entry = kwargs['rule_entry']
-    source_vertex = kwargs['source_vertex']
-    potential_vertex = kwargs['potential_vertex']
     index_manager = IndexManager.from_graph_schema(schema, **kwargs)
-    assimilation_results = [{'vertex': source_vertex}]
-    edge_regulator = EdgeRegulator(schema[rule_entry.edge_type])
-    identified_vertexes, exist = _derive_vertexes(potential_vertex, rule_entry, index_manager)
-    for vertex in identified_vertexes:
-        edge_args = (source_vertex, potential_vertex, extracted_data, rule_entry.inbound)
-        edge = edge_regulator.generate_potential_edge(*edge_args)
-        assimilation_results.append({'edge': edge, 'vertex': vertex})
+    assimilation_results = []
+    for entry in kwargs['assimilation']:
+        rule_entry = entry['rule_entry']
+        source_vertex = entry['source_vertex']
+        potential_vertex = entry['potential_vertex']
+        extracted_data = entry['extracted_data']
+        entry_results = [{'vertex': source_vertex}]
+        edge_regulator = EdgeRegulator(schema[rule_entry.edge_type])
+        identified_vertexes, exist = _derive_vertexes(potential_vertex, rule_entry, index_manager)
+        for vertex in identified_vertexes:
+            edge_args = (source_vertex, potential_vertex, extracted_data, rule_entry.inbound)
+            edge = edge_regulator.generate_potential_edge(*edge_args)
+            entry_results.append({'edge': edge, 'vertex': vertex})
+        assimilation_results.append(entry_results)
     return {'assimilation': assimilation_results}
 
 
