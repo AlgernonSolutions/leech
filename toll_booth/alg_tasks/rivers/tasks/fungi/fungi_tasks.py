@@ -381,15 +381,16 @@ def _calculate_change_log_identifier_stem(extracted_data):
 
 
 def _build_remote_id_extractor(**kwargs):
-    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
-    from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
     driving_identifier_stem = kwargs['driving_identifier_stem']
+    schema = kwargs['schema']
     driving_identifier_stem = IdentifierStem.from_raw(driving_identifier_stem)
-    schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
-    leech_driver = LeechDriver(table_name=kwargs.get('table_name', 'VdGraphObjects'))
-    extractor_setup = leech_driver.get_extractor_setup(driving_identifier_stem)
+    schema_entry = schema[driving_identifier_stem.object_type]
+    extractor_setup = {
+        'id_type': driving_identifier_stem.get('id_type'),
+        'type': 'CredibleFrontEndExtractor'
+    }
     extractor_setup.update(driving_identifier_stem.for_extractor)
     extractor_setup.update(schema_entry.extract[extractor_setup['type']].extraction_properties)
     return extractor_setup
