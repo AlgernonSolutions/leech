@@ -25,14 +25,17 @@ def transform(**kwargs):
 
     from toll_booth.alg_obj.graph.ogm.regulators import VertexRegulator
 
+    transform_results = []
     schema_entry = kwargs['schema_entry']
     schema = kwargs['schema']
     extracted_data = kwargs['extracted_data']
     vertex_regulator = VertexRegulator(schema_entry)
-    source_vertex = vertex_regulator.create_potential_vertex(extracted_data['source'])
-    arbiter = RuleArbiter(source_vertex, schema, schema_entry)
-    potentials = arbiter.process_rules(extracted_data)
-    return {'potentials': potentials, 'source_vertex': source_vertex}
+    for entry in extracted_data:
+        source_vertex = vertex_regulator.create_potential_vertex(entry['source'])
+        arbiter = RuleArbiter(source_vertex, schema, schema_entry)
+        potentials = arbiter.process_rules(entry)
+        transform_results.append({'potentials': potentials, 'source_vertex': source_vertex})
+    return {'transform': transform_results}
 
 
 @xray_recorder.capture('assimilate')

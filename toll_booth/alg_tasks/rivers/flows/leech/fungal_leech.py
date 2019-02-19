@@ -42,15 +42,27 @@ def _build_transform_signature(**kwargs):
 
 # @xray_recorder.capture('fungal_leech_build_assimilate_signature')
 def _build_assimilate_group(task_args, **kwargs):
+    batch_size = 100
     signatures = []
     execution_id = kwargs['execution_id']
     task_name = 'assimilate'
-    potentials = task_args.get_argument_value('potentials')
-    source_vertex = task_args.get_argument_value('source_vertex')
-    for potential in potentials:
-        new_arg = {'rule_entry': potential[1], 'potential_vertex': potential[0], 'source_vertex': source_vertex}
-        task_identifier = f'assimilate-[{str(potential[1])}]-[{str(potential[0])}]-{execution_id}'
-        new_task_args = task_args.replace_argument_value(task_name, new_arg, task_identifier)
+    transform_results = task_args.get_argument_value('transform')
+    batches = []
+    batch = []
+    for transform_result in transform_results:
+        potentials = transform_result['potentials']
+        source_vertex = transform_result['source_vertex']
+        for potential in potentials:
+            if len(batch) > batch_size:
+                batches.append(batch)
+                batch = []
+            new_arg = {'rule_entry': potential[1], 'potential_vertex': potential[0], 'source_vertex': source_vertex}
+            batch.append(new_arg)
+    if batch:
+        batches.append(batch)
+    for batch in batches:
+        task_identifier = f'assimilate-{batches.index(batch)}-{execution_id}'
+        new_task_args = task_args.replace_argument_value(task_name, batch, task_identifier)
         signature = ActivitySignature(task_identifier, task_name, task_args=new_task_args, **kwargs)
         signatures.append(signature)
     tuple_signatures = tuple(signatures)
