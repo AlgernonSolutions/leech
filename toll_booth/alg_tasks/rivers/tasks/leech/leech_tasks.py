@@ -71,13 +71,7 @@ def index(**kwargs):
 
     schema = kwargs['schema']
     vertexes, edges = _standardize_assimilation_results(**kwargs)
-    source_vertex = kwargs['source_vertex']
     index_manager = IndexManager.from_graph_schema(schema, **kwargs)
-    try:
-        index_manager.index_object(source_vertex)
-    except UniqueIndexViolationException as e:
-        logging.warning(
-            f'vertex {source_vertex} has already been set to the index, so violated {e.index_name}, just so you know')
     for edge in edges:
         try:
             index_manager.index_object(edge)
