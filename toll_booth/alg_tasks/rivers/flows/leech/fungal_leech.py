@@ -52,11 +52,17 @@ def _build_assimilate_group(task_args, **kwargs):
     for transform_result in transform_results:
         potentials = transform_result['potentials']
         source_vertex = transform_result['source_vertex']
+        extracted_data = transform_result['extracted_data']
         for potential in potentials:
             if len(batch) > batch_size:
                 batches.append(batch)
                 batch = []
-            new_arg = {'rule_entry': potential[1], 'potential_vertex': potential[0], 'source_vertex': source_vertex}
+            new_arg = {
+                'rule_entry': potential[1],
+                'potential_vertex': potential[0],
+                'source_vertex': source_vertex,
+                'extracted_data': extracted_data
+            }
             batch.append(new_arg)
     if batch:
         batches.append(batch)
