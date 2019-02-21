@@ -34,7 +34,7 @@ def get_local_max_change_type_value(**kwargs):
 def pull_change_types(**kwargs):
     from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
 
-    change_types = ChangeTypes.get(**kwargs)
+    change_types = ChangeTypes.retrieve(**kwargs)
     return {'changelog_types': change_types}
 
 

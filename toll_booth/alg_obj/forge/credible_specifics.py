@@ -3,7 +3,8 @@ from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
 class ChangeType(AlgObject):
-    def __init__(self, category_id, category, action_id, action, id_type, id_name, has_details, is_static):
+    def __init__(self, category_id, category, action_id, action, id_type, id_name, has_details, **kwargs):
+        is_static = kwargs.get('is_static', False)
         self._category_id = category_id
         self._category = category
         self._action_id = action_id
@@ -22,7 +23,7 @@ class ChangeType(AlgObject):
     def parse_json(cls, json_dict):
         return cls(
             json_dict['category_id'], json_dict['category'], json_dict['action_id'], json_dict['action'],
-            json_dict['id_type'], json_dict['id_name'], json_dict['has_details'], json_dict['is_static']
+            json_dict['id_type'], json_dict['id_name'], json_dict['has_details'], is_static=json_dict.get('is_static')
         )
 
     @property
@@ -140,19 +141,17 @@ class ChangeTypes(AlgObject):
         self._change_types = change_types
 
     @classmethod
-    def get(cls, **kwargs):
-        from toll_booth.alg_obj.aws.sapper.leech_driver import LeechDriver
+    def retrieve(cls, **kwargs):
+        from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
+
+        snek = SchemaSnek(**kwargs)
         change_types = {}
-        leech_driver = kwargs.get('leech_driver', LeechDriver(**kwargs))
-        change_type_data = leech_driver.get_changelog_types()
-        for category_name, entries in change_type_data.items():
-            for entry in entries:
-                paired_identifiers = entry['identifier_stem'].paired_identifiers
-                paired_identifiers['id_type'] = entry['id_type']
-                paired_identifiers['id_name'] = entry['id_name']
-                paired_identifiers['is_static'] = entry['is_static']
-                change_type = ChangeType(**paired_identifiers)
-                change_types[change_type.action_id] = change_type
+        change_type_data = snek.get_schema('change_types.json')
+        for entry in change_type_data:
+            entry['category'] = entry['change_category']
+            entry['action'] = entry['change_action']
+            change_type = ChangeType(**entry)
+            change_types[change_type.action_id] = change_type
         return cls(change_types)
 
     @classmethod

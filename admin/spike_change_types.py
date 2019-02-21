@@ -1,3 +1,5 @@
+import json
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -33,13 +35,13 @@ def spike():
             new_item = {
                 'sid_value': identifier_stem.for_dynamo,
                 'identifier_stem': str(identifier_stem),
-                'change_category': entry.retrieve('category_name', None),
-                'change_action': entry.retrieve('action', None),
-                'has_details': entry.retrieve('has_details', None),
-                'category_id': entry.retrieve('category_id'),
-                'action_id': entry.retrieve('changelogtype_id'),
-                'id_name': entry.retrieve('primarykey_name'),
-                'id_type': entry.retrieve('record_type')
+                'change_category': entry.get('category_name', None),
+                'change_action': entry.get('action', None),
+                'has_details': entry.get('has_details', None),
+                'category_id': entry.get('category_id'),
+                'action_id': entry.get('changelogtype_id'),
+                'id_name': entry.get('primarykey_name'),
+                'id_type': entry.get('record_type')
             }
             if new_item['change_action'] == '':
                 new_item['change_action'] = 'unspecified'
@@ -54,5 +56,51 @@ def spike():
     print()
 
 
+def generate_json():
+    results = []
+    sql = '''
+           SELECT
+               clt.changelogtype_id,
+               clc.category_id,
+               clt.action,
+               clt.has_details,
+               clc.category_name,
+               clt.record_type,
+               clt.primarykey_name
+           FROM ChangeLogType as clt
+           INNER JOIN ChangeLogCategory as clc ON clt.category_id = clc.category_id
+           '''
+    credible_report = CredibleReport.from_sql('MBI', sql)
+    for id_value, entry in credible_report.items():
+        pairs = {
+            'category': entry['category_name'],
+            'category_id': entry['category_id'],
+            'action_id': entry['changelogtype_id'],
+            'action': entry['action'],
+            'has_details': entry['has_details']
+        }
+        identifier_stem = IdentifierStem('vertex', 'ChangeLogType', pairs)
+        new_item = {
+            'sid_value': identifier_stem.for_dynamo,
+            'identifier_stem': str(identifier_stem),
+            'change_category': entry.get('category_name', None),
+            'change_action': entry.get('action', None),
+            'has_details': entry.get('has_details', None),
+            'category_id': entry.get('category_id'),
+            'action_id': entry.get('changelogtype_id'),
+            'id_name': entry.get('primarykey_name'),
+            'id_type': entry.get('record_type')
+        }
+        if new_item['change_action'] == '':
+            new_item['change_action'] = 'unspecified'
+        if new_item['id_name'] == '':
+            new_item['id_name'] = 'unspecified'
+        if new_item['id_type'] == '':
+            new_item['id_type'] = 'unspecified'
+        results.append(new_item)
+    string_json = json.dumps(results)
+    print(string_json)
+
+
 if __name__ == '__main__':
-    spike()
+    generate_json()
