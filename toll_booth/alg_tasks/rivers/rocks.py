@@ -110,6 +110,7 @@ def workflow(workflow_name):
                 except AttributeError:
                     pass
                 decisions.add_decision(decision)
+            logging.info(f'sending the following decisions: {decisions.decisions}')
             client.respond_decision_task_completed(**decisions.for_commit)
             return results
         return wrapper
