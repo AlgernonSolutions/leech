@@ -233,7 +233,10 @@ class CredibleMuleTeam:
 
     def _parse_emp_id_search(self, **kwargs):
         results = kwargs['results']
-        possible_employees = CredibleCsvParser.parse_csv_response(results)
+        try:
+            possible_employees = CredibleCsvParser.parse_csv_response(results)
+        except RuntimeError:
+            possible_employees = []
         emp_id = None
         if len(possible_employees) == 1:
             for entry in possible_employees:
