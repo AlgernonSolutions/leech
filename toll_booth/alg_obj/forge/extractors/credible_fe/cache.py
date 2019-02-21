@@ -49,8 +49,8 @@ class PromiseToken(AlgObject):
     def __int__(self):
         try:
             return int(self._callback(self._timestamp))
-        except ValueError:
-            print()
+        except ValueError as e:
+            raise e
 
     @classmethod
     def parse_json(cls, json_dict):

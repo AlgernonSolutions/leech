@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from aws_xray_sdk.core import xray_recorder
 
@@ -356,11 +356,16 @@ def _build_changed_targets(id_source, extracted_data, change_type):
             id_type = change_type.id_type
         if id_type not in ['ClientVisit', 'Clients', 'unspecified']:
             id_name = change_type.id_name
+            record_id = record['record_id']
+            try:
+                record_id = Decimal(record_id)
+            except InvalidOperation:
+                pass
             changed_target.append({
                 'id_source': id_source,
                 'id_type': id_type,
                 'id_name': id_name,
-                'id_value': Decimal(record['record_id']),
+                'id_value': record_id,
                 'change_date_utc': change_date_utc
             })
         if id_type == 'unspecified':

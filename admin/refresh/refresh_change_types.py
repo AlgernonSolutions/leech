@@ -31,4 +31,3 @@ def get_test():
 if __name__ == '__main__':
     set_logging()
     refresh()
-    get_test()
