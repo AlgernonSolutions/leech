@@ -15,7 +15,7 @@ def add_data_source_vertex(id_source, **kwargs):
 
 
 if __name__ == '__main__':
-    id_source = 'MBI'
+    id_source = 'ICFS'
     os.environ['GRAPH_DB_ENDPOINT'] = 'algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com'
     os.environ['GRAPH_DB_READER_ENDPOINT'] = 'algernon.cluster-ro-cnv3iqiknsnm.us-east'
     add_data_source_vertex(id_source)

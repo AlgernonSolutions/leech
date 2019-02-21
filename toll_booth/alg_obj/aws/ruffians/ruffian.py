@@ -234,6 +234,17 @@ class Ruffian:
             Payload=task_args
         )
         raw_result = response['Payload'].read().decode()
-        results = json.loads(json.loads(raw_result), cls=AlgDecoder)
+        try:
+            results = json.loads(json.loads(raw_result), cls=AlgDecoder)
+        except TypeError as e:
+            results = {
+                'fail': True
+            }
+            if 'errorMessage' in raw_result:
+                results['reason'] = 'lambda_error'
+                results['details'] = raw_result['errorMessage']
+                return results
+            logging.error(e.args[0])
+            raise RuntimeError()
         logging.info(f'got the results from controlled activity {task_name} back: {results}')
         return results
