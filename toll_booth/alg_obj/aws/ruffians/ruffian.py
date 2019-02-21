@@ -242,7 +242,7 @@ class Ruffian:
             }
             if 'errorMessage' in raw_result:
                 results['reason'] = 'lambda_error'
-                results['details'] = raw_result['errorMessage']
+                results['details'] = raw_result
                 return results
             logging.error(e.args[0])
             raise RuntimeError()

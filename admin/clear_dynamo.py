@@ -30,10 +30,15 @@ def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
 
 if __name__ == '__main__':
     set_logging()
-    emp_identifier_string = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
-    edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
-    strings = [emp_identifier_string, edge_identifier_string]
-    for entry in strings:
+    icfs_emp_identifier_string = '#vertex#ExternalId#{\"id_source\": \"ICFS\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    mbi_emp_identifier_string = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    icfs_edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"ICFS\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    mbi_edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
+    blank_edge_identifier_string = '#edge#_by_emp_id_#{}#'
+    icfs_strings = [icfs_emp_identifier_string, icfs_edge_identifier_string]
+    mbi_string = [mbi_emp_identifier_string, mbi_edge_identifier_string]
+    blank_strings = [blank_edge_identifier_string]
+    for entry in blank_strings:
         target_identifier_stem = IdentifierStem.from_raw(entry)
         logging.info(f'started a clear dynamo identifier stem operation: {target_identifier_stem}')
         clear_dynamo_identifier_stem(target_identifier_stem)
