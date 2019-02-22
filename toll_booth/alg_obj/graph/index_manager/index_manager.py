@@ -221,8 +221,8 @@ class IndexManager:
     def _perform_link_operation(self, link_history: LinkHistory, link_entry: LinkEntry):
         hash_key_name, partition_key_name = self._object_index.indexed_fields
         key_value = {
-            partition_key_name: str(link_history.identifier_stem),
-            hash_key_name: str(link_history.id_value)
+            partition_key_name: str(link_history.potential_vertex.identifier_stem),
+            hash_key_name: str(link_history.potential_vertex.id_value)
         }
         self._table.update_item(
             Key=key_value,

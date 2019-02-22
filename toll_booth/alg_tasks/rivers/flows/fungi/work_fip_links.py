@@ -34,10 +34,12 @@ def _build_index_group(task_args, **kwargs):
     local_id_values = task_args.get_argument_value('local_id_values')
     remote_id_values = task_args.get_argument_value('remote_id_values')
     local_linked_values = local_id_values['linked']
+    new_ids = remote_id_values - local_id_values['all']
+    newly_linked_ids = (remote_id_values - local_linked_values) - new_ids
     operations = [
         ('unlink_old_ids', local_linked_values - remote_id_values),
-        ('link_new_ids', remote_id_values - local_linked_values),
-        ('put_new_ids', remote_id_values - local_id_values['all']),
+        ('link_new_ids', newly_linked_ids),
+        ('put_new_ids', new_ids),
     ]
     for operation in operations:
         operation_name = operation[0]
