@@ -13,7 +13,7 @@ def refresh():
     logging.info('going to refresh the remote change type files')
     admin_file_name = os.path.dirname(__file__)
     admin_directory = os.path.dirname(admin_file_name)
-    schema_file_path = os.path.join(admin_directory, 'starters', 'change_types.json')
+    schema_file_path = os.path.join(admin_directory, 'starters', 'fip_change_types.json')
     snek = SchemaSnek()
     snek.put_schema(schema_file_path, schema_name='change_types.json')
     logging.info('completed the update of the remote change type files')

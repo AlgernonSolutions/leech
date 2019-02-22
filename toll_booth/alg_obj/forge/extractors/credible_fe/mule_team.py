@@ -152,38 +152,37 @@ class CredibleMuleTeam:
     def _strain_emp_ids(self, **kwargs):
         table_rows = kwargs['results']
         for row in table_rows:
-            if 'style' in row.attrs:
-                utc_change_date_string = row.contents[15].string
-                try:
-                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
-                except ValueError:
-                    utc_change_date_string = f'{utc_change_date_string} 12:00:00 AM'
-                    change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
-                change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
-                utc_timestamp = change_date_utc.timestamp()
-                done_by_entry = row.contents[9]
-                done_by_name = done_by_entry.string
-                try:
-                    matches = self._name_pattern.search(done_by_name)
-                except TypeError:
-                    raise RuntimeError()
-                last_name = matches.group('last_name')
-                first_initial = matches.group('first_initial')
-                emp_id = self._cached_emp_ids.get_emp_id(last_name, first_initial, utc_timestamp)
-                if emp_id is None:
-                    emp_id_kwargs = kwargs.copy()
-                    del(emp_id_kwargs['results'])
-                    self._cached_emp_ids.mark_emp_id_working(last_name, first_initial, utc_timestamp)
-                    emp_id_kwargs['last_name'] = last_name
-                    emp_id_kwargs['first_initial'] = first_initial
-                    emp_id_kwargs['change_date_utc'] = utc_timestamp
-                    logging.debug('calling for a search employees operation')
-                    self._work.put({
-                        'fn_name': '_search_employees',
-                        'fn_kwargs': emp_id_kwargs
-                    })
-                    continue
-                self._results.append({'emp_ids': {utc_timestamp: emp_id}})
+            utc_change_date_string = row.contents[15].string
+            try:
+                change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+            except ValueError:
+                utc_change_date_string = f'{utc_change_date_string} 12:00:00 AM'
+                change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
+            change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
+            utc_timestamp = change_date_utc.timestamp()
+            done_by_entry = row.contents[9]
+            done_by_name = done_by_entry.string
+            try:
+                matches = self._name_pattern.search(done_by_name)
+            except TypeError:
+                raise RuntimeError()
+            last_name = matches.group('last_name')
+            first_initial = matches.group('first_initial')
+            emp_id = self._cached_emp_ids.get_emp_id(last_name, first_initial, utc_timestamp)
+            if emp_id is None:
+                emp_id_kwargs = kwargs.copy()
+                del(emp_id_kwargs['results'])
+                self._cached_emp_ids.mark_emp_id_working(last_name, first_initial, utc_timestamp)
+                emp_id_kwargs['last_name'] = last_name
+                emp_id_kwargs['first_initial'] = first_initial
+                emp_id_kwargs['change_date_utc'] = utc_timestamp
+                logging.debug('calling for a search employees operation')
+                self._work.put({
+                    'fn_name': '_search_employees',
+                    'fn_kwargs': emp_id_kwargs
+                })
+                continue
+            self._results.append({'emp_ids': {utc_timestamp: emp_id}})
         page_number = kwargs.get('page_number', 1)
         emp_task_name = f'strain_emp_ids_{page_number}'
         del(self._score_board[emp_task_name])
