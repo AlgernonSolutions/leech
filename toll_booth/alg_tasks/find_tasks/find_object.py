@@ -31,5 +31,7 @@ def _derive_resolver(source, function_args, object_type, object_property, ogm):
         return ogm.get_vertex
     if object_type == 'EdgeConnection':
         return ogm.get_edge_connection
+    if object_type == 'Vertexes':
+        return ogm.find_vertexes
     raise NotImplementedError(f'could not find any matching resolves for '
                               f'source: {source}, functions_args: {function_args}')

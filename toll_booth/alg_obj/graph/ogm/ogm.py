@@ -1,3 +1,4 @@
+import json
 import logging
 
 from toll_booth.alg_obj.aws.trident.graph_driver import TridentDriver
@@ -71,10 +72,7 @@ class OgmReader:
 
     def get_vertex(self, source, function_args, **kwargs):
         internal_id = function_args.get('internal_id', source.get('internal_id'))
-        query = f'g.V("{internal_id}")'
-        results = self._trident_driver.execute(query, True)
-        for result in results:
-            return result
+        return self._get_vertex_by_internal_id(internal_id)
 
     def get_vertex_properties(self,  source, function_args, **kwargs):
         name_filters = function_args.get('property_names', [])
@@ -90,6 +88,18 @@ class OgmReader:
             return []
         return [y[0] for x, y in results[0].items()]
 
+    def find_vertexes(self, source, function_args, **kwargs):
+        internal_id = function_args.get('internal_id', source.get('internal_id'))
+        identifier_stem = function_args.get('identifier_stem', source.get('identifier_stem'))
+        sid_value = function_args.get('sid_value', source.get('sid_value'))
+        vertex_properties = function_args.get('vertex_properties', source.get('vertex_properties'))
+        if vertex_properties:
+            vertex_properties = json.loads(vertex_properties)
+        if internal_id:
+            vertex = self._get_vertex_by_internal_id(internal_id)
+            return [vertex]
+        return self._find_vertexes_by_identifiers(identifier_stem, sid_value, vertex_properties)
+
     def get_edge_connection(self, source, function_args, **kwargs):
         token_json = {
             'username': kwargs['username'],
@@ -104,6 +114,25 @@ class OgmReader:
         token.increment()
         return TridentEdgeConnection(edges, token, more)
 
+    def _find_vertexes_by_identifiers(self, identifier_stem=None, sid_value=None, vertex_properties=None):
+        if not vertex_properties:
+            vertex_properties = {}
+        query = f'g.V()'
+        if identifier_stem:
+            query += f".has('identifier_stem', '{identifier_stem}')"
+        if sid_value:
+            query += f".has('sid_value', '{sid_value}')"
+        if vertex_properties:
+            property_queries = ''.join([self._generate_property_query(x, y) for x, y in vertex_properties.items()])
+            query += property_queries
+        return self._trident_driver.execute(query, read_only=True)
+
+    def _get_vertex_by_internal_id(self, internal_id):
+        query = f'g.V("{internal_id}")'
+        results = self._trident_driver.execute(query, True)
+        for result in results:
+            return result
+
     def _get_connected_edges(self, internal_id, pagination_token, function_args):
         edge_labels = function_args.get('edge_labels', [])
         inclusive_start = pagination_token.inclusive_start
@@ -116,6 +145,11 @@ class OgmReader:
         returned_edges = edges[0:(exclusive_end-inclusive_start)]
         more = len(edges) > len(returned_edges)
         return self.sort_edges(internal_id, returned_edges), more
+
+    @classmethod
+    def _generate_property_query(cls, property_name, property_value):
+        return f".has('{property_name}', '{property_value}')"
+
 
     @classmethod
     def sort_edges(cls, internal_id, unsorted_edges):
