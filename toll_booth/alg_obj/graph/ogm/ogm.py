@@ -93,8 +93,6 @@ class OgmReader:
         identifier_stem = function_args.get('identifier_stem', source.get('identifier_stem'))
         sid_value = function_args.get('sid_value', source.get('sid_value'))
         vertex_properties = function_args.get('vertex_properties', source.get('vertex_properties'))
-        if vertex_properties:
-            vertex_properties = json.loads(vertex_properties)
         if internal_id:
             vertex = self._get_vertex_by_internal_id(internal_id)
             return [vertex]
