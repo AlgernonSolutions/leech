@@ -34,8 +34,8 @@ def work_remote_id_change_action(**kwargs):
     if chain_results is None:
         return
     fungal_leech = _build_fungal_leech(**kwargs)
-    leech_results = fungal_leech(**kwargs)
-    if leech_results is None:
+    fungal_leech(**kwargs)
+    if not fungal_leech.is_complete:
         return
     decisions.append(CompleteWork())
 
