@@ -180,7 +180,7 @@ def get_enrichment_for_change_action(**kwargs):
     change_action = changelog_types[str(action_id)]
     category_id = changelog_types.get_category_id_from_action_id(str(action_id))
     if change_action.is_static and change_action.has_details is False:
-        empty_data = {'change_detail': {}, 'emp_ids': {}}
+        empty_data = {'change_detail': {}, 'by_emp_ids': {}, 'client_ids': {}}
         return {'enriched_data': empty_data}
     mule_team = CredibleMuleTeam(id_source)
     enrichment_args = {
@@ -191,7 +191,8 @@ def get_enrichment_for_change_action(**kwargs):
         'category_id': category_id,
         'action_id': int(action_id),
         'get_details': change_action.has_details is True,
-        'get_emp_ids': change_action.is_static is False,
+        'get_by_emp_ids': change_action.is_static is False,
+        'get_client_ids': change_action.has_client_entity,
         'checked_emp_ids': None
     }
     enriched_data = mule_team.enrich_data(**enrichment_args)
@@ -230,7 +231,7 @@ def batch_generate_remote_id_change_data(**kwargs):
     id_source = driving_identifier_stem.get('id_source')
     for remote_change in remote_changes:
         change_date_utc = remote_change['UTCDate']
-        by_emp_id = enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
+        by_emp_id = enriched_data['by_emp_ids'].get(change_date_utc, kwargs['id_value'])
         extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
 
         source_data = {

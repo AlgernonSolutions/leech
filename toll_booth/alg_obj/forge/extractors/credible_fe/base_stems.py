@@ -5,5 +5,6 @@ URL_STEMS = {
     'DataDict': '/common/hipaalog_datadict.asp',
     'ChangeDetail': '/common/hipaalog_details.asp',
     'Employee Advanced': '/employee/list_emps_adv.asp',
+    'Clients Advanced': '/clients/list_clients_adv.asp',
     'Global': '/admin/global_hipaalog.aspx'
 }

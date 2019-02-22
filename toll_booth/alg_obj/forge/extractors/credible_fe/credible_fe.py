@@ -476,6 +476,24 @@ class CredibleFrontEndDriver:
         response = self._session.post(url, data=data)
         return response.text
 
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
+    def retrieve_client_id_search(self, url, last_name, first_initial):
+        data = {
+            'submitform': 'true',
+            'btn_export': ' Export ',
+            'wh_fld1': 'c.last_name',
+            'wh_cmp1': 'LIKE',
+            'wh_val1': f'*{last_name}*',
+            'wh_andor': 'AND',
+            'wh_fld2': 'c.first_name',
+            'wh_cmp2': 'LIKE',
+            'wh_val2': f'{first_initial}*',
+            'client_id': 1
+        }
+        response = self._session.post(url, data=data)
+        return response.text
+
     def _strain_emp_ids(self, table_rows, cached_emp_ids):
         name_pattern = re.compile("(?P<last_name>\w+),\s+(?P<first_initial>\w)")
         emp_ids = {}
