@@ -5,7 +5,7 @@ from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 class ChangeType(AlgObject):
     def __init__(self, category_id, category, action_id, action, id_type, id_name, has_details, **kwargs):
         is_static = kwargs.get('is_static', False)
-        has_client_entity = kwargs.get('has_client_entity')
+        entity_type = kwargs.get('entity_type')
         self._category_id = category_id
         self._category = category
         self._action_id = action_id
@@ -14,7 +14,7 @@ class ChangeType(AlgObject):
         self._id_name = id_name
         self._has_details = has_details
         self._is_static = is_static
-        self._has_client_entity = has_client_entity
+        self._entity_type = entity_type
 
     @classmethod
     def get_from_change_identifier(cls, change_identifier):
@@ -61,8 +61,16 @@ class ChangeType(AlgObject):
         return self._is_static
 
     @property
+    def entity_type(self):
+        return self._entity_type
+
+    @property
     def has_client_entity(self):
-        return self._has_client_entity
+        return self._entity_type == 'Clients'
+
+    @property
+    def has_emp_entity(self):
+        return self._entity_type == 'Employees'
 
     def __str__(self):
         return self._action

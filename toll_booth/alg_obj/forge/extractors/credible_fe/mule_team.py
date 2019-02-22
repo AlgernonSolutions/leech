@@ -30,7 +30,7 @@ class CredibleMuleTeam:
         self._row_pattern = re.compile(ROW_PATTERN)
         self._name_pattern = re.compile(NAME_PATTERN)
         self._cached_emp_ids = kwargs.get('cached_emp_ids', CachedEmployeeIds())
-        self._cached_client_ids = kwargs.get('cached_client_ids', CachedEmployeeIds())
+        self._cached_entity_ids = kwargs.get('cached_client_ids', CachedEmployeeIds())
         self._score_board = {}
 
     def _start_threads(self):
@@ -118,11 +118,11 @@ class CredibleMuleTeam:
         row_match = self._row_pattern.search(response).group('rows')
         row_soup = bs4.BeautifulSoup(row_match, features='html.parser')
         table_rows = row_soup.find_all('tr')
-        if kwargs['get_emp_ids']:
+        if kwargs['get_by_emp_ids']:
             emp_id_kwargs = kwargs.copy()
             emp_id_kwargs['results'] = table_rows
             self._work.put({
-                'fn_name': '_strain_emp_ids',
+                'fn_name': '_strain_by_emp_ids',
                 'fn_kwargs': emp_id_kwargs
             })
             emp_task_name = f'strain_emp_ids_{page_number}'
@@ -136,15 +136,15 @@ class CredibleMuleTeam:
             })
             detail_task_name = f'strain_change_details_{page_number}'
             self._score_board[detail_task_name] = False
-        if kwargs['get_client_ids']:
-            client_id_kwargs = kwargs.copy()
-            client_id_kwargs['results'] = table_rows
+        if kwargs['get_entity_ids']:
+            entity_kwargs = kwargs.copy()
+            entity_kwargs['results'] = table_rows
             self._work.put({
-                'fn_name': '_strain_client_ids',
-                'fn_kwargs': client_id_kwargs
+                'fn_name': '_strain_entity_ids',
+                'fn_kwargs': entity_kwargs
             })
-            client_task_name = f'strain_client_ids_{page_number}'
-            self._score_board[client_task_name] = False
+            entity_task_name = f'strain_entity_ids_{page_number}'
+            self._score_board[entity_task_name] = False
         task_name = f'extract_changelog_page_{page_number}'
         del (self._score_board[task_name])
         if len(table_rows) <= 3:
@@ -159,8 +159,9 @@ class CredibleMuleTeam:
                 'fn_kwargs': extract_kwargs
             })
 
-    def _strain_client_ids(self, **kwargs):
+    def _strain_entity_ids(self, **kwargs):
         table_rows = kwargs['results']
+        entity_type = kwargs['entity_type']
         for row in table_rows:
             if 'style' in row.attrs:
                 utc_change_date_string = row.contents[15].string
@@ -171,34 +172,38 @@ class CredibleMuleTeam:
                     change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
                 change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
                 utc_timestamp = change_date_utc.timestamp()
-                done_by_entry = row.contents[7]
-                done_by_name = done_by_entry.string
+                entity_entry = row.contents[7]
+                entity_name = entity_entry.string
                 try:
-                    matches = self._name_pattern.search(done_by_name)
+                    matches = self._name_pattern.search(entity_name)
                 except TypeError:
                     raise RuntimeError()
                 last_name = matches.group('last_name')
                 first_initial = matches.group('first_initial')
-                client_id = self._cached_client_ids.get_emp_id(last_name, first_initial, utc_timestamp)
-                if client_id is None:
-                    client_id_kwargs = kwargs.copy()
-                    del(client_id_kwargs['results'])
-                    self._cached_client_ids.mark_emp_id_working(last_name, first_initial, utc_timestamp)
-                    client_id_kwargs['last_name'] = last_name
-                    client_id_kwargs['first_initial'] = first_initial
-                    client_id_kwargs['change_date_utc'] = utc_timestamp
+                entity_id = self._cached_entity_ids.get_emp_id(last_name, first_initial, utc_timestamp)
+                if entity_id is None:
+                    entity_kwargs = kwargs.copy()
+                    del(entity_kwargs['results'])
+                    self._cached_entity_ids.mark_emp_id_working(last_name, first_initial, utc_timestamp)
+                    entity_kwargs['last_name'] = last_name
+                    entity_kwargs['first_initial'] = first_initial
+                    entity_kwargs['change_date_utc'] = utc_timestamp
+                    entity_kwargs['result_location'] = 'entity_ids'
                     logging.debug('calling for a search client operation')
+                    fn_name = '_search_clients'
+                    if entity_type == 'Employees':
+                        fn_name = '_search_employees'
                     self._work.put({
-                        'fn_name': '_search_clients',
-                        'fn_kwargs': client_id_kwargs
+                        'fn_name': fn_name,
+                        'fn_kwargs': entity_kwargs
                     })
                     continue
-                self._results.append({'by_emp_ids': {utc_timestamp: client_id}})
+                self._results.append({'entity_ids': {utc_timestamp: entity_id}})
         page_number = kwargs.get('page_number', 1)
-        emp_task_name = f'strain_client_ids_{page_number}'
+        emp_task_name = f'strain_entity_ids_{page_number}'
         del(self._score_board[emp_task_name])
 
-    def _strain_emp_ids(self, **kwargs):
+    def _strain_by_emp_ids(self, **kwargs):
         table_rows = kwargs['results']
         for row in table_rows:
             if 'style' in row.attrs:
@@ -226,6 +231,7 @@ class CredibleMuleTeam:
                     emp_id_kwargs['last_name'] = last_name
                     emp_id_kwargs['first_initial'] = first_initial
                     emp_id_kwargs['change_date_utc'] = utc_timestamp
+                    emp_id_kwargs['result_location'] = 'by_emp_ids'
                     logging.debug('calling for a search employees operation')
                     self._work.put({
                         'fn_name': '_search_employees',
@@ -271,13 +277,14 @@ class CredibleMuleTeam:
     def _search_employees(self, **kwargs):
         logging.debug('started a search employees operation')
         url = BASE_STEM + URL_STEMS['Employee Advanced']
+        result_location = kwargs['result_location']
         search_kwargs = kwargs.copy()
         search_kwargs['url'] = url
         self._driver_work.put({
             'fn_name': '_get_emp_id_search',
             'fn_kwargs': search_kwargs
         })
-        task_name = f'search_employees_for_{kwargs["last_name"]}_{kwargs["first_initial"]}'
+        task_name = f'search_employees_for_{result_location}_{kwargs["last_name"]}_{kwargs["first_initial"]}'
         self._score_board[task_name] = False
 
     def _search_clients(self, **kwargs):
@@ -294,6 +301,10 @@ class CredibleMuleTeam:
 
     def _parse_emp_id_search(self, **kwargs):
         results = kwargs['results']
+        result_location = kwargs['result_location']
+        cache = self._cached_emp_ids
+        if result_location == 'entity_ids':
+            cache = self._cached_entity_ids
         try:
             possible_employees = CredibleCsvParser.parse_csv_response(results)
         except RuntimeError:
@@ -308,9 +319,9 @@ class CredibleMuleTeam:
             logging.warning('could not determine the emp_id from their name: %s' %
                             f'{kwargs["last_name"]}, {kwargs["first_initial"]}, using default value of 0')
             emp_id = 0
-        self._cached_emp_ids.add_emp_id(kwargs['last_name'], kwargs['first_initial'], emp_id)
-        self._results.append({'by_emp_ids': {kwargs['change_date_utc']: emp_id}})
-        task_name = f'search_employees_for_{kwargs["last_name"]}_{kwargs["first_initial"]}'
+        cache.add_emp_id(kwargs['last_name'], kwargs['first_initial'], emp_id)
+        self._results.append({result_location: {kwargs['change_date_utc']: emp_id}})
+        task_name = f'search_employees_for_{result_location}_{kwargs["last_name"]}_{kwargs["first_initial"]}'
         del(self._score_board[task_name])
         logging.debug('completed a search employees operation')
 
@@ -330,7 +341,7 @@ class CredibleMuleTeam:
             logging.warning('could not determine the client_id from their name: %s' %
                             f'{kwargs["last_name"]}, {kwargs["first_initial"]}, using default value of 0')
             client_id = 0
-        self._cached_client_ids.add_emp_id(kwargs['last_name'], kwargs['first_initial'], client_id)
+        self._cached_entity_ids.add_emp_id(kwargs['last_name'], kwargs['first_initial'], client_id)
         self._results.append({'client_ids': {kwargs['change_date_utc']: client_id}})
         task_name = f'search_clients_for_{kwargs["last_name"]}_{kwargs["first_initial"]}'
         del(self._score_board[task_name])

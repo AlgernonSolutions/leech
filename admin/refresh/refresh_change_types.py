@@ -2,9 +2,6 @@ import json
 import logging
 import os
 
-from jsonref import JsonRef
-from jsonschema import validate
-
 from admin.set_logging import set_logging
 from toll_booth.alg_obj.aws.snakes.schema_snek import SchemaSnek
 

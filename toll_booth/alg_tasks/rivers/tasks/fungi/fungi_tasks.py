@@ -179,8 +179,8 @@ def get_enrichment_for_change_action(**kwargs):
     action_id = kwargs['action_id']
     change_action = changelog_types[str(action_id)]
     category_id = changelog_types.get_category_id_from_action_id(str(action_id))
-    if change_action.is_static and change_action.has_details is False:
-        empty_data = {'change_detail': {}, 'by_emp_ids': {}, 'client_ids': {}}
+    if change_action.is_static and change_action.has_details is False and not change_action.entity_type:
+        empty_data = {'change_detail': {}, 'by_emp_ids': {}, 'entity_ids': {}}
         return {'enriched_data': empty_data}
     mule_team = CredibleMuleTeam(id_source)
     enrichment_args = {
@@ -192,7 +192,7 @@ def get_enrichment_for_change_action(**kwargs):
         'action_id': int(action_id),
         'get_details': change_action.has_details is True,
         'get_by_emp_ids': change_action.is_static is False,
-        'get_client_ids': change_action.has_client_entity,
+        'get_entity_ids': change_action.entity_type,
         'checked_emp_ids': None
     }
     enriched_data = mule_team.enrich_data(**enrichment_args)
