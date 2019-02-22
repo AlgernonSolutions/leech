@@ -6,6 +6,7 @@ from threading import Thread
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from retrying import retry
 
 from toll_booth.alg_obj.serializers import AlgEncoder
@@ -210,7 +211,10 @@ class Ruffian:
                 swf_client.respond_activity_task_failed(**swf_payload)
         except TypeError:
             swf_payload.update({'result': json.dumps(results, cls=AlgEncoder)})
-            swf_client.respond_activity_task_completed(**swf_payload)
+            try:
+                swf_client.respond_activity_task_completed(**swf_payload)
+            except ClientError as e:
+                logging.error(e.response)
         kwargs['queue'].put({'task_type': 'close_task', 'task_token': task_token})
 
     @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)

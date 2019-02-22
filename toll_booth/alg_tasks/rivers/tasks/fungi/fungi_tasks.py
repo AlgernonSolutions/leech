@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal, InvalidOperation
 
 from aws_xray_sdk.core import xray_recorder
@@ -361,7 +362,8 @@ def _build_changed_targets(id_source, extracted_data, change_type):
             try:
                 record_id = Decimal(record_id)
             except InvalidOperation:
-                pass
+                logging.warning(f'could not convert extracted data into a change_target, this may be by design, but still worth pointing out: {id_source}, {change_type}, {extracted_data}')
+                return None
             changed_target.append({
                 'id_source': id_source,
                 'id_type': id_type,
