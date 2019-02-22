@@ -574,6 +574,10 @@
           "property_data_type": "DateTime"
         },
         {
+          "property_name": "fungal_stem",
+          "property_data_type": "String"
+        },
+        {
           "property_name": "action",
           "property_data_type": "String"
         },

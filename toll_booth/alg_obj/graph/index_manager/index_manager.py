@@ -20,6 +20,7 @@ class IndexManager:
         internal_id_index = kwargs.get('internal_id_index', None)
         link_index = kwargs.get('link_index', None)
         identifier_stem_index = kwargs.get('identifier_stem_index', None)
+        fungal_index = kwargs.get('fungal_index', None)
         if table_name is None:
             table_name = os.getenv('INDEX_TABLE_NAME', 'leech_indexes')
         if object_index is None:
@@ -28,15 +29,18 @@ class IndexManager:
             internal_id_index = UniqueIndex.for_internal_id_index(**kwargs)
         if identifier_stem_index is None:
             identifier_stem_index = UniqueIndex.for_identifier_stem_index(**kwargs)
+        if fungal_index is None:
+            fungal_index = UniqueIndex.for_fungal_index(**kwargs)
         if link_index is None:
             link_index = UniqueIndex.for_link_index(**kwargs)
         other_indexes_key_name = kwargs.get('index_key_name', os.getenv('INDEXES_KEY_NAME', 'indexes'))
         other_indexes = kwargs.get('indexes', [])
-        indexes = [object_index, internal_id_index, identifier_stem_index]
+        indexes = [object_index, internal_id_index, identifier_stem_index, fungal_index]
         self._table_name = table_name
         self._object_index = object_index
         self._internal_id_index = internal_id_index
         self._identifier_stem_index = identifier_stem_index
+        self._fungal_index = fungal_index
         self._link_index = link_index
         self._table = boto3.resource('dynamodb').Table(self._table_name)
         self._indexes = indexes

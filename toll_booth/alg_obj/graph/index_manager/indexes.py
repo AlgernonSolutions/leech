@@ -138,6 +138,16 @@ class UniqueIndex(Index):
             index_name = os.getenv('LINK_INDEX_NAME', 'link_index')
         return cls(index_name, index_fields, [])
 
+    @classmethod
+    def for_fungal_index(cls, **kwargs):
+        index_name = kwargs.get('index_name', None)
+        if not index_name:
+            index_name = os.getenv('FUNGAL_INDEX_NAME', 'fungal_index')
+        fungal_stem_name = kwargs.get('fungal_stem_name')
+        if not fungal_stem_name:
+            fungal_stem_name = os.getenv('FUNGAL_STEM_NAME', 'fungal_stem')
+        return cls(index_name, [fungal_stem_name, 'numeric_id_value'], ['ChangeLog'])
+
 
 class NonUniqueIndex(Index):
     def __init__(self, index_name, indexed_fields, indexed_object_types):

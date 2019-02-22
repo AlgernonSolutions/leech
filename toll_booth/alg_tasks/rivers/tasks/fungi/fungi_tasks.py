@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from aws_xray_sdk.core import xray_recorder
 
+from toll_booth.alg_obj.forge.credible_specifics import FungalStem
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException
 from toll_booth.alg_tasks.rivers.rocks import task
 
@@ -236,10 +237,12 @@ def batch_generate_remote_id_change_data(**kwargs):
         by_emp_id = enriched_data['by_emp_ids'].get(utc_timestamp, kwargs['id_value'])
         extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
 
+        fungal_stem = FungalStem.from_identifier_stem(driving_identifier_stem, kwargs['id_value'], change_action.category)
         source_data = {
             'change_date_utc': extracted_data['change_date_utc'],
             'change_description': extracted_data['change_description'],
             'change_date': extracted_data['change_date'],
+            'fungal_stem': str(fungal_stem),
             'action': extracted_data['action'],
             'action_id': str(action_id),
             'id_source': id_source,
@@ -283,10 +286,12 @@ def generate_remote_id_change_data(**kwargs):
     extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
     id_source = driving_identifier_stem.get('id_source')
     by_emp_id = enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
+    fungal_stem = FungalStem.from_identifier_stem(driving_identifier_stem, kwargs['id_value'], change_action.category)
     source_data = {
         'change_date_utc': extracted_data['change_date_utc'],
         'change_description': extracted_data['change_description'],
         'change_date': extracted_data['change_date'],
+        'fungal_stem': str(fungal_stem),
         'action': extracted_data['action'],
         'action_id': str(action_id),
         'id_source': id_source,
