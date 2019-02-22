@@ -5487,6 +5487,7 @@
 		"change_action": "UNASSIGN CLIENT EMPLOYEE",
 		"has_details": false,
 		"entity_type": "Clients",
+		"action_id": 76,
 		"category_id": 9,
 		"id_name": "emp_id",
 		"id_type": "Employees"
