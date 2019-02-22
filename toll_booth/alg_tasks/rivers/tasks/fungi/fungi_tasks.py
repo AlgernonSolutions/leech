@@ -232,7 +232,8 @@ def batch_generate_remote_id_change_data(**kwargs):
     id_source = driving_identifier_stem.get('id_source')
     for remote_change in remote_changes:
         change_date_utc = remote_change['UTCDate']
-        by_emp_id = enriched_data['by_emp_ids'].get(change_date_utc, kwargs['id_value'])
+        utc_timestamp = str(change_date_utc.timestamp())
+        by_emp_id = enriched_data['by_emp_ids'].get(utc_timestamp, kwargs['id_value'])
         extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
 
         source_data = {
