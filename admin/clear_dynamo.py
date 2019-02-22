@@ -35,10 +35,12 @@ if __name__ == '__main__':
     icfs_edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"ICFS\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
     mbi_edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
     blank_edge_identifier_string = '#edge#_by_emp_id_#{}#'
+    changed_edge = '#edge#_changed_#{}#'
     icfs_strings = [icfs_emp_identifier_string, icfs_edge_identifier_string]
     mbi_string = [mbi_emp_identifier_string, mbi_edge_identifier_string]
+    all_strings = [icfs_edge_identifier_string, icfs_emp_identifier_string, mbi_edge_identifier_string, mbi_emp_identifier_string, blank_edge_identifier_string, changed_edge]
     blank_strings = [blank_edge_identifier_string]
-    for entry in blank_strings:
+    for entry in all_strings:
         target_identifier_stem = IdentifierStem.from_raw(entry)
         logging.info(f'started a clear dynamo identifier stem operation: {target_identifier_stem}')
         clear_dynamo_identifier_stem(target_identifier_stem)
