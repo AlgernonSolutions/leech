@@ -91,10 +91,14 @@ class RuffianRoost:
     @classmethod
     def disband_ruffians(cls, execution_arn):
         client = boto3.client('stepfunctions')
-        client.stop_execution(
-            executionArn=execution_arn,
-            cause='work completed'
-        )
+        try:
+            client.stop_execution(
+                executionArn=execution_arn,
+                cause='work completed'
+            )
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ExecutionDoesNotExist':
+                raise e
 
 
 class Ruffian:
