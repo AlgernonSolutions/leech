@@ -351,13 +351,17 @@ def _build_changed_targets(id_source, extracted_data, change_type):
             'change_date_utc': change_date_utc
         })
     if clientvisit_id:
-        changed_target.append({
-            'id_source': id_source,
-            'id_type': 'ClientVisit',
-            'id_name': 'clientvisit_id',
-            'id_value': Decimal(clientvisit_id),
-            'change_date_utc': change_date_utc
-        })
+        if client_id != clientvisit_id:
+            logging.warning(f'while running an extraction, got a row with the same client_id and clientvisit_id, this could be correct, or it could be due to a credible error, '
+                            f'we assume it is due to the credible error, but if things go strange, check this out: {extracted_data}')
+        else:
+            changed_target.append({
+                'id_source': id_source,
+                'id_type': 'ClientVisit',
+                'id_name': 'clientvisit_id',
+                'id_value': Decimal(clientvisit_id),
+                'change_date_utc': change_date_utc
+            })
     if extracted_data.get('record', None):
         record = extracted_data.get('record')
         id_type = record['record_type']
