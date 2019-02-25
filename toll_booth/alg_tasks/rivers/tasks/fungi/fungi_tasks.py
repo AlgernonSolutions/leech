@@ -95,9 +95,20 @@ def put_new_ids(**kwargs):
 @task('graph_links')
 def graph_links(**kwargs):
     from toll_booth.alg_obj.graph.ogm.ogm import Ogm
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+    from toll_booth.alg_obj.graph import InternalId
+    from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex
 
-    vertexes = []
     edges = []
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['identifier_stem'])
+    id_source = driving_identifier_stem.get('id_source')
+    internal_id = InternalId(''.join(['IdSource', id_source])).id_value
+    identifier_stem = IdentifierStem('vertex', 'IdSource', {'id_source': id_source})
+    potential_vertex = PotentialVertex(
+        'IdSource', internal_id, {'id_source': id_source}, identifier_stem, id_source, 'id_source')
+
+    vertexes = [potential_vertex]
+
     link_histories = kwargs.get('new_link_histories', [])
     new_links = kwargs.get('new_links', [])
     new_unlinks = kwargs.get('new_unlinks', [])
