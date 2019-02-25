@@ -918,9 +918,43 @@
             "name": "record",
             "mutation": "split_record_id"
           },
-          "Consumer Name": {
+          "Consumer ID": {
             "name": "client_id",
-            "mutation": "get_client_id"
+            "mutation": null
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "ChangeLog": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer ID": {
+            "name": "client_id",
+            "mutation": null
           },
           "User": {
             "name": "emp_id",

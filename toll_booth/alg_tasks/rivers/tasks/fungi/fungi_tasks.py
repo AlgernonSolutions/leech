@@ -208,16 +208,15 @@ def build_mapping(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
-    working_identifier_stem = IdentifierStem.from_raw(kwargs['identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
     schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
     fungal_extractor = schema_entry.extract['CredibleFrontEndExtractor']
     extraction_properties = fungal_extractor.extraction_properties
     mapping = extraction_properties['mapping']
     id_source_mapping = mapping.get(id_source, mapping['default'])
-    driving_mapping = id_source_mapping[driving_identifier_stem.get('id_type')]
-    working_mapping = id_source_mapping[working_identifier_stem.get('id_type')]
-    return {'driving_mapping': driving_mapping, 'working_mapping': working_mapping}
+    mapping = id_source_mapping[driving_identifier_stem.get('id_type')]
+
+    return {'mapping': mapping}
 
 
 @xray_recorder.capture('batch_generate_remote_id_change_data')
@@ -237,7 +236,7 @@ def batch_generate_remote_id_change_data(**kwargs):
         change_date_utc = remote_change['UTCDate']
         utc_timestamp = str(change_date_utc.timestamp())
         by_emp_id = enriched_data['by_emp_ids'].get(utc_timestamp, kwargs['id_value'])
-        extracted_data = _build_change_log_extracted_data(remote_change, kwargs['working_mapping'])
+        extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
 
         fungal_stem = FungalStem.from_identifier_stem(driving_identifier_stem, kwargs['id_value'], change_action.category)
         source_data = {
@@ -285,7 +284,7 @@ def generate_remote_id_change_data(**kwargs):
     change_action = changelog_types[str(action_id)]
     enriched_data = kwargs['enriched_data']
     change_date_utc = remote_change['UTCDate']
-    extracted_data = _build_change_log_extracted_data(remote_change, kwargs['working_mapping'])
+    extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
     id_source = driving_identifier_stem.get('id_source')
     by_emp_id = enriched_data['emp_ids'].get(change_date_utc, kwargs['id_value'])
     fungal_stem = FungalStem.from_identifier_stem(driving_identifier_stem, kwargs['id_value'], change_action.category)
@@ -343,7 +342,7 @@ def _build_changed_targets(id_source, extracted_data, change_type):
     client_id = extracted_data.get('client_id', None)
     clientvisit_id = extracted_data.get('clientvisit_id', None)
     change_date_utc = extracted_data['change_date_utc']
-    if client_id and client_id != 0:
+    if client_id:
         changed_target.append({
             'id_source': id_source,
             'id_type': 'Clients',
@@ -351,7 +350,7 @@ def _build_changed_targets(id_source, extracted_data, change_type):
             'id_value': Decimal(client_id),
             'change_date_utc': change_date_utc
         })
-    if clientvisit_id and clientvisit_id != '0':
+    if clientvisit_id:
         changed_target.append({
             'id_source': id_source,
             'id_type': 'ClientVisit',
