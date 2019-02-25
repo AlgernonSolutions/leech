@@ -204,12 +204,12 @@ def get_enrichment_for_change_action(**kwargs):
 @xray_recorder.capture('build_mapping')
 @task('build_mapping')
 def build_mapping(**kwargs):
-    from toll_booth.alg_obj.graph.schemata.schema_entry import SchemaVertexEntry
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
-    schema_entry = SchemaVertexEntry.retrieve(driving_identifier_stem.object_type)
+    schema = kwargs['schema']
+    schema_entry = schema[driving_identifier_stem.object_type]
     fungal_extractor = schema_entry.extract['CredibleFrontEndExtractor']
     extraction_properties = fungal_extractor.extraction_properties
     mapping = extraction_properties['mapping']
