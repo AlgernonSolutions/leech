@@ -281,7 +281,7 @@ class CredibleMuleTeam:
                     change_date_utc = datetime.datetime.strptime(utc_change_date_string, '%m/%d/%Y %I:%M:%S %p')
                 change_date_utc = change_date_utc.replace(tzinfo=pytz.UTC)
                 self._results.append({
-                    'change_detail': {changelog_id: change_date_utc.timestamp()}
+                    'change_detail': {change_date_utc.timestamp(): changelog_id}
                 })
         del (self._score_board[task_name])
 

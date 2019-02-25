@@ -276,7 +276,7 @@ def batch_generate_remote_id_change_data(**kwargs):
         if changed_targets:
             returned_data['changed_target'].extend(changed_targets)
         change_details = enriched_data.get('change_detail', {})
-        change_detail_target = change_details.get(change_date_utc, None)
+        change_detail_target = change_details.get(utc_timestamp)
         if change_detail_target is not None:
             returned_data['change_target'].extend(change_detail_target)
         change_data.append(returned_data)
