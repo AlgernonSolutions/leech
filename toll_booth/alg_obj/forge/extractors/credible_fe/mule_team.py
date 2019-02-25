@@ -51,11 +51,15 @@ class CredibleMuleTeam:
             worker.join()
 
     def enrich_data(self, **kwargs):
+        score_checks = 0
+        check_threshold = 3
         enrichment = {}
         self._enrich_data(**kwargs)
         self._start_threads()
-        while self._score_board:
+        while score_checks < check_threshold:
             logging.debug(self._score_board)
+            if not self._score_board:
+                score_checks += 1
             time.sleep(3)
         self._stop_threads()
         for result in self._results:
@@ -84,7 +88,10 @@ class CredibleMuleTeam:
                 function_kwargs = assignment['fn_kwargs']
                 logging.debug('the credible driver got an assignment: %s' % function_name)
                 function_kwargs['driver'] = driver
-                getattr(self, function_name)(**function_kwargs)
+                try:
+                    getattr(self, function_name)(**function_kwargs)
+                except Exception as e:
+                    print(e)
                 logging.debug('the credible driver finished an assignment: %s' % function_name)
                 self._driver_work.task_done()
 
@@ -97,7 +104,10 @@ class CredibleMuleTeam:
                 return
             function_name = assignment['fn_name']
             function_kwargs = assignment['fn_kwargs']
-            getattr(self, function_name)(**function_kwargs)
+            try:
+                getattr(self, function_name)(**function_kwargs)
+            except Exception as e:
+                print(e)
             self._work.task_done()
 
     def _extract_changelog_page(self, **kwargs):
@@ -244,10 +254,13 @@ class CredibleMuleTeam:
         del(self._score_board[emp_task_name])
 
     def _strain_change_details(self, **kwargs):
+        page_number = kwargs.get('page_number', 1)
+        task_name = f'strain_change_details_{page_number}'
         row_soup = kwargs['results']
         table_rows = row_soup.find_all('a')
         if len(table_rows) <= 6:
-            return {}
+            del (self._score_board[task_name])
+            return
         for row in table_rows:
             if 'clid' in row.attrs:
                 detail_kwargs = kwargs.copy()
@@ -270,8 +283,6 @@ class CredibleMuleTeam:
                 self._results.append({
                     'change_detail': {changelog_id: change_date_utc.timestamp()}
                 })
-        page_number = kwargs.get('page_number', 1)
-        task_name = f'strain_change_details_{page_number}'
         del (self._score_board[task_name])
 
     def _search_employees(self, **kwargs):

@@ -1858,8 +1858,8 @@
 		"has_details": false,
 		"category_id": 4,
 		"action_id": 514,
-		"id_name": "unspecified",
-		"id_type": "unspecified"
+		"id_name": "emp_id",
+		"id_type": "Employees"
 	}, {
 		"sid_value": "#SOURCE#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 506, \"action\": \"CHANGE PROGRAM ON CLIENT-EMPLOYEE ASSIGNMENT\", \"has_details\": true}#",
 		"identifier_stem": "#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 506, \"action\": \"CHANGE PROGRAM ON CLIENT-EMPLOYEE ASSIGNMENT\", \"has_details\": true}#",
@@ -4498,8 +4498,8 @@
 		"has_details": false,
 		"category_id": 5,
 		"action_id": 247,
-		"id_name": "unspecified",
-		"id_type": "unspecified"
+		"id_name": "txplusproblem_id",
+		"id_type": "TxPlusProblem"
 	}, {
 		"sid_value": "#SOURCE#vertex#ChangeLogType#{\"category\": \"Additions\", \"category_id\": 5, \"action_id\": 463, \"action\": \"INSERT VALUE CODE\", \"has_details\": false}#",
 		"identifier_stem": "#vertex#ChangeLogType#{\"category\": \"Additions\", \"category_id\": 5, \"action_id\": 463, \"action\": \"INSERT VALUE CODE\", \"has_details\": false}#",
@@ -6072,8 +6072,8 @@
 		"has_details": false,
 		"category_id": 4,
 		"action_id": 253,
-		"id_name": "unspecified",
-		"id_type": "unspecified"
+		"id_name": "txplus_id",
+		"id_type": "TxPlus"
 	}, {
 		"sid_value": "#SOURCE#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 173, \"action\": \"UPDATE CLIENT USER\", \"has_details\": false}#",
 		"identifier_stem": "#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 173, \"action\": \"UPDATE CLIENT USER\", \"has_details\": false}#",
