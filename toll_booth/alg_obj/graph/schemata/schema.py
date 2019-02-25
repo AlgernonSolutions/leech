@@ -51,8 +51,8 @@ class Schema(AlgObject):
             validate(working_schema, master_schema)
             schema_snek.put_schema(schema_file_path, **kwargs)
             schema_snek.put_validation_schema(schema_file_path, **kwargs)
-            vertex_entries = {x.entry_name for x in working_schema['vertex']}
-            edge_entries = {x.entry_name for x in working_schema['edge']}
+            vertex_entries = {x['vertex_name'] for x in working_schema['vertex']}
+            edge_entries = {x['edge_label'] for x in working_schema['edge']}
             return cls(vertex_entries, edge_entries)
 
     @classmethod

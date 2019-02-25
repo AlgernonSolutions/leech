@@ -404,6 +404,8 @@ class GraphObject(AlgObject):
         }
         if isinstance(self._id_value, int) or isinstance(self._id_value, Decimal):
             indexed_value['numeric_id_value'] = self._id_value
+        for property_name, property_value in self._object_properties.items():
+            indexed_value[property_name] = property_value
         return indexed_value
 
     @property

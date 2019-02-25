@@ -10,7 +10,7 @@ def add_data_source_vertex(id_source, **kwargs):
     identifier_stem = IdentifierStem('vertex', 'IdSource', {'id_source': id_source})
     potential_vertex = PotentialVertex('IdSource', internal_id, {'id_source': id_source}, identifier_stem, id_source, 'id_source')
     ogm = Ogm(**kwargs)
-    # results = ogm.graph_objects(vertexes=[potential_vertex])
+    results = ogm.graph_objects(vertexes=[potential_vertex])
     return internal_id
 
 

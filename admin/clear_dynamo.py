@@ -6,6 +6,19 @@ from admin.set_logging import set_logging
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
 
+def clear_dynamo_table(table_name='leech_indexes'):
+    resource = boto3.resource('dynamodb').Table(table_name)
+    paginator = boto3.client('dynamodb').get_paginator('scan')
+    iterator = paginator.paginate(TableName=table_name)
+    with resource.batch_writer() as writer:
+        for page in iterator:
+            for item in page['Items']:
+                writer.delete_item(Key={
+                    'sid_value': item['sid_value']['S'],
+                    'identifier_stem': item['identifier_stem']['S']
+                })
+
+
 def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
     resource = boto3.resource('dynamodb').Table(table_name)
     paginator = boto3.client('dynamodb').get_paginator('query')
@@ -30,6 +43,7 @@ def clear_dynamo_identifier_stem(identifier_stem, table_name='leech_indexes'):
 
 if __name__ == '__main__':
     set_logging()
+    clear_dynamo_table()
     icfs_emp_identifier_string = '#vertex#ExternalId#{\"id_source\": \"ICFS\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
     mbi_emp_identifier_string = '#vertex#ExternalId#{\"id_source\": \"MBI\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
     icfs_edge_identifier_string = '#edge#_fip_link_#{\"id_source\": \"ICFS\", \"id_type\": \"Employees\", \"id_name\": \"emp_id\"}#'
