@@ -729,9 +729,120 @@
           }
         }
       ]
+    },
+    {
+      "vertex_name": "DataField",
+      "vertex_properties": [
+        {
+          "property_name": "field_name",
+          "property_data_type": "String",
+          "is_id_value": true
+        },
+        {
+          "property_name": "field_value",
+          "property_data_type": "String",
+          "sensitive": true
+        },
+        {
+          "property_name": "field_data_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "source_id_value",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "source_id_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "source_id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "internal_id_key": [
+        "source_id_source",
+        "source_id_type",
+        "source_id_value",
+        "field_name"
+      ],
+      "identifier_stem": [
+         "source_id_source",
+        "source_id_type",
+        "source_id_value"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "inbound": [],
+            "outbound": [
+              {
+                "edge_type": "_data_field_",
+                "target_type": "ExternalId",
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "id_type",
+                    "constant_value": "source.id_type"
+                  }
+                ],
+                "target_specifiers": [
+                  {
+                    "specifier_name": "data_field_target",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "id_type",
+                      "id_value"
+                    ]
+                  }
+                ],
+                "if_absent": "pass"
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex_type": "ExternalId",
+            "mapping":  {"$ref": "#/commons/mapping"},
+            "extracted_categories":["*"]
+          }
+        }
+      ]
     }
   ],
   "edge": [
+    {
+      "edge_label": "_data_field_",
+      "from": ["DataField"],
+      "to": ["ExternalId"],
+      "edge_properties": [
+        {
+          "property_name": "field_name",
+          "property_data_type": "String",
+          "property_source": {
+            "source_type": "source_vertex",
+            "vertex_property_name": "field_name"
+          }
+        }
+      ],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id",
+        "field_name"
+      ],
+      "indexes": []
+    },
     {
       "edge_label": "_fip_link_",
       "from": ["ExternalId"],

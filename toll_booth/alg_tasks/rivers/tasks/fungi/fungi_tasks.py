@@ -235,6 +235,7 @@ def build_mapping(**kwargs):
 def batch_generate_remote_id_change_data(**kwargs):
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
+    id_values = set()
     change_data = []
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     remote_changes = kwargs['remote_changes']
@@ -247,6 +248,7 @@ def batch_generate_remote_id_change_data(**kwargs):
         change_date_utc = remote_change['UTCDate']
         utc_timestamp = str(change_date_utc.timestamp())
         by_emp_id = enriched_data['by_emp_ids'].get(utc_timestamp, kwargs['id_value'])
+        id_values.add((id_source, 'Employees', 'emp_id', by_emp_id))
         extracted_data = _build_change_log_extracted_data(remote_change, kwargs['mapping'])
 
         fungal_stem = FungalStem.from_identifier_stem(driving_identifier_stem, kwargs['id_value'], change_action.category)
@@ -274,6 +276,7 @@ def batch_generate_remote_id_change_data(**kwargs):
         }
         changed_targets = _build_changed_targets(id_source, extracted_data, change_action)
         if changed_targets:
+            id_values.update((id_source, x['id_type'], x['id_name'], x['id_value'] for x in changed_targets))
             returned_data['changed_target'].extend(changed_targets)
         change_detail_data = enriched_data.get('change_details', {})
         change_details = enriched_data.get('change_detail', {})
@@ -292,7 +295,7 @@ def batch_generate_remote_id_change_data(**kwargs):
                     'new_value': entry['new_value']
                 })
         change_data.append(returned_data)
-    return {'change_data': change_data}
+    return {'change_data': change_data, 'ext_id_values': id_values}
 
 
 @xray_recorder.capture('generate_remote_id_change_data')
@@ -341,6 +344,143 @@ def generate_remote_id_change_data(**kwargs):
     if change_detail_target is not None:
         returned_data['change_target'].extend(change_detail_target)
     return {'change_data': returned_data}
+
+
+@xray_recorder.capture('post_process_get_encounters')
+@task('post_process_get_encounters')
+def post_process_get_encounters(**kwargs):
+    from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+
+    encounter_id = kwargs['encounter_id']
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+    id_source = driving_identifier_stem.get('id_source')
+
+    with CredibleFrontEndDriver(id_source) as driver:
+        results = driver.retrieve_client_encounter(encounter_id)
+        return {'encounter_results': results}
+
+
+@xray_recorder.capture('post_process_parse_encounter')
+@task('post_process_parse_encounters')
+def post_process_parse_encounters(**kwargs):
+    import bs4
+    from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
+    import dateutil
+
+    encounter_id = kwargs['encounter_id']
+    driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
+    id_source = driving_identifier_stem.get('id_source')
+    encounter_data = []
+    encounter_documentation = []
+
+    fields_of_interest = {
+        'Service Type:': {
+            'field_name': 'visit_type',
+            'data_type': 'String'
+        },
+        'Program:': {
+            'field_name': 'program',
+            'data_type': 'String'
+        },
+        'Location:': {
+            'field_name': 'location',
+            'data_type': 'String'
+        },
+        'Recipient:': {
+            'field_name': 'recipient',
+            'data_type': 'String'
+        },
+        'Time In:': {
+            'field_name': 'time_in',
+            'data_type': 'Time'
+        },
+        'Time Out:': {
+            'field_name': 'time_out',
+            'data_type': 'Time'
+        },
+        'Date:': {
+            'field_name': 'encounter_date',
+            'data_type': 'Date'
+        },
+        'Duration:': {
+            'field_name': 'duration',
+            'data_type': 'Number'
+        },
+        'CPT Code:': {
+            'field_name': 'cpt_code',
+            'data_type': 'String'
+        },
+        'Non Billable:': {
+            'field_name': 'non_billable',
+            'data_type': 'Boolean'
+        },
+        'Transferred:': {
+            'field_name': 'transfer_date',
+            'data_type': 'DateTime'
+        },
+        'Approved': {
+            'field_name': 'appr',
+            'data_type': 'Boolean'
+        }
+    }
+    header_data = {}
+    data_fields = []
+    results = kwargs['encounter_results']
+    encounter_soup = bs4.BeautifulSoup(results)
+    tables = encounter_soup.find_all('table')
+    encounter_header_table = tables[3]
+    encounter_documentation_table = tables[7]
+    encounter_data.extend(_filter_string(x) for x in encounter_header_table.strings if _filter_string(x))
+    encounter_documentation.extend(_filter_string(x) for x in encounter_documentation_table.strings if _filter_string(x))
+
+    for entry in encounter_data:
+        if entry in fields_of_interest:
+            entry_index = encounter_data.index(entry)
+            entry_index += 1
+            next_field = encounter_data[entry_index]
+            field_name = fields_of_interest[entry]['field_name']
+            data_type = fields_of_interest[entry]['data_type']
+            header_data[field_name] = next_field
+            data_fields.append({
+                'field_name': field_name,
+                'field_value': next_field,
+                'field_data_type': data_type,
+                'source_id_value': encounter_id,
+                'source_id_type': 'ClientVisit',
+                'source_id_source': id_source
+            })
+
+    datetime_in = dateutil.parser.parse(f"{header_data['encounter_date']} {header_data['time_in']}")
+    data_fields.append({
+        'field_name': 'datetime_in',
+        'field_value': datetime_in.isoformat(),
+        'field_data_type': 'DateTime',
+        'source_id_value': encounter_id,
+        'source_id_type': 'ClientVisit',
+        'source_id_source': id_source
+    })
+    datetime_out = dateutil.parser.parse(f"{header_data['encounter_date']} {header_data['time_out']}")
+    data_fields.append({
+        'field_name': 'datetime_out',
+        'field_value': datetime_out.isoformat(),
+        'field_data_type': 'DateTime',
+        'source_id_value': encounter_id,
+        'source_id_type': 'ClientVisit',
+        'source_id_source': id_source
+    })
+    return {'data_fields': data_fields}
+
+
+def _filter_string(question_string):
+    test_string = str(question_string)
+    empty_characters = ['\n', '\r']
+    for entry in empty_characters:
+        test_string = test_string.replace(entry, '')
+    test_string = test_string.strip()
+    if test_string:
+        return test_string
+    return False
 
 
 def _build_change_log_extracted_data(remote_change, mapping):

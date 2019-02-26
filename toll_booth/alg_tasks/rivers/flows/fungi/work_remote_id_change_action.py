@@ -14,7 +14,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, Sub
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-# @xray_recorder.capture('work_remote_id_change_action')
+@xray_recorder.capture('work_remote_id_change_action')
 @workflow('work_remote_id_change_action')
 def work_remote_id_change_action(**kwargs):
     decisions = kwargs['decisions']
@@ -40,7 +40,7 @@ def work_remote_id_change_action(**kwargs):
     decisions.append(CompleteWork())
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_enrich_signature')
+@xray_recorder.capture('work_remote_id_change_action_build_enrich_signature')
 def _build_enrich_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['enrich']
@@ -48,7 +48,7 @@ def _build_enrich_signature(**kwargs):
     return enrich_signature
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
+@xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
 def _build_change_data_signatures(task_args, **kwargs):
     batch_size = 100
     execution_id = kwargs['execution_id']
@@ -84,7 +84,7 @@ def _build_change_data_signatures(task_args, **kwargs):
     return signatures
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_fungal_leech')
+@xray_recorder.capture('work_remote_id_change_action_build_fungal_leech')
 def _build_fungal_leech(execution_id, task_args, **kwargs):
     subtask_name = 'fungal_leech'
     subtask_identifier = f'fungal_leech-{execution_id}'
@@ -92,3 +92,22 @@ def _build_fungal_leech(execution_id, task_args, **kwargs):
     new_task_args = task_args.replace_argument_value(subtask_name, {'extracted_data': extracted_data})
     fungal_leech = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
     return fungal_leech
+
+
+@xray_recorder.capture('work_remote_id_change_action_build_post_process')
+def _build_post_process_group(execution_id, task_args, **kwargs):
+    ext_id_values = task_args.get_argument_value('ext_id_values')
+
+    signatures = []
+    encounter_ids = []
+    for entry in ext_id_values:
+        id_type = entry[1]
+        id_value = entry[3]
+        if id_type == 'ClientVisit':
+            encounter_ids.append(id_value)
+    if encounter_ids:
+        subtask_name = 'post_process_encounters'
+        subtask_identifier = f'post_process_encounters-{execution_id}'
+        new_task_args = task_args.replace_argument_value(subtask_name, {'encounter_ids': encounter_ids}, subtask_identifier)
+        signatures.append(SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args))
+    return group(*tuple(signatures))

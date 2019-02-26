@@ -21,7 +21,8 @@ _url_stems = {
     'DataDict': '/common/hipaalog_datadict.asp',
     'ChangeDetail': '/common/hipaalog_details.asp',
     'Employee Advanced': '/employee/list_emps_adv.asp',
-    'Global': '/admin/global_hipaalog.aspx'
+    'Global': '/admin/global_hipaalog.aspx',
+    'Encounter': '/visit/clientvisit_view.asp'
 }
 
 
@@ -357,6 +358,7 @@ class CredibleFrontEndDriver:
         csv_response = CredibleCsvParser.parse_csv_response(response.text, key_name='UTCDate')
         return csv_response
 
+    @_login_required
     def get_change_logs(self, **kwargs):
         url = _base_stem + _url_stems[kwargs['driving_id_type']]
         data = {
@@ -492,6 +494,15 @@ class CredibleFrontEndDriver:
             'client_id': 1
         }
         response = self._session.post(url, data=data)
+        return response.text
+
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    @_login_required
+    def retrieve_client_encounter(self, encounter_id):
+        url = _base_stem + _url_stems['Encounter']
+        response = self._session.get(url, data={'clientvisit_id': encounter_id})
+        if response.status_code != 200:
+            raise RuntimeError(f'could not get the encounter data for {encounter_id}, response code: {response.status_code}')
         return response.text
 
     def _strain_emp_ids(self, table_rows, cached_emp_ids):

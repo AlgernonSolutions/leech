@@ -113,6 +113,27 @@
             }
           ]
         }
+      },
+      {
+        "workflow_name": "post_process_encounters",
+        "workflow_description": "retrieves the starting data for a given set of encounter_ids in Credible",
+        "workflow_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "workflow_name": "post_process_patient",
+        "workflow_description": "retrieves the starting data for a given patient_id in Credible",
+        "workflow_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "workflow_name": "post_process_provider",
+        "workflow_description": "retrieves the starting data for a given provider_id in Credible",
+        "workflow_config": {
+          "concurrency": 1
+        }
       }
     ],
     "tasks": [
@@ -279,6 +300,24 @@
           "time_outs": {
             "running": 300
           }
+        }
+      },
+      {
+        "task_name": "post_process_get_encounters",
+        "task_description": "retrieves the information present in a Credible encounter",
+        "task_config": {
+          "concurrency": 1,
+          "task_list": "credible",
+          "time_outs": {
+            "running": 300
+          }
+        }
+      },
+      {
+        "task_name": "post_process_parse_encounters",
+        "task_description": "parses the data returned from a Credible encounter",
+        "task_config": {
+          "concurrency": 10
         }
       },
       {
