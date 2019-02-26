@@ -295,7 +295,7 @@ def batch_generate_remote_id_change_data(**kwargs):
                     'new_value': entry['new_value']
                 })
         change_data.append(returned_data)
-    return {'change_data': change_data, 'ext_id_values': id_values}
+    return {'change_data': change_data, 'ext_id_values': list(id_values)}
 
 
 @xray_recorder.capture('generate_remote_id_change_data')
