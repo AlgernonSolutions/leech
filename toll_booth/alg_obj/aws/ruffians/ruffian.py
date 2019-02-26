@@ -191,8 +191,9 @@ class Ruffian:
                     pending = Thread(target=self._run_task, kwargs=task_args)
                     pending.start()
                 except RuntimeError as e:
-                    logging.error(e)
-                    raise e
+                    logging.warning(e)
+                    queue.put(new_task)
+                    continue
                 self._pending_tasks[task_token] = pending
                 logging.info(f'started the task in a thread, total pending tasks: {len(self._pending_tasks)}')
             if task_type == 'close_task':

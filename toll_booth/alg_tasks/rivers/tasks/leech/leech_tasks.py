@@ -47,7 +47,7 @@ def assimilate(**kwargs):
     schema = kwargs['schema']
     index_manager = IndexManager.from_graph_schema(schema, **kwargs)
     assimilation_results = []
-    for entry in kwargs['assimilation']:
+    for entry in kwargs['assimilation_batch']:
         rule_entry = entry['rule_entry']
         source_vertex = entry['source_vertex']
         potential_vertex = entry['potential_vertex']

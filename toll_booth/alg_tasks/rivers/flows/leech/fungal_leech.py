@@ -68,7 +68,7 @@ def _build_assimilate_group(task_args, **kwargs):
         batches.append(batch)
     for batch in batches:
         task_identifier = f'assimilate-{batches.index(batch)}-{execution_id}'
-        new_task_args = task_args.replace_argument_value(task_name, {'assimilation': batch}, task_identifier)
+        new_task_args = task_args.replace_argument_value(task_name, {'assimilation_batch': batch}, task_identifier)
         signature = ActivitySignature(task_identifier, task_name, task_args=new_task_args, **kwargs)
         signatures.append(signature)
     tuple_signatures = tuple(signatures)
