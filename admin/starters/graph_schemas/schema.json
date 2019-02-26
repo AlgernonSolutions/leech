@@ -125,21 +125,16 @@
           "property_data_type": "Number"
         },
         {
-          "property_name": "data_dict_id",
-          "property_data_type": "Number"
+          "property_name": "field_name",
+          "property_data_type": "String"
         },
         {
-          "property_name": "detail_one",
+          "property_name": "old_value",
           "property_data_type": "String",
           "sensitive": true
         },
         {
-          "property_name": "detail_one_value",
-          "property_data_type": "String",
-          "sensitive": true
-        },
-        {
-          "property_name": "detail_two",
+          "property_name": "new_value",
           "property_data_type": "String",
           "sensitive": true
         }

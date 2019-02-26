@@ -15,6 +15,7 @@ from toll_booth.alg_obj.forge.extractors.credible_fe.base_stems import BASE_STEM
 from toll_booth.alg_obj.forge.extractors.credible_fe.cache import CachedEmployeeIds
 from toll_booth.alg_obj.forge.extractors.credible_fe.credible_csv_parser import CredibleCsvParser
 from toll_booth.alg_obj.forge.extractors.credible_fe.regex_patterns import ROW_PATTERN, NAME_PATTERN
+from toll_booth.alg_obj.utils import recursively_update
 
 
 class CredibleMuleTeam:
@@ -66,7 +67,7 @@ class CredibleMuleTeam:
             for entry_name, entry in result.items():
                 if entry_name not in enrichment:
                     enrichment[entry_name] = {}
-                enrichment[entry_name].update(entry)
+                recursively_update(enrichment[entry_name], entry)
         return enrichment
 
     def _enrich_data(self, **kwargs):
@@ -378,11 +379,11 @@ class CredibleMuleTeam:
         for row in interesting_rows:
             self._results.append({
                 'change_details': {
-                    kwargs['changelog_id']: {
+                    kwargs['changelog_id']: [{
                         'id_name': str(row.contents[1].string).lower(),
                         'old_value': str(row.contents[3].string),
                         'new_value': str(row.contents[5].string)
-                    }
+                    }]
                 }
             })
         task_name = f'get_change_detail_{kwargs["changelog_id"]}'

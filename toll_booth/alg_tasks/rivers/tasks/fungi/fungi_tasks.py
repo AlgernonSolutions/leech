@@ -275,10 +275,22 @@ def batch_generate_remote_id_change_data(**kwargs):
         changed_targets = _build_changed_targets(id_source, extracted_data, change_action)
         if changed_targets:
             returned_data['changed_target'].extend(changed_targets)
+        change_detail_data = enriched_data.get('change_details', {})
         change_details = enriched_data.get('change_detail', {})
-        change_detail_target = change_details.get(utc_timestamp)
-        if change_detail_target is not None:
-            returned_data['change_target'].extend(change_detail_target)
+        changelog_id = change_details.get(utc_timestamp)
+        change_detail_data = change_detail_data.get(changelog_id)
+        if change_detail_data is not None:
+            for entry in change_detail_data:
+                returned_data['change_target'].append({
+                    'change_date_utc': extracted_data['change_date_utc'],
+                    'id_source': id_source,
+                    'id_type': 'Change',
+                    'id_name': 'change_date_utc',
+                    'changelog_id': Decimal(changelog_id),
+                    'field_name': entry['id_name'],
+                    'old_value': entry['old_value'],
+                    'new_value': entry['new_value']
+                })
         change_data.append(returned_data)
     return {'change_data': change_data}
 

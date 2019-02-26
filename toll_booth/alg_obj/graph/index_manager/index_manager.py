@@ -8,7 +8,8 @@ from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException, UniqueIndex, \
     UniqueIndexViolationException, MissingIndexedPropertyException, AttemptedStubIndexException, Index
-from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry
+from toll_booth.alg_obj.graph.index_manager.undocumented_links import LinkHistory, LinkEntry, \
+    NonFungalObjectLinkingException
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem, PotentialVertex
 from toll_booth.alg_obj.graph.schemata.schema import Schema
 from toll_booth.alg_obj.serializers import ExplosionDecoder, AlgDecoder
@@ -112,10 +113,14 @@ class IndexManager:
             total = len(items)
             progress = 0
             for item in items:
-                link_history = LinkHistory.parse_from_table_entry(item)
-                results.append(link_history)
-                progress += 1
-                logging.debug(f'{progress}/{total}')
+                try:
+                    link_history = LinkHistory.parse_from_table_entry(item)
+                    results.append(link_history)
+                except NonFungalObjectLinkingException:
+                    continue
+                finally:
+                    progress += 1
+                    logging.debug(f'{progress}/{total}')
         return results
 
     def get_local_id_values(self, identifier_stem, index_name=None):

@@ -6242,8 +6242,8 @@
 		"has_details": true,
 		"category_id": 4,
 		"action_id": 91,
-		"id_name": "unspecified",
-		"id_type": "unspecified"
+		"id_name": "client_id",
+		"id_type": "ClientsExt"
 	}, {
 		"sid_value": "#SOURCE#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 24, \"action\": \"UPDATE CLIENTEXT RECORD\", \"has_details\": true}#",
 		"identifier_stem": "#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 24, \"action\": \"UPDATE CLIENTEXT RECORD\", \"has_details\": true}#",
@@ -6252,8 +6252,8 @@
 		"has_details": true,
 		"category_id": 4,
 		"action_id": 24,
-		"id_name": "unspecified",
-		"id_type": "unspecified"
+		"id_name": "client_id",
+		"id_type": "ClientsExt"
 	}, {
 		"sid_value": "#SOURCE#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 468, \"action\": \"UPDATE CONDITION CODE\", \"has_details\": true}#",
 		"identifier_stem": "#vertex#ChangeLogType#{\"category\": \"Changes\", \"category_id\": 4, \"action_id\": 468, \"action\": \"UPDATE CONDITION CODE\", \"has_details\": true}#",

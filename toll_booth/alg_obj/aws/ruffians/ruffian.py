@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+import threading
+from multiprocessing.pool import ThreadPool
 from queue import Queue
 from threading import Thread
 
@@ -174,6 +176,7 @@ class Ruffian:
 
     def _dispatch_tasks(self, **kwargs):
         queue = kwargs['queue']
+        pool = ThreadPool()
         while True:
             new_task = queue.get()
             if new_task is None:
@@ -187,19 +190,13 @@ class Ruffian:
                     'queue': queue,
                     'poll_response': poll_response
                 }
-                try:
-                    pending = Thread(target=self._run_task, kwargs=task_args)
-                    pending.start()
-                except RuntimeError as e:
-                    logging.warning(e)
-                    queue.put(new_task)
-                    continue
+                pending = pool.apply_async(self._run_task, kwds=task_args)
                 self._pending_tasks[task_token] = pending
                 logging.info(f'started the task in a thread, total pending tasks: {len(self._pending_tasks)}')
             if task_type == 'close_task':
                 logging.info(f'received orders to close a task thread: {new_task}')
                 task_token = new_task['task_token']
-                self._pending_tasks[task_token].join()
+                # self._pending_tasks[task_token].join()
                 del(self._pending_tasks[task_token])
                 logging.info(f'closed out a task thread, total pending tasks: {len(self._pending_tasks)}')
 
