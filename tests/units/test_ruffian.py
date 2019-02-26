@@ -48,11 +48,11 @@ class TestRuffian:
         decide(event, timed_mock_context)
 
     @pytest.mark.ruffian_lambda_labor
-    def test_lambda_labor(self, lambda_labor_arg, mock_context):
-        lambda_labor_arg['flow_id'] = '123some_flow_id'
-        lambda_labor_arg['run_id'] = '123_some_run_id'
-        lambda_labor_arg['task_id'] = '123_some_task_id'
-        sent_args = json.loads(json.dumps(lambda_labor_arg, cls=AlgEncoder))
+    def test_lambda_labor(self, mock_task_args, mock_context):
+        mock_task_args['flow_id'] = '123some_flow_id'
+        mock_task_args['run_id'] = '123_some_run_id'
+        mock_task_args['task_id'] = '123_some_task_id'
+        sent_args = json.loads(json.dumps(mock_task_args, cls=AlgEncoder))
         results = lambda_labor(sent_args, mock_context)
         loaded_results = json.loads(results, cls=AlgDecoder)
         assert isinstance(results, str)

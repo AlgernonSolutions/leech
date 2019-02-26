@@ -276,7 +276,7 @@ def batch_generate_remote_id_change_data(**kwargs):
         }
         changed_targets = _build_changed_targets(id_source, extracted_data, change_action)
         if changed_targets:
-            id_values.update((id_source, x['id_type'], x['id_name'], x['id_value'] for x in changed_targets))
+            id_values.update(tuple([id_source, x['id_type'], x['id_name'], x['id_value']]) for x in changed_targets)
             returned_data['changed_target'].extend(changed_targets)
         change_detail_data = enriched_data.get('change_details', {})
         change_details = enriched_data.get('change_detail', {})

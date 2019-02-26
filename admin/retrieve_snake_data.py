@@ -9,7 +9,7 @@ def retrieve_snake_data(json_string):
 
 if __name__ == '__main__':
     target_json_string = '''
-    {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/batch_generate_remote_id_change_data!1551133959.167375.json"}}
+	{"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/transform!1551201372.469329.json"}}
     '''
     results = retrieve_snake_data(target_json_string)
     print(results)

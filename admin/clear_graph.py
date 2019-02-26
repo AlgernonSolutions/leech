@@ -12,6 +12,6 @@ def clear_graph(source_query, **kwargs):
 if __name__ == '__main__':
     os.environ['GRAPH_DB_ENDPOINT'] = 'algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com'
     os.environ['GRAPH_DB_READER_ENDPOINT'] = 'algernon.cluster-ro-cnv3iqiknsnm.us-east'
-    target_query = 'g.E()'
+    target_query = 'g.V()'
     clear_results = clear_graph(target_query)
     print(clear_results)

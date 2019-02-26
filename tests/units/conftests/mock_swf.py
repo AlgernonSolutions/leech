@@ -8,7 +8,8 @@ from tests.units.conftests.bad_subtask_events import bad_subtask_events
 from tests.units.test_data import patches
 from tests.units.test_data.data_setup.boto import intercept
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.aws.snakes.snakes import StoredData
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
 
 class MockSwfEvent:
@@ -29,8 +30,8 @@ class MockSwfEvent:
 
 _lambda_labor_params = [
     (
-        'get_enrichment_for_change_action',
-        ' {"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1551211498.257718.json"}}, "pull_schema_entry": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/pull_schema_entry!1551191035.038166.json"}}, "get_local_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_local_ids!1551191141.148492.json"}}, "get_remote_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_remote_ids!1551191142.05883.json"}}, "work_fip_links": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_fip_links!1551211500.646865.json"}}, "pull_change_types": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/pull_change_types!1551191182.185015.json"}}, "build_mapping": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/build_mapping!1551191189.508193.json"}}, "work_remote_id": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id12290!1551211501.17081.json"}}, "work_remote_id_change_type": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id_change_type4!1551193611.455379.json"}}, "get_local_max_change_type_value": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_local_max_change_type_value!1551193620.468257.json"}}, "work_remote_id_change_action": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id_change_action50!1551193681.110478.json"}}}}}'
+        'transform',
+        '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1551218820.177353.json"}}, "pull_schema_entry": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/pull_schema_entry!1551197229.857375.json"}}, "get_local_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_local_ids!1551197233.13346.json"}}, "get_remote_ids": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_remote_ids!1551197237.277653.json"}}, "work_fip_links": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_fip_links!1551218821.266343.json"}}, "pull_change_types": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/pull_change_types!1551197282.292127.json"}}, "build_mapping": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/build_mapping!1551197291.292371.json"}}, "work_remote_id": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id12295!1551218821.845887.json"}}, "work_remote_id_change_type": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id_change_type4!1551201006.719581.json"}}, "get_local_max_change_type_value": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_local_max_change_type_value!1551200627.371132.json"}}, "work_remote_id_change_action": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/work_remote_id_change_action50!1551201309.524328.json"}}, "get_enrichment_for_change_action": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_enrichment_for_change_action!1551201351.129711.json"}}, "batch_generate_remote_id_change_data": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/batch_generate_remote_id_change_data!1551201358.589679.json"}}, "fungal_leech": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/fungal_leech!1551201364.780468.json"}}}}}'
     )
 ]
 
@@ -138,3 +139,81 @@ def mock_work_history():
     from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
     history = WorkflowHistory.parse_from_poll('TheLeech', fungal_leech_events)
     return history
+
+
+@pytest.fixture
+def mock_task_args():
+    task_name = 'transform'
+    from toll_booth.alg_obj.graph.schemata.schema import Schema
+    schema = Schema.retrieve()
+    schema_entry = schema['ChangeLog']
+    stored_schema = StoredData('test', {'schema': schema, 'schema_entry': schema_entry})
+    stored_schema.store()
+    task_args_string = {
+        '_alg_class': 'TaskArguments',
+        '_alg_module': 'toll_booth.alg_obj.aws.gentlemen.tasks',
+        'value': {
+            '_arguments': {
+                'command_fungi': {'_alg_class': 'StoredData',
+                                  '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                  'value': {
+                                      'pointer': 'the-leech#cache/command_fungi!1551218820.177353.json'}},
+                'pull_schema_entry': {'_alg_class': 'StoredData',
+                                      '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                      'value': {
+                                          'pointer': stored_schema.pointer}},
+                'get_local_ids': {'_alg_class': 'StoredData',
+                                  '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                  'value': {
+                                      'pointer': 'the-leech#cache/get_local_ids!1551197233.13346.json'}},
+                'get_remote_ids': {'_alg_class': 'StoredData',
+                                   '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                   'value': {
+                                       'pointer': 'the-leech#cache/get_remote_ids!1551197237.277653.json'}},
+                'work_fip_links': {'_alg_class': 'StoredData',
+                                   '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                   'value': {
+                                       'pointer': 'the-leech#cache/work_fip_links!1551218821.266343.json'}},
+                'pull_change_types': {'_alg_class': 'StoredData',
+                                      '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                      'value': {
+                                          'pointer': 'the-leech#cache/pull_change_types!1551197282.292127.json'}},
+                'build_mapping': {'_alg_class': 'StoredData',
+                                  '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                  'value': {
+                                      'pointer': 'the-leech#cache/build_mapping!1551197291.292371.json'}},
+                'work_remote_id': {'_alg_class': 'StoredData',
+                                   '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                   'value': {
+                                       'pointer': 'the-leech#cache/work_remote_id12295!1551218821.845887.json'}},
+                'work_remote_id_change_type': {
+                    '_alg_class': 'StoredData',
+                    '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                    'value': {
+                        'pointer': 'the-leech#cache/work_remote_id_change_type4!1551201006.719581.json'}},
+                'get_local_max_change_type_value': {
+                    '_alg_class': 'StoredData',
+                    '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                    'value': {
+                        'pointer': 'the-leech#cache/get_local_max_change_type_value!1551200627.371132.json'}},
+                'work_remote_id_change_action': {
+                    '_alg_class': 'StoredData',
+                    '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                    'value': {
+                        'pointer': 'the-leech#cache/work_remote_id_change_action50!1551201309.524328.json'}},
+                'get_enrichment_for_change_action': {
+                    '_alg_class': 'StoredData',
+                    '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                    'value': {
+                        'pointer': 'the-leech#cache/get_enrichment_for_change_action!1551201351.129711.json'}},
+                'batch_generate_remote_id_change_data': {
+                    '_alg_class': 'StoredData',
+                    '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                    'value': {
+                        'pointer': 'the-leech#cache/batch_generate_remote_id_change_data!1551201358.589679.json'}},
+                'fungal_leech': {'_alg_class': 'StoredData',
+                                 '_alg_module': 'toll_booth.alg_obj.aws.snakes.snakes',
+                                 'value': {
+                                     'pointer': 'the-leech#cache/fungal_leech!1551201364.780468.json'}}}}}
+    task_args = json.loads(json.dumps(task_args_string), cls=AlgDecoder)
+    return {'task_name': task_name, 'task_args': task_args}
