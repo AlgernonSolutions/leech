@@ -412,8 +412,8 @@
         }
       },
       {
-        "task_name": "build_productivity_report",
-        "task_description": "constructs the data structure for the productivity report",
+        "task_name": "build_daily_report",
+        "task_description": "constructs the data structure for the daily report",
         "task_config": {
           "concurrency": 1
         }

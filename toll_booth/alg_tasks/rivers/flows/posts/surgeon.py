@@ -40,9 +40,13 @@ def send_icfs_reports(**kwargs):
         'get_productivity': f'get_productivity-{execution_id}',
         'get_da_tx': f'get_encounters-{execution_id}'
     }
-    query_group = _build_query_group(**kwargs)
-    query_data = query_group(**kwargs)
-    if query_data is None:
+    query_signature = _build_query_signature(**kwargs)
+    query_results = query_signature(**kwargs)
+    if query_results is None:
+        return
+    team_signature = _build_team_signature(**kwargs)
+    team_results = team_signature(**kwargs)
+    if not team_results:
         return
     build_send_chain = _build_send_reports(**kwargs)
     final_results = build_send_chain(**kwargs)
@@ -51,20 +55,25 @@ def send_icfs_reports(**kwargs):
     decisions.append(CompleteWork(final_results))
 
 
-def _build_query_group(**kwargs):
+def _build_query_signature(**kwargs):
     names = kwargs['names']
     productivity = ActivitySignature(names['get_productivity'], 'get_productivity_report_data', **kwargs)
-    da_tx = ActivitySignature(names['get_da_tx'], 'get_da_tx_data', **kwargs)
-    return group(productivity, da_tx)
+    return productivity
 
 
-def _build_send_reports(task_args: TaskArguments, **kwargs):
+def _build_team_signature(task_args, **kwargs):
     execution_id = kwargs['execution_id']
     id_source = task_args.get_argument_value('id_source')
     new_task_args = task_args.replace_argument_value('collect', _team_data[id_source], execution_id)
+    signature = ActivitySignature(f'build_team-{execution_id}', 'build_clinical_teams', task_args=new_task_args, **kwargs)
+    return signature
+
+
+def _build_send_reports(**kwargs):
+    execution_id = kwargs['execution_id']
     signatures = [
-        ActivitySignature(f'build_team-{execution_id}', 'build_clinical_teams', task_args=new_task_args, **kwargs),
-        ActivitySignature(f'build_productivity-{execution_id}', 'build_productivity_report', task_args=task_args, **kwargs),
-        ActivitySignature(f'write_report_data-{execution_id}', 'write_report_data', task_args=task_args, **kwargs),
+        ActivitySignature(f'build_caseload-{execution_id}', 'build_clinical_caseloads', **kwargs),
+        ActivitySignature(f'build_daily_report-{execution_id}', 'build_daily_report', **kwargs),
+        ActivitySignature(f'write_report_data-{execution_id}', 'write_report_data', **kwargs),
     ]
     return chain(*tuple(signatures))

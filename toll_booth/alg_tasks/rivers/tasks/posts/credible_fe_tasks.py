@@ -78,9 +78,9 @@ def get_productivity_report_data(**kwargs):
     return results
 
 
-@xray_recorder.capture('build_productivity_report')
-@task('build_productivity_report')
-def build_productivity_report(**kwargs):
+@xray_recorder.capture('build_daily_report')
+@task('build_daily_report')
+def build_daily_report(**kwargs):
     pass
 
 
@@ -214,3 +214,6 @@ def _parse_staff_names(primary_staff_line):
             name = name.replace(program_name, '')
         staff.append(name)
     return staff
+
+
+def _build_team_productivity()
