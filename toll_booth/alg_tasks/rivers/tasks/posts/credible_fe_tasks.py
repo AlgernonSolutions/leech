@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+import pytz
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -37,13 +38,14 @@ def get_productivity_report_data(**kwargs):
         'clientvisit_id': 1,
         'service_type': 1,
         'non_billable': 1,
-        'rev_timeout': 1,
         'consumer_name': 1,
         'staff_name': 1,
         'client_int_id': 1,
         'emp_int_id': 1,
         'non_billable1': 3,
-        'visittype': 1
+        'visittype': 1,
+        'orig_rate_amount': 1,
+        'timein': 1
     }
     unapproved_search_data = encounter_search_data.copy()
     unapproved_search_data.update({
@@ -51,7 +53,8 @@ def get_productivity_report_data(**kwargs):
         'show_unappr': 1,
         'wh_fld1': 'cv.appr',
         'wh_cmp1': '=',
-        'wh_val1': False
+        'wh_val1': False,
+        'data_dict_ids': 641
     })
     tx_plan_args = encounter_search_data.copy()
     tx_plan_args['visittype_id'] = 3
@@ -81,7 +84,34 @@ def get_productivity_report_data(**kwargs):
 @xray_recorder.capture('build_daily_report')
 @task('build_daily_report')
 def build_daily_report(**kwargs):
-    pass
+    daily_report = {}
+    encounter_data = kwargs['encounter_data']
+    encounters = [{
+        'clientvisit_id': int(x['Service ID']),
+        'rev_timeout': x['Service Date'],
+        'visit_type': x['Service Type'],
+        'non_billable': bool(x['Non Billable']),
+        'emp_id': int(x['Staff ID']),
+        'client_id': int(x['Consumer ID']),
+        'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate']))
+    } for x in encounter_data]
+    unapproved_data = kwargs['unapproved_data']
+    unapproved = [{
+        'clientvisit_id': int(x['Service ID']),
+        'rev_timeout': x['Service Date'],
+        'visit_type': x['Service Type'],
+        'non_billable': bool(x['Non Billable']),
+        'emp_id': int(x['Staff ID']),
+        'client_id': int(x['Consumer ID']),
+        'red_x': x['Manual RedX Note'],
+        'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate']))
+    } for x in unapproved_data]
+    caseloads = kwargs['caseloads']
+    for team_name, employees in caseloads.items():
+        page_name = f'productivity_{team_name}'
+        productivity_results = _build_team_productivity(employees, encounters, unapproved)
+        daily_report[page_name] = productivity_results
+    return {'report': daily_report}
 
 
 @xray_recorder.capture('get_da_tx_data')
@@ -199,7 +229,7 @@ def build_clinical_caseloads(**kwargs):
                     for emp_id, employee in employees.items():
                         if emp_id == found_emp_id:
                             employee['caseload'].append(client_record)
-    return caseloads
+    return {'caseloads': caseloads}
 
 
 def _parse_staff_names(primary_staff_line):
@@ -216,4 +246,21 @@ def _parse_staff_names(primary_staff_line):
     return staff
 
 
-def _build_team_productivity()
+def _build_team_productivity(team_caseload, encounters, unapproved):
+    results = []
+    twenty_four_hours_ago = datetime.now(pytz.timezone('US/Eastern')) - timedelta(hours=24)
+    six_days_ago = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days=6)
+    past_day_encounters = [x for x in encounters if encounters['rev_timeout'] <= twenty_four_hours_ago]
+    next_six_days_encounters = [x for x in encounters if all(
+        [encounters['rev_timeout'] > twenty_four_hours_ago, encounters['rev_timeout'] <= six_days_ago]
+    )]
+    for emp_id, employee in team_caseload.items():
+        emp_past_day_encounters = [x['base_rate'] for x in past_day_encounters if x['emp_id'] == emp_id]
+        emp_next_six_days_encounters = [x['base_rate'] for x in next_six_days_encounters if x['emp_id'] == emp_id]
+        emp_red_x = [x['base_rate'] for x in unapproved if x['emp_id'] == emp_id and x['red_x']]
+        emp_unapproved = [x['base_rate'] for x in unapproved if x['emp_id'] == emp_id and not x['red_x']]
+        results.append([
+            emp_id, f'{employee["last_name"]}, {employee["first_name"]}',
+            sum(emp_past_day_encounters), sum(emp_next_six_days_encounters), sum(emp_unapproved), sum(emp_red_x)
+        ])
+    return results
