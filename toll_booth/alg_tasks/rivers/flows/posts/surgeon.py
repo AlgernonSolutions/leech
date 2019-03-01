@@ -67,4 +67,4 @@ def _build_send_reports(task_args: TaskArguments, **kwargs):
         ActivitySignature(f'build_productivity-{execution_id}', 'build_productivity_report', task_args=task_args, **kwargs),
         ActivitySignature(f'write_report_data-{execution_id}', 'write_report_data', task_args=task_args, **kwargs),
     ]
-    return group(*tuple(signatures))
+    return chain(*tuple(signatures))
