@@ -31,7 +31,7 @@ _team_data = {
 }
 
 
-@xray_recorder.capture('send_icfs_reports')
+# @xray_recorder.capture('send_icfs_reports')
 @workflow('send_icfs_reports')
 def send_icfs_reports(**kwargs):
     execution_id = kwargs['execution_id']
