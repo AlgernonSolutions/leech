@@ -58,6 +58,23 @@ class TestRuffian:
         assert isinstance(results, str)
         assert isinstance(loaded_results, StoredData)
 
+    @pytest.mark.tasks
+    def test_tasks(self, custom_task_args, mock_context):
+        task_data = {'id_source': 'ICFS'}
+        task_args = custom_task_args(task_data)
+        lambda_args = {
+            'task_name': 'get_productivity_report_data',
+            'task_args': task_args,
+            'flow_id': '123some_flow_id',
+            'run_id': '123_some_run_id',
+            'task_id': '123_some_task_id'
+        }
+        sent_args = json.loads(json.dumps(lambda_args, cls=AlgEncoder))
+        results = lambda_labor(sent_args, mock_context)
+        loaded_results = json.loads(results, cls=AlgDecoder)
+        assert isinstance(results, str)
+        assert isinstance(loaded_results, StoredData)
+
     @pytest.mark.ruffian_mule_team
     def test_ruffian_mule_team(self, mule_team_arg, mock_context):
         sent_args = json.loads(json.dumps(mule_team_arg, cls=AlgEncoder))

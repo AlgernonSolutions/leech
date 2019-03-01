@@ -8,6 +8,7 @@ from tests.units.conftests.bad_subtask_events import bad_subtask_events
 from tests.units.test_data import patches
 from tests.units.test_data.data_setup.boto import intercept
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
+from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 
@@ -217,3 +218,10 @@ def mock_task_args():
                                      'pointer': 'the-leech#cache/fungal_leech!1551201364.780468.json'}}}}}
     task_args = json.loads(json.dumps(task_args_string), cls=AlgDecoder)
     return {'task_name': task_name, 'task_args': task_args}
+
+
+@pytest.fixture
+def custom_task_args():
+    def task_args(arg_data):
+        return TaskArguments.for_starting_data('test', arg_data)
+    return task_args

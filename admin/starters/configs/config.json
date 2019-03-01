@@ -134,6 +134,22 @@
         "workflow_config": {
           "concurrency": 1
         }
+      },
+      {
+        "workflow_name": "send_icfs_reports",
+        "workflow_description": "sends reports to ICFS based on static configurations",
+        "workflow_config": {
+          "concurrency": 1,
+           "labor_task_lists": [
+            {
+              "list_name": "credible",
+              "number_threads": 1
+            }
+          ],
+          "time_outs": {
+            "decision": "300"
+          }
+        }
       }
     ],
     "tasks": [
@@ -370,6 +386,50 @@
         "task_description": "fires an email through the AWS pinpoint service",
         "task_config": {
           "concurrency": 10
+        }
+      },
+      {
+        "task_name": "get_productivity_report_data",
+        "task_description": "retrieves the report data needed for the routine productivity report",
+        "task_config": {
+          "concurrency": 1,
+          "task_list": "credible"
+        }
+      },
+      {
+        "task_name": "get_da_tx_data",
+        "task_description": "retrieves the report data needed for the da_tx report",
+         "task_config": {
+          "concurrency": 1,
+          "task_list": "credible"
+        }
+      },
+      {
+        "task_name": "write_report_data",
+        "task_description": "builds the excel spreadsheet object for a given set of data",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "task_name": "build_productivity_report",
+        "task_description": "constructs the data structure for the productivity report",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "task_name": "build_clinical_teams",
+        "task_description": "parses bulk employee records into teams, based on supervisors",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
+      {
+        "task_name": "build_clinical_caseloads",
+        "task_description": "parses bulk client records into CSW caseloads, based on primary staff",
+        "task_config": {
+          "concurrency": 1
         }
       }
     ]

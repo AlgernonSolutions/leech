@@ -419,6 +419,23 @@ class CredibleFrontEndDriver:
         return changelog_data, page_number
 
     @_login_required
+    def get_caseload_report(self):
+        data = {
+            'btn_filter': 'Export File',
+            'rpt': 'RptCaseLoadNoRoles',
+            'prompt1': '',
+            'prompt2': '',
+            'prompt3': 1,
+            'prompt4': '',
+            'prompt5': '',
+            'blnroles': 0,
+            'blnseverity': 0
+        }
+        url = 'https://reports.crediblebh.com/reports/caseload.asp'
+        response = self._session.post(url, data=data)
+        
+
+    @_login_required
     def process_advanced_search(self, id_type, selected_fields, start_date=None, end_date=None):
         credible_date_format = '%m/%d/%Y'
         url = _base_stem + self._monitor_extract_stems[id_type]
