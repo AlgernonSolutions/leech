@@ -1,4 +1,4 @@
-rapidjson
+python-rapidjson
 openpyxl
 retrying
 bs4
