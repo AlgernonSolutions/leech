@@ -1,3 +1,4 @@
+import rapidjson
 import json
 import logging
 import os
@@ -73,7 +74,7 @@ class StoredData(AlgObject):
         resource = boto3.resource('s3')
         stored_object = resource.Object(pointer_parts[0], pointer_parts[1]).get()
         string_body = stored_object['Body'].read()
-        body = json.loads(string_body, cls=AlgDecoder)
+        body = rapidjson.loads(string_body, object_hook=AlgDecoder.object_hook)
         cls_args = {
             'data_name': data_name,
             'data_string': body['data_string'],
@@ -109,7 +110,7 @@ class StoredData(AlgObject):
     def _overwrite_store(self):
         resource = boto3.resource('s3')
         body = {'data_string': self._data_string, 'full_unpack': self._full_unpack}
-        body_string = json.dumps(body, cls=AlgEncoder)
+        body_string = rapidjson.dumps(body, default=AlgEncoder.default)
         resource.Object(self._bucket_name, self.data_key).put(Body=body_string)
         self._is_stored = True
         return self.pointer

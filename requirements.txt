@@ -1,3 +1,5 @@
+rapidjson
+ujson
 openpyxl
 retrying
 bs4

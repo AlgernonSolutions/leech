@@ -9,7 +9,7 @@ _team_data = {
     'ICFS': {
         'teams': {
             'Bacchus': [],
-            'Tali': [],
+            'Vodovis': [],
             'Bragg': [],
             'Pinkney': [],
             'Moore': [],
@@ -18,14 +18,14 @@ _team_data = {
             'Other': []
         },
         'manual_assignments': {
-            7335: 'Pittinger-Dunham',
-            12791: 'Pittinger-Dunham',
-            11655: 'Pittinger-Dunham',
-            13304: 'Pittinger-Dunham',
-            12869: 'Pittinger-Dunham',
-            13553: 'Other'
+            '7335': 'Pittinger-Dunham',
+            '12791': 'Pittinger-Dunham',
+            '11655': 'Pittinger-Dunham',
+            '13304': 'Pittinger-Dunham',
+            '12869': 'Pittinger-Dunham',
+            '13553': 'Other'
         },
-        'first_level': ['Bacchus', 'Tali', 'Bragg', 'Pinkney', 'Moore'],
+        'first_level': ['Bacchus', 'Vodovis', 'Bragg', 'Pinkney', 'Moore'],
         'default_team': 'Shpak'
     }
 }
