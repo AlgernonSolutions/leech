@@ -175,7 +175,7 @@ def build_clinical_teams(**kwargs):
             'caseload': []
         }
         if str_emp_id in manual_assignments:
-            teams[manual_assignments[str_emp_id]] = emp_record
+            teams[manual_assignments[str_emp_id]].append(emp_record)
             continue
         for name in first_level:
             if name in supervisor_names:
