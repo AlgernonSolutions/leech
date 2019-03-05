@@ -154,6 +154,7 @@ def write_report_data(**kwargs):
     for entry_name, report_data in report_data.items():
         new_sheet = report_book.create_sheet(entry_name)
         new_sheet.append([entry_name])
+        new_sheet.append([])
         for row in report_data:
             new_sheet.append(row)
     try:
@@ -272,7 +273,7 @@ def _parse_staff_names(primary_staff_line):
 def _build_team_productivity(team_caseload, encounters, unapproved):
     from datetime import datetime, timedelta
 
-    results = []
+    results = [['CSW ID', 'CSW Name', 'Past 24 Hours', 'Next Past 6 Days', 'All Unapproved', 'All Red X Notes']]
     twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
     six_days_ago = datetime.now() - timedelta(days=6)
     past_day_encounters = [x for x in encounters if x['transfer_date'] >= twenty_four_hours_ago]
