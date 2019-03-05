@@ -189,7 +189,8 @@ def build_clinical_teams(**kwargs):
 @xray_recorder.capture('build_clinical_caseloads')
 @task('build_clinical_caseloads')
 def build_clinical_caseloads(**kwargs):
-    caseloads = {'unassigned': []}
+    caseloads = {}
+    unassigned = []
     name_lookup = {}
     teams = kwargs['teams']
     clients = kwargs['client_data']
@@ -197,10 +198,10 @@ def build_clinical_caseloads(**kwargs):
         if team_name not in caseloads:
             caseloads[team_name] = {}
         for employee in employees:
-            emp_id = employee['emp_id']
+            emp_id = str(employee['emp_id'])
             last_name = employee['last_name']
             first_name = employee['first_name']
-            list_name = f'{first_name[1:]} {last_name}'
+            list_name = f'{first_name[0]} {last_name}'
             name_lookup[list_name] = emp_id
             if emp_id not in caseloads[team_name]:
                 caseloads[team_name][emp_id] = []
@@ -208,7 +209,7 @@ def build_clinical_caseloads(**kwargs):
         client_id = client[' Id']
         primary_assigned = client['Primary Staff']
         if not primary_assigned:
-            caseloads['unassigned'].append({
+            unassigned.append({
                 'client_id': client_id,
                 'last_name': client['Last Name'],
                 'first_name': client['First Name'],
@@ -232,7 +233,8 @@ def build_clinical_caseloads(**kwargs):
                 for team_name, employees in caseloads.items():
                     for emp_id, employee in employees.items():
                         if emp_id == found_emp_id:
-                            employee['caseload'].append(client_record)
+                            employee.append(client_record)
+    caseloads['unassigned'] = unassigned
     return {'caseloads': caseloads}
 
 
