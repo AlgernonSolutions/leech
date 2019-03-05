@@ -136,9 +136,11 @@ def get_da_tx_data(**kwargs):
 @task('write_report_data')
 def write_report_data(**kwargs):
     from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment
+
     from toll_booth.alg_obj.aws.snakes.invites import ObjectDownloadLink
     import os
-    from datetime import  datetime
+    from datetime import datetime
 
     report_bucket_name = kwargs.get('report_bucket_name', os.getenv('REPORT_BUCKET_NAME', 'algernonsolutions-leech'))
     local_user_directory = os.path.expanduser('~')
@@ -154,9 +156,18 @@ def write_report_data(**kwargs):
     for entry_name, report_data in report_data.items():
         new_sheet = report_book.create_sheet(entry_name)
         new_sheet.append([entry_name])
+        top_row = new_sheet.row_dimensions[1]
+        top_row.font = Font(bold=True, size=18)
         new_sheet.append([])
+        row_lengths = [len(x) for x in report_data]
+        max_row_length = None
+        if row_lengths:
+            max_row_length = max([len(x) for x in report_data])
         for row in report_data:
             new_sheet.append(row)
+        if max_row_length:
+            new_sheet.merge_cells(f'A1:{chr(ord("a") + (max_row_length-1))}1')
+    report_book.remove(front_sheet)
     try:
         report_book.save(report_save_path)
     except FileNotFoundError:
