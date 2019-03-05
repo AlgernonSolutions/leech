@@ -204,7 +204,7 @@ def build_clinical_caseloads(**kwargs):
             list_name = f'{first_name[0]} {last_name}'
             name_lookup[list_name] = emp_id
             if emp_id not in caseloads[team_name]:
-                caseloads[team_name][emp_id] = []
+                caseloads[team_name][emp_id] = employee
     for client in clients:
         client_id = client[' Id']
         primary_assigned = client['Primary Staff']
@@ -233,7 +233,7 @@ def build_clinical_caseloads(**kwargs):
                 for team_name, employees in caseloads.items():
                     for emp_id, employee in employees.items():
                         if emp_id == found_emp_id:
-                            employee.append(client_record)
+                            employee['caseload'].append(client_record)
     caseloads['unassigned'] = unassigned
     return {'caseloads': caseloads}
 
@@ -256,11 +256,11 @@ def _parse_staff_names(primary_staff_line):
 
 def _build_team_productivity(team_caseload, encounters, unapproved):
     results = []
-    twenty_four_hours_ago = datetime.now(pytz.timezone('US/Eastern')) - timedelta(hours=24)
-    six_days_ago = datetime.now(pytz.timezone('US/Eastern')) - timedelta(days=6)
-    past_day_encounters = [x for x in encounters if encounters['rev_timeout'] <= twenty_four_hours_ago]
+    twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
+    six_days_ago = datetime.now() - timedelta(days=6)
+    past_day_encounters = [x for x in encounters if x['rev_timeout'] <= twenty_four_hours_ago]
     next_six_days_encounters = [x for x in encounters if all(
-        [encounters['rev_timeout'] > twenty_four_hours_ago, encounters['rev_timeout'] <= six_days_ago]
+        [x['rev_timeout'] > twenty_four_hours_ago, x['rev_timeout'] <= six_days_ago]
     )]
     for emp_id, employee in team_caseload.items():
         emp_past_day_encounters = [x['base_rate'] for x in past_day_encounters if x['emp_id'] == emp_id]
