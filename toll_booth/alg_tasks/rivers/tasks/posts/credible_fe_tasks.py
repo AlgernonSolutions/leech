@@ -112,6 +112,18 @@ def build_daily_report(**kwargs):
         'red_x': x['Manual RedX Note'],
         'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate']))
     } for x in unapproved_data]
+    tx_plan_data = kwargs['tx_data']
+    tx_plans = [{
+        'rev_timeout': x['Service Date'],
+        'emp_id':  int(x['Staff ID']),
+        'client_id': int(x['Consumer ID'])
+    } for x in tx_plan_data]
+    da_data = kwargs['da_data']
+    diagnostics = [{
+        'rev_timeout': x['Service Date'],
+        'emp_id': int(x['Staff ID']),
+        'client_id': int(x['Consumer ID'])
+    } for x in da_data]
     caseloads = kwargs['caseloads']
     for team_name, employees in caseloads.items():
         if team_name == 'unassigned':
@@ -171,7 +183,7 @@ def write_report_data(**kwargs):
     try:
         report_book.save(report_save_path)
     except FileNotFoundError:
-        report_save_path = os.path.join(report_name)
+        report_save_path = f'/tmp/{report_name}'
         report_book.save(report_save_path)
     download_link = ObjectDownloadLink(report_bucket_name, f'{id_source}/{report_name}', local_file_path=report_save_path)
     return {'download_link': download_link}
@@ -390,3 +402,11 @@ def _build_team_productivity(team_caseload, encounters, unapproved):
             sum(emp_past_day_encounters), sum(emp_next_six_days_encounters), sum(emp_unapproved), sum(emp_red_x)
         ])
     return results
+
+
+def _build_expiration_report(team_caseload, assessment_data):
+    pass
+
+
+def _build_cracks_report(team_caseload, client_data, encounters):
+    pass
