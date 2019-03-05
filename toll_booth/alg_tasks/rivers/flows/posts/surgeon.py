@@ -75,5 +75,6 @@ def _build_send_reports(**kwargs):
         ActivitySignature(f'build_caseload-{execution_id}', 'build_clinical_caseloads', **kwargs),
         ActivitySignature(f'build_daily_report-{execution_id}', 'build_daily_report', **kwargs),
         ActivitySignature(f'write_report_data-{execution_id}', 'write_report_data', **kwargs),
+        ActivitySignature(f'send_report-{execution_id}', 'send_report', **kwargs),
     ]
     return chain(*tuple(signatures))

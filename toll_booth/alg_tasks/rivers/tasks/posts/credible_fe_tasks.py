@@ -136,7 +136,7 @@ def get_da_tx_data(**kwargs):
 @task('write_report_data')
 def write_report_data(**kwargs):
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment
+    from openpyxl.styles import Font
 
     from toll_booth.alg_obj.aws.snakes.invites import ObjectDownloadLink
     import os
@@ -175,6 +175,58 @@ def write_report_data(**kwargs):
         report_book.save(report_save_path)
     download_link = ObjectDownloadLink(report_bucket_name, f'{id_source}/{report_name}', local_file_path=report_save_path)
     return {'download_link': download_link}
+
+
+@xray_recorder.capture('send_report')
+@task('send_report')
+def send_report(**kwargs):
+    import boto3
+    client = boto3.client('ses')
+    download_link = kwargs['download_link']
+    recipients = kwargs['recipients']
+    text_body = f'''
+        You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform. 
+        The requested report can be downloaded from the included link. To secure the information contained within, the link will expire in {download_link.expiration_hours}.
+        I hope this report brings you joy and the everlasting delights of a cold data set.
+
+        {str(download_link)}
+
+        - Algernon
+
+        This communication, download link, and any attachment may contain information, which is sensitive, confidential and/or privileged, covered under HIPAA and is intended for use only by the addressee(s) indicated above. If you are not the intended recipient, please be advised that any disclosure, copying, distribution, or use of the contents of this information is strictly prohibited. If you have received this communication in error, please notify the sender immediately and destroy all copies of the original transmission.
+    '''
+    html_body = f'''
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>Algernon Clinical Intelligence Report</title>
+            </head>
+            <body>
+                <p>You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform.</p>
+                <p>The requested report can be downloaded from the included link. To secure the information contained within, the link will expire in {download_link.expiration_hours}.</p>
+                <p>I hope this report brings you joy and the everlasting delights of a cold data set.</p>
+                <h4>{str(download_link)}</h4>
+                <p> - Algernon </p>
+                <h5>This communication, download link, and any attachment may contain information, which is sensitive, confidential and/or privileged, covered under HIPAA and is intended for use only by the addressee(s) indicated above. If you are not the intended recipient, please be advised that any disclosure, copying, distribution, or use of the contents of this information is strictly prohibited. If you have received this communication in error, please notify the sender immediately and destroy all copies of the original transmission.</h5>
+            </body>
+        </html>    
+    '''
+    response = client.send_email(
+        Source='algernon@algernon.solutions',
+        Destination={
+            'ToAddresses': [x['email_address'] for x in recipients]
+        },
+        Message={
+            'Subject': {'Data': 'Algernon Solutions Clinical Intelligence Report'},
+            'Body': {
+                'Text': {'Data': text_body},
+                'Html': {'Data': html_body}
+            }
+        },
+        ReplyToAddresses=['algernon@algernon.solutions']
+    )
+    return {'message_id': response['MessageId'], 'text_body': text_body, 'html_body': html_body}
 
 
 @xray_recorder.capture('build_clinical_teams')

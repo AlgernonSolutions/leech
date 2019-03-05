@@ -50,3 +50,7 @@ class ObjectDownloadLink(AlgObject):
             ExpiresIn=self._expiration_seconds
         )
         return pre_signed
+
+    @property
+    def expiration_hours(self):
+        return self._expiration_seconds/360
