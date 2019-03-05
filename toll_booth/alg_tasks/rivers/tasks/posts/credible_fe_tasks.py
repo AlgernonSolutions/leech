@@ -238,6 +238,8 @@ def build_clinical_caseloads(**kwargs):
 
 def _parse_staff_names(primary_staff_line):
     staff = []
+    if not primary_staff_line:
+        return staff
     program_pattern = '(\([^)]*\))'
     program_re = re.compile(program_pattern)
     staff_names = primary_staff_line.split(', ')
