@@ -28,6 +28,7 @@ def get_productivity_report_data(**kwargs):
         'teams': 1,
         'client_id': 1,
         'last_name': 1,
+        'first_name': 1,
         'text28': 1,
         'dob': 1,
         'ssn': 1,
@@ -191,6 +192,7 @@ def build_clinical_caseloads(**kwargs):
     caseloads = {'unassigned': []}
     name_lookup = {}
     teams = kwargs['teams']
+    clients = kwargs['client_data']
     for team_name, employees in teams.items():
         if team_name not in caseloads:
             caseloads[team_name] = {}
@@ -202,7 +204,6 @@ def build_clinical_caseloads(**kwargs):
             name_lookup[list_name] = emp_id
             if emp_id not in caseloads[team_name]:
                 caseloads[team_name][emp_id] = []
-    clients = kwargs['clients']
     for client in clients:
         client_id = client[' Id']
         primary_assigned = client['Primary Staff']
@@ -241,7 +242,7 @@ def _parse_staff_names(primary_staff_line):
     program_re = re.compile(program_pattern)
     staff_names = primary_staff_line.split(', ')
     for name in staff_names:
-        program_match = program_re.match(name)
+        program_match = program_re.search(name)
         if program_match:
             program_name = program_match.group(1)
             name = name.replace(program_name, '')
