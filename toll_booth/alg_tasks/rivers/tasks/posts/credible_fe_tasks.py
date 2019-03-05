@@ -14,7 +14,10 @@ from toll_booth.alg_tasks.rivers.rocks import task
 def get_productivity_report_data(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
+    credible_date_format = '%m/%d/%Y'
     today = datetime.utcnow()
+    encounter_start_date = today - timedelta(days=90)
+    unapproved_start_date = today - timedelta(days=365)
     staff_search_data = {
         'emp_status_f': 'ACTIVE',
         'first_name': 1,
@@ -46,7 +49,10 @@ def get_productivity_report_data(**kwargs):
         'non_billable1': 3,
         'visittype': 1,
         'orig_rate_amount': 1,
-        'timein': 1
+        'timein': 1,
+        'wh_fld1': 'cv.transfer_date',
+        'wh_cmp1': '>=',
+        'wh_val1': encounter_start_date.strftime(credible_date_format)
     }
     unapproved_search_data = encounter_search_data.copy()
     unapproved_search_data.update({
@@ -55,14 +61,17 @@ def get_productivity_report_data(**kwargs):
         'wh_fld1': 'cv.appr',
         'wh_cmp1': '=',
         'wh_val1': False,
-        'data_dict_ids': 641
+        'data_dict_ids': 641,
+        'wh_andor': 'AND',
+        'wh_fld2': 'cv.transfer_date',
+        'wh_cmp2': '>=',
+        'wh_val2': unapproved_start_date.strftime(credible_date_format)
     })
     tx_plan_args = encounter_search_data.copy()
     tx_plan_args['visittype_id'] = 3
     da_args = encounter_search_data.copy()
     da_args['visittype_id'] = 5
-    encounter_start_date = today - timedelta(days=90)
-    unapproved_start_date = today - timedelta(days=365)
+
 
     id_source = kwargs['id_source']
     report_args = {
@@ -109,6 +118,8 @@ def build_daily_report(**kwargs):
     } for x in unapproved_data]
     caseloads = kwargs['caseloads']
     for team_name, employees in caseloads.items():
+        if team_name == 'unassigned':
+            continue
         page_name = f'productivity_{team_name}'
         productivity_results = _build_team_productivity(employees, encounters, unapproved)
         daily_report[page_name] = productivity_results
@@ -258,11 +269,12 @@ def _build_team_productivity(team_caseload, encounters, unapproved):
     results = []
     twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
     six_days_ago = datetime.now() - timedelta(days=6)
-    past_day_encounters = [x for x in encounters if x['rev_timeout'] <= twenty_four_hours_ago]
+    past_day_encounters = [x for x in encounters if x['rev_timeout'] >= twenty_four_hours_ago]
     next_six_days_encounters = [x for x in encounters if all(
-        [x['rev_timeout'] > twenty_four_hours_ago, x['rev_timeout'] <= six_days_ago]
+        [x['rev_timeout'] < twenty_four_hours_ago, x['rev_timeout'] >= six_days_ago]
     )]
     for emp_id, employee in team_caseload.items():
+        emp_id = int(emp_id)
         emp_past_day_encounters = [x['base_rate'] for x in past_day_encounters if x['emp_id'] == emp_id]
         emp_next_six_days_encounters = [x['base_rate'] for x in next_six_days_encounters if x['emp_id'] == emp_id]
         emp_red_x = [x['base_rate'] for x in unapproved if x['emp_id'] == emp_id and x['red_x']]

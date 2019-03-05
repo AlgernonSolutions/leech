@@ -433,7 +433,6 @@ class CredibleFrontEndDriver:
         }
         url = 'https://reports.crediblebh.com/reports/caseload.asp'
         response = self._session.post(url, data=data)
-        
 
     @_login_required
     def process_advanced_search(self, id_type, selected_fields, start_date=None, end_date=None):
