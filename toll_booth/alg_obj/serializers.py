@@ -10,7 +10,8 @@ from toll_booth.alg_obj import AlgObject
 
 
 class AlgEncoder(json.JSONEncoder):
-    def default(self, obj):
+    @classmethod
+    def default(cls, obj):
         if isinstance(obj, AlgObject):
             return {'_alg_class': type(obj).__name__, '_alg_module': str(obj.__module__), 'value': obj.to_json}
         if isinstance(obj, frozenset):
@@ -30,7 +31,7 @@ class AlgEncoder(json.JSONEncoder):
         if isinstance(obj, JsonRef):
             subject = obj.__subject__
             return subject
-        return super(AlgEncoder, self).default(obj)
+        return super().default(obj)
 
 
 class AlgDecoder(json.JSONDecoder):
