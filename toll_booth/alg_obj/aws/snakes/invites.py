@@ -1,14 +1,23 @@
 import boto3
 from botocore.exceptions import ClientError
 
+from toll_booth.alg_obj import AlgObject
 
-class ObjectDownloadLink:
+
+class ObjectDownloadLink(AlgObject):
     def __init__(self, bucket_name, remote_file_path, expiration_seconds=172800, local_file_path=None):
         self._bucket_name = bucket_name
         self._remote_file_path = remote_file_path
         self._expiration_seconds = expiration_seconds
         self._local_file_path = local_file_path
         self._stored = False
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['bucket_name'], json_dict['remote_file_path'],
+            json_dict.get('expiration_seconds', 172800), json_dict.get('local_file_path')
+        )
 
     def _store(self):
         s3 = boto3.resource('s3')

@@ -31,7 +31,7 @@ class AlgEncoder(json.JSONEncoder):
         if isinstance(obj, JsonRef):
             subject = obj.__subject__
             return subject
-        return super().default(obj)
+        return super(AlgEncoder, cls()).default(obj)
 
 
 class AlgDecoder(json.JSONDecoder):

@@ -1,9 +1,3 @@
-import os
-import re
-from datetime import datetime, timedelta
-from decimal import Decimal
-
-import pytz
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -13,8 +7,10 @@ from toll_booth.alg_tasks.rivers.rocks import task
 @task('get_productivity_report_data')
 def get_productivity_report_data(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
+    from datetime import datetime, timedelta
 
     credible_date_format = '%m/%d/%Y'
+
     today = datetime.utcnow()
     encounter_start_date = today - timedelta(days=90)
     unapproved_start_date = today - timedelta(days=365)
@@ -90,6 +86,9 @@ def get_productivity_report_data(**kwargs):
 @xray_recorder.capture('build_daily_report')
 @task('build_daily_report')
 def build_daily_report(**kwargs):
+    import re
+    from decimal import Decimal
+
     daily_report = {}
     encounter_data = kwargs['encounter_data']
     encounters = [{
@@ -138,6 +137,8 @@ def get_da_tx_data(**kwargs):
 def write_report_data(**kwargs):
     from openpyxl import Workbook
     from toll_booth.alg_obj.aws.snakes.invites import ObjectDownloadLink
+    import os
+    from datetime import  datetime
 
     report_bucket_name = kwargs.get('report_bucket_name', os.getenv('REPORT_BUCKET_NAME', 'algernonsolutions-leech'))
     local_user_directory = os.path.expanduser('~')
@@ -155,7 +156,11 @@ def write_report_data(**kwargs):
         new_sheet.append([entry_name])
         for row in report_data:
             new_sheet.append(row)
-    report_book.save(report_save_path)
+    try:
+        report_book.save(report_save_path)
+    except FileNotFoundError:
+        report_save_path = os.path.join('home', report_name)
+        report_book.save(report_save_path)
     download_link = ObjectDownloadLink(report_bucket_name, f'{id_source}/{report_name}', local_file_path=report_save_path)
     return {'download_link': download_link}
 
@@ -247,6 +252,8 @@ def build_clinical_caseloads(**kwargs):
 
 
 def _parse_staff_names(primary_staff_line):
+    import re
+
     staff = []
     if not primary_staff_line:
         return staff
@@ -263,6 +270,8 @@ def _parse_staff_names(primary_staff_line):
 
 
 def _build_team_productivity(team_caseload, encounters, unapproved):
+    from datetime import datetime, timedelta
+
     results = []
     twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
     six_days_ago = datetime.now() - timedelta(days=6)
