@@ -171,7 +171,7 @@ def write_report_data(**kwargs):
     try:
         report_book.save(report_save_path)
     except FileNotFoundError:
-        report_save_path = os.path.join('home', report_name)
+        report_save_path = os.path.join(report_name)
         report_book.save(report_save_path)
     download_link = ObjectDownloadLink(report_bucket_name, f'{id_source}/{report_name}', local_file_path=report_save_path)
     return {'download_link': download_link}
@@ -181,9 +181,12 @@ def write_report_data(**kwargs):
 @task('send_report')
 def send_report(**kwargs):
     import boto3
+    import os
+
     client = boto3.client('ses')
     download_link = kwargs['download_link']
     recipients = kwargs['recipients']
+    subject_line = 'Algernon Solutions Clinical Intelligence Report'
     text_body = f'''
         You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform. 
         The requested report can be downloaded from the included link. To secure the information contained within, the link will expire in {download_link.expiration_hours}.
@@ -212,13 +215,46 @@ def send_report(**kwargs):
             </body>
         </html>    
     '''
+
+    addresses = {
+        x['email_address']: {'ChannelType': 'EMAIL'} for x in recipients
+    }
+
+    application_id = kwargs.get('application_id', os.getenv('PINPOINT_APP_ID', 'e077e1ece06a40d983a1fb0cdeb76854'))
+
+    response = client.send_messages(
+        ApplicationId=application_id,
+        MessageRequest={
+            'Addresses': addresses,
+            'MessageConfiguration': {
+                'EmailMessage': {
+                    'FromAddress': 'algernon@algernon.solutions',
+                    'ReplyToAddresses': [
+                        'algernon@algernon.solutions',
+                    ],
+                    'SimpleEmail': {
+                        'HtmlPart': {
+                            'Data': html_body
+                        },
+                        'Subject': {
+                            'Data': subject_line
+                        },
+                        'TextPart': {
+                            'Data': text_body
+                        }
+                    }
+                }
+            }
+        }
+    )
+
     response = client.send_email(
         Source='algernon@algernon.solutions',
         Destination={
             'ToAddresses': [x['email_address'] for x in recipients]
         },
         Message={
-            'Subject': {'Data': 'Algernon Solutions Clinical Intelligence Report'},
+            'Subject': {'Data': subject_line},
             'Body': {
                 'Text': {'Data': text_body},
                 'Html': {'Data': html_body}

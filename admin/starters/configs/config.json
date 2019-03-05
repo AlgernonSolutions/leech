@@ -431,6 +431,13 @@
         "task_config": {
           "concurrency": 1
         }
+      },
+      {
+        "task_name": "send_report",
+        "task_description": "fires the email containing report information",
+        "task_config": {
+          "concurrency": 1
+        }
       }
     ]
   }
