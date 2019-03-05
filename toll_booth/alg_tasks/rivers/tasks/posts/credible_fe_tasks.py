@@ -93,12 +93,13 @@ def build_daily_report(**kwargs):
     encounter_data = kwargs['encounter_data']
     encounters = [{
         'clientvisit_id': int(x['Service ID']),
-        'rev_timeout': x['Service Date'],
+        'transfer_date': x['Transfer Date'],
         'visit_type': x['Service Type'],
         'non_billable': bool(x['Non Billable']),
         'emp_id': int(x['Staff ID']),
         'client_id': int(x['Consumer ID']),
-        'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate']))
+        'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate'])),
+        'data_dict_ids': 83
     } for x in encounter_data]
     unapproved_data = kwargs['unapproved_data']
     unapproved = [{
@@ -264,9 +265,9 @@ def _build_team_productivity(team_caseload, encounters, unapproved):
     results = []
     twenty_four_hours_ago = datetime.now() - timedelta(hours=24)
     six_days_ago = datetime.now() - timedelta(days=6)
-    past_day_encounters = [x for x in encounters if x['rev_timeout'] >= twenty_four_hours_ago]
+    past_day_encounters = [x for x in encounters if x['transfer_date'] >= twenty_four_hours_ago]
     next_six_days_encounters = [x for x in encounters if all(
-        [x['rev_timeout'] < twenty_four_hours_ago, x['rev_timeout'] >= six_days_ago]
+        [x['transfer_date'] < twenty_four_hours_ago, x['transfer_date'] >= six_days_ago]
     )]
     for emp_id, employee in team_caseload.items():
         emp_id = int(emp_id)
