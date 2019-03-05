@@ -52,7 +52,8 @@ def get_productivity_report_data(**kwargs):
         'timein': 1,
         'wh_fld1': 'cv.transfer_date',
         'wh_cmp1': '>=',
-        'wh_val1': encounter_start_date.strftime(credible_date_format)
+        'wh_val1': encounter_start_date.strftime(credible_date_format),
+        'data_dict_ids': 83
     }
     unapproved_search_data = encounter_search_data.copy()
     unapproved_search_data.update({
