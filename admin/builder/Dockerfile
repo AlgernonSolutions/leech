@@ -1,7 +1,7 @@
 FROM amazonlinux:latest
 
 WORKDIR /home
-COPY requirements.txt requirements.txt
-RUN mkdir layer
+COPY . .
 RUN yum install -y python3
-RUN pip3 install -t layer -r requirements.txt
+RUN python3 -m pip install --upgrade pip
+RUN pip3 install -r requirements.txt
