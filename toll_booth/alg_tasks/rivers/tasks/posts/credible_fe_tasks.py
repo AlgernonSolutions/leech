@@ -118,7 +118,7 @@ def build_daily_report(**kwargs):
         page_name = f'productivity_{team_name}'
         productivity_results = _build_team_productivity(employees, encounters, unapproved)
         daily_report[page_name] = productivity_results
-    return {'report': daily_report}
+    return {'report_data': daily_report}
 
 
 @xray_recorder.capture('get_da_tx_data')
