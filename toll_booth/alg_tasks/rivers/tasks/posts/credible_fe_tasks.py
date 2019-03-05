@@ -61,23 +61,18 @@ def get_productivity_report_data(**kwargs):
         'wh_fld1': 'cv.appr',
         'wh_cmp1': '=',
         'wh_val1': False,
-        'data_dict_ids': 641,
-        'wh_andor': 'AND',
-        'wh_fld2': 'cv.transfer_date',
-        'wh_cmp2': '>=',
-        'wh_val2': unapproved_start_date.strftime(credible_date_format)
+        'data_dict_ids': 641
     })
     tx_plan_args = encounter_search_data.copy()
     tx_plan_args['visittype_id'] = 3
     da_args = encounter_search_data.copy()
     da_args['visittype_id'] = 5
 
-
     id_source = kwargs['id_source']
     report_args = {
         'emp_data': ('Employees', staff_search_data),
         'client_data': ('Clients', client_search_data),
-        'encounter_data': ('ClientVisit', encounter_search_data, encounter_start_date, today),
+        'encounter_data': ('ClientVisit', encounter_search_data),
         'unapproved_data': ('ClientVisit', unapproved_search_data, unapproved_start_date, today),
         'tx_data': ('ClientVisit', tx_plan_args, unapproved_start_date, today),
         'da_data': ('ClientVisit', da_args, unapproved_start_date, today)
