@@ -23,12 +23,15 @@ class RuffianRoost:
         deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
         client = boto3.client('stepfunctions')
         execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, client)]
+        running_machines = []
         for work_list in work_lists:
             execution_arns.append(
                 cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, client)
             )
-        if decider_list not in work_lists:
-            execution_arns.append(cls._start_machine(ruffian_machine_arn, decider_list, domain_name, config, client))
+            running_machines.append(work_list['list_name'])
+        if decider_list not in running_machines:
+            base_ruffian = {'list_name': decider_list, 'number_threads': 1}
+            execution_arns.append(cls._start_machine(ruffian_machine_arn, base_ruffian, domain_name, config, client))
         return execution_arns
 
     @classmethod
