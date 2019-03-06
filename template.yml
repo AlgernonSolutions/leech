@@ -57,7 +57,7 @@ Resources:
       Role:
         Ref: LambdaRoleArn
       Timeout: 300
-      MemorySize: 448
+      MemorySize: 128
 
   decide:
     Type: AWS::Serverless::Function

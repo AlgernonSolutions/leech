@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
-# @lambda_logged
+@lambda_logged
 def start_flow(event, context):
     logging.info(f'received a call to fire a start_flow task, event: {event}')
     provided_flow_id = event['flow_id']

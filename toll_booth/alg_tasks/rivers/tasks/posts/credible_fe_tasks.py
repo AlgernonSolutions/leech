@@ -348,7 +348,7 @@ def build_clinical_caseloads(**kwargs):
         for emp_id, employee in team.items():
             client_ids.update([x['client_id'] for x in employee['caseload']])
     client_ids.update([x['client_id'] for x in unassigned])
-    if client_ids - set([str(x[' ID']) for x in clients]):
+    if client_ids - set([str(x[' Id']) for x in clients]):
         raise RuntimeError('while creating caseloads, we seemed to have missed someone, can not continue due to prime directive')
     caseloads['unassigned'] = unassigned
     return {'caseloads': caseloads}
