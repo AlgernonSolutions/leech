@@ -27,6 +27,8 @@ class RuffianRoost:
             execution_arns.append(
                 cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, client)
             )
+        if decider_list not in work_lists:
+            execution_arns.append(cls._start_machine(ruffian_machine_arn, decider_list, domain_name, config, client))
         return execution_arns
 
     @classmethod
