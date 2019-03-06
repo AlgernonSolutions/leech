@@ -170,10 +170,10 @@ def write_report_data(**kwargs):
     today_string = today.strftime('%Y%m%d')
     report_name = f'{report_name}_{today_string}.xlsx'
     report_save_path = os.path.join(local_user_directory, report_name)
-    report_data = kwargs['report_data']
+    reports = kwargs['report_data']
     report_book = Workbook()
     front_sheet = report_book.active
-    for entry_name, report_data in report_data.items():
+    for entry_name, report_data in reports.items():
         new_sheet = report_book.create_sheet(entry_name)
         new_sheet.append([entry_name])
         top_row = new_sheet.row_dimensions[1]
@@ -341,7 +341,7 @@ def build_clinical_caseloads(**kwargs):
                 'dob': client['DOB'],
                 'ssn': client['SSN'],
                 'team': client['CSA (Team)'],
-                'primary_staff': primary_names
+                'primary_staff': primary_assigned
             })
     client_ids = set()
     for team_name, team in caseloads.items():
