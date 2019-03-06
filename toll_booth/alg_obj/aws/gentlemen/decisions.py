@@ -216,14 +216,14 @@ class CompleteWork(Decision):
         return self.__getitem__('result')
 
     def add_result(self, result_name, results):
-        current_results = self._decision_attributes['results']
+        current_results = self._decision_attributes['result']
         if current_results:
             current_results = json.loads(current_results, cls=AlgDecoder)
         if result_name in current_results:
             raise RuntimeError(f'tried to store results: {results}, named: {result_name} in current results: {current_results},'
                                f' overwriting in the complete work decision is not supported')
         current_results[result_name] = results
-        self._decision_attributes['results'] = json.dumps(current_results, cls=AlgEncoder)
+        self._decision_attributes['result'] = json.dumps(current_results, cls=AlgEncoder)
 
 
 class SignalExternalFlow(Decision):

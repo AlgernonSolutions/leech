@@ -221,19 +221,16 @@ def send_report(**kwargs):
                 </style>
             </head>
             <body>
-                <div class="container">
-                    <p> <img src="Algernon_final_Twitter.jpg" alt="algernon_solutions_logo" width="200", height="200"></p>
-                    <p>You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform.</p>
-                    <p>The requested report can be downloaded from the included link. To secure the information contained within, the link will expire in {download_link.expiration_hours} hours.</p>
-                    <p>I hope this report brings you joy and the everlasting delights of a cold data set.</p>
-                    <h4>{str(download_link)}</h4>
-                    <p> - Algernon </p>
-                    <h5>
-                        This communication, download link, and any attachment may contain information, which is sensitive, confidential and/or privileged, covered under HIPAA and is intended for use only by the addressee(s) indicated above.<br/>
-                        If you are not the intended recipient, please be advised that any disclosure, copying, distribution, or use of the contents of this information is strictly prohibited.<br/>
-                        If you have received this communication in error, please notify the sender immediately and destroy all copies of the original transmission.<br/>
-                    </h5>
-                </div>
+                <p>You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform.</p>
+                <p>The requested report can be downloaded from the included link. To secure the information contained within, the link will expire in {download_link.expiration_hours} hours.</p>
+                <p>I hope this report brings you joy and the everlasting delights of a cold data set.</p>
+                <h4>{str(download_link)}</h4>
+                <p> - Algernon </p>
+                <h5>
+                    This communication, download link, and any attachment may contain information, which is sensitive, confidential and/or privileged, covered under HIPAA and is intended for use only by the addressee(s) indicated above.<br/>
+                    If you are not the intended recipient, please be advised that any disclosure, copying, distribution, or use of the contents of this information is strictly prohibited.<br/>
+                    If you have received this communication in error, please notify the sender immediately and destroy all copies of the original transmission.<br/>
+                </h5>
             </body>
         </html>
     '''
