@@ -430,7 +430,7 @@ def _build_unassigned_report(caseloads):
     for client in caseloads['unassigned']:
         report.append([
             client['client_id'], f'{client["last_name"]}, {client["first_name"]}',
-            client['dob'], client['dob'], client['ssn'], client['team'], client.get('primary_staff', '')
+            client['dob'], client['dob'], client['ssn'], client['team'], ', '.join(client.get('primary_staff', []))
         ])
     return report
 
