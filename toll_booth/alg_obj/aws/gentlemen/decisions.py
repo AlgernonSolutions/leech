@@ -202,11 +202,12 @@ class StartActivity(Decision):
 
 class CompleteWork(Decision):
     def __init__(self, results=None):
-        complete_work_attributes = {
-            'result': results
-        }
-        if not results:
-            complete_work_attributes = {}
+        complete_work_attributes = {}
+        if results:
+            results = json.dumps(results, cls=AlgEncoder)
+            complete_work_attributes = {
+                'result': results
+            }
         attributes_name = 'completeWorkflowExecutionDecisionAttributes'
         super().__init__('CompleteWorkflowExecution', complete_work_attributes, attributes_name)
 
