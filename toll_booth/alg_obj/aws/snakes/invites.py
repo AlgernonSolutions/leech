@@ -23,7 +23,7 @@ class ObjectDownloadLink(AlgObject):
         s3 = boto3.resource('s3')
         if self._local_file_path is None:
             raise RuntimeError(f'tried to generate a download url for {self._remote_file_path}, but it does not exist remotely, and no local path was provided')
-        s3.Bucket(self._bucket_name).upload_file(self._local_file_path, self._local_file_path)
+        s3.Bucket(self._bucket_name).upload_file(self._local_file_path, self._remote_file_path)
         self._stored = True
 
     def _check(self):
@@ -53,4 +53,4 @@ class ObjectDownloadLink(AlgObject):
 
     @property
     def expiration_hours(self):
-        return self._expiration_seconds/360
+        return int(self._expiration_seconds/3600)
