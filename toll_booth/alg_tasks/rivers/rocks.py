@@ -2,7 +2,7 @@ import logging
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
@@ -105,6 +105,8 @@ def workflow(workflow_name):
                     if mark_ruffian:
                         for marker in mark_ruffian:
                             decisions.add_decision(marker)
+                elif isinstance(decision, CompleteWork):
+                    decision.add_result('task_args', task_args)
                 try:
                     decision.set_id_info(work_history.flow_id, work_history.run_id)
                 except AttributeError:
