@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
-# @lambda_logged
+@lambda_logged
 def start_flow(event, context):
     logging.info(f'received a call to fire a start_flow task, event: {event}')
     provided_flow_id = event['flow_id']
@@ -28,7 +28,7 @@ def start_flow(event, context):
             'name': flow_name,
             'version': str(versions.workflow_versions[flow_name])
         },
-        'taskList': {'name': flow_name},
+        'taskList': {'name': flow_id},
         'childPolicy': 'TERMINATE',
         'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
     }
