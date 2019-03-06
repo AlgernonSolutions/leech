@@ -1,11 +1,15 @@
+import logging
 from datetime import datetime
 
 import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions
+from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
+@lambda_logged
 def start_flow(event, context):
+    logging.info(f'recieved a call to fire a start_flow task, event: {event}')
     details = event['detail']
     provided_flow_id = details['flow_id']
     flow_id = _generate_flow_id(provided_flow_id)
