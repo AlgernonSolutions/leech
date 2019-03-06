@@ -109,7 +109,8 @@ class RuffianRoost:
 
 
 class Ruffian:
-    def __init__(self, domain_name, work_list, config, warn_level, context):
+    def __init__(self, domain_name, work_list, config, warn_level, context, **kwargs):
+        run_config = kwargs.get('run_config', {})
         self._domain_name = domain_name
         self._work_list = work_list
         self._config = config
@@ -117,6 +118,7 @@ class Ruffian:
         self._context = context
         self._pending_tasks = {}
         self._connections = []
+        self._run_config = run_config
 
     @classmethod
     def build(cls, context, domain_name, work_list, config, **kwargs):
@@ -135,7 +137,7 @@ class Ruffian:
         logging.info(f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
-            general = General(self._domain_name, self._work_list, self._context)
+            general = General(self._domain_name, self._work_list, self._context, self._run_config)
             try:
                 general.command()
             except Exception as e:

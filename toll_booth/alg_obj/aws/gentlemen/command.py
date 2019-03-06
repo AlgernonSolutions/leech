@@ -26,11 +26,13 @@ class WorkHistoryRetrievalException(Exception):
 
 
 class General:
-    def __init__(self, domain_name, task_list, context=None, identity=None):
+    def __init__(self, domain_name, task_list, context=None, identity=None, **kwargs):
+        run_config = kwargs.get('run_config', {})
         self._domain_name = domain_name
         self._task_list = task_list
         self._context = context
         self._identity = identity
+        self._run_config = run_config
         self._client = boto3.client('swf', config=Config(
             connect_timeout=70, read_timeout=70, retries={'max_attempts': 0}))
 
@@ -112,6 +114,7 @@ class General:
         if self._identity:
             poll_args['identity'] = self._identity
         response_iterator = paginator.paginate(**poll_args)
+        fresh_start = self._run_config.get('fresh_start')
 
         for page in response_iterator:
             if 'taskToken' not in page:
@@ -121,6 +124,8 @@ class General:
             history = page
         history['events'] = events
         workflow_history = WorkflowHistory.parse_from_poll(self._domain_name, history)
+        if fresh_start:
+            return workflow_history
         try:
             markers = self._get_past_runs(workflow_history.flow_id)
         except ClientError as e:
