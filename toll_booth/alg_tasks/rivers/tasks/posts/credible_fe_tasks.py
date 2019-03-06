@@ -1,6 +1,5 @@
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.aws.snakes.stored_statics import StaticImage
 from toll_booth.alg_tasks.rivers.rocks import task
 
 

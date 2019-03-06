@@ -49,6 +49,16 @@ Resources:
       Timeout: 300
       MemorySize: 448
 
+  starter:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/starter_motor.start_flow
+      FunctionName: leech-start
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 448
+
   decide:
     Type: AWS::Serverless::Function
     Properties:
