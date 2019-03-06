@@ -10,12 +10,11 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 @lambda_logged
 def start_flow(event, context):
     logging.info(f'recieved a call to fire a start_flow task, event: {event}')
-    details = event['detail']
-    provided_flow_id = details['flow_id']
+    provided_flow_id = event['flow_id']
     flow_id = _generate_flow_id(provided_flow_id)
-    domain_name = details['domain_name']
-    flow_name = details['flow_name']
-    input_string = details.get('input_string')
+    domain_name = event['domain_name']
+    flow_name = event['flow_name']
+    input_string = event.get('input_string')
     client = boto3.client('swf')
     versions = Versions.retrieve(domain_name)
     start_args = {
