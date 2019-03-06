@@ -192,12 +192,7 @@ def write_report_data(**kwargs):
 @xray_recorder.capture('send_report')
 @task('send_report')
 def send_report(**kwargs):
-    import boto3
-    import os
-
-    client = boto3.client('ses')
     download_link = kwargs['download_link']
-    recipients = kwargs['recipients']
     subject_line = 'Algernon Solutions Clinical Intelligence Report'
     text_body = f'''
         You are receiving this email because you have requested to have routine reports sent to you through the Algernon Clinical Intelligence Platform. 
@@ -228,52 +223,7 @@ def send_report(**kwargs):
         </html>    
     '''
 
-    addresses = {
-        x['email_address']: {'ChannelType': 'EMAIL'} for x in recipients
-    }
-
-    application_id = kwargs.get('application_id', os.getenv('PINPOINT_APP_ID', 'e077e1ece06a40d983a1fb0cdeb76854'))
-
-    response = client.send_messages(
-        ApplicationId=application_id,
-        MessageRequest={
-            'Addresses': addresses,
-            'MessageConfiguration': {
-                'EmailMessage': {
-                    'FromAddress': 'algernon@algernon.solutions',
-                    'ReplyToAddresses': [
-                        'algernon@algernon.solutions',
-                    ],
-                    'SimpleEmail': {
-                        'HtmlPart': {
-                            'Data': html_body
-                        },
-                        'Subject': {
-                            'Data': subject_line
-                        },
-                        'TextPart': {
-                            'Data': text_body
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-    response = client.send_email(
-        Source='algernon@algernon.solutions',
-        Destination={
-            'ToAddresses': [x['email_address'] for x in recipients]
-        },
-        Message={
-            'Subject': {'Data': subject_line},
-            'Body': {
-                'Text': {'Data': text_body},
-                'Html': {'Data': html_body}
-            }
-        },
-        ReplyToAddresses=['algernon@algernon.solutions']
-    )
+    response = _send_by_ses(subject_line=subject_line, text_body=text_body, html_body=html_body, **kwargs)
     return {'message_id': response['MessageId'], 'text_body': text_body, 'html_body': html_body}
 
 
@@ -410,3 +360,69 @@ def _build_expiration_report(team_caseload, assessment_data):
 
 def _build_cracks_report(team_caseload, client_data, encounters):
     pass
+
+
+def _send_by_ses(**kwargs):
+    import boto3
+
+    client = boto3.client('ses')
+    recipients = kwargs['recipients']
+    html_body, text_body = kwargs['html_body'], kwargs['text_body']
+    subject_line = kwargs['subject_line']
+
+    response = client.send_email(
+        Source='algernon@algernon.solutions',
+        Destination={
+            'ToAddresses': [x['email_address'] for x in recipients]
+        },
+        Message={
+            'Subject': {'Data': subject_line},
+            'Body': {
+                'Text': {'Data': text_body},
+                'Html': {'Data': html_body}
+            }
+        },
+        ReplyToAddresses=['algernon@algernon.solutions']
+    )
+    return response
+
+
+def _send_by_pinpoint(**kwargs):
+    import os
+    import boto3
+
+    client = boto3.client('pinpoint')
+    application_id = kwargs.get('application_id', os.getenv('PINPOINT_APP_ID', 'e077e1ece06a40d983a1fb0cdeb76854'))
+    recipients = kwargs['recipients']
+    html_body, text_body = kwargs['html_body'], kwargs['text_body']
+    subject_line = kwargs['subject_line']
+    addresses = {
+        x['email_address']: {'ChannelType': 'EMAIL'} for x in recipients
+    }
+
+    response = client.send_messages(
+        ApplicationId=application_id,
+        MessageRequest={
+            'Addresses': addresses,
+            'MessageConfiguration': {
+                'EmailMessage': {
+                    'FromAddress': 'algernon@algernon.solutions',
+                    'ReplyToAddresses': [
+                        'algernon@algernon.solutions',
+                    ],
+                    'SimpleEmail': {
+                        'HtmlPart': {
+                            'Data': html_body
+                        },
+                        'Subject': {
+                            'Data': subject_line
+                        },
+                        'TextPart': {
+                            'Data': text_body
+                        }
+                    }
+                }
+            }
+        }
+    )
+    return response
