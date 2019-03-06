@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import boto3
+from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
@@ -19,7 +20,7 @@ def start_flow(event, context):
     client = boto3.client('swf')
     versions = Versions.retrieve(domain_name)
     config = LeechConfig.retrieve()
-    _rouse_ruffians(domain_name, flow_id, flow_name, config)
+
     start_args = {
         'domain': domain_name,
         'workflowId': flow_id,
@@ -33,7 +34,13 @@ def start_flow(event, context):
     }
     if input_string:
         start_args['input'] = input_string
-    start_results = client.start_workflow_execution(**start_args)
+    try:
+        start_results = client.start_workflow_execution(**start_args)
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
+            raise e
+        return
+    _rouse_ruffians(domain_name, flow_id, flow_name, config)
     return start_results
 
 
