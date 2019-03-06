@@ -1,3 +1,5 @@
+from datetime import timedelta, datetime
+
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -131,6 +133,12 @@ def build_daily_report(**kwargs):
         page_name = f'productivity_{team_name}'
         productivity_results = _build_team_productivity(employees, encounters, unapproved)
         daily_report[page_name] = productivity_results
+    tx_report = _build_expiration_report(caseloads, tx_plans, 180)
+    da_report = _build_expiration_report(caseloads, diagnostics, 180)
+    unassigned_report = _build_unassigned_report(caseloads)
+    daily_report['tx_plans'] = tx_report
+    daily_report['diagnostics'] = da_report
+    daily_report['unassigned'] = unassigned_report
     return {'report_data': daily_report}
 
 
@@ -302,7 +310,9 @@ def build_clinical_caseloads(**kwargs):
                 'medicaid_id': client['Medicaid ID'],
                 'dob': client['DOB'],
                 'ssn': client['SSN'],
+                'team': client['CSA (Team)']
             })
+            continue
         primary_names = _parse_staff_names(primary_assigned)
         client_record = {
             'client_id': client_id,
@@ -313,6 +323,7 @@ def build_clinical_caseloads(**kwargs):
             'ssn': client['SSN'],
             'primary_staff': primary_names
         }
+        found = False
         for staff_name in primary_names:
             found_emp_id = name_lookup.get(staff_name)
             if found_emp_id:
@@ -320,6 +331,25 @@ def build_clinical_caseloads(**kwargs):
                     for emp_id, employee in employees.items():
                         if emp_id == found_emp_id:
                             employee['caseload'].append(client_record)
+                            found = True
+        if not found:
+            unassigned.append({
+                'client_id': client_id,
+                'last_name': client['Last Name'],
+                'first_name': client['First Name'],
+                'medicaid_id': client['Medicaid ID'],
+                'dob': client['DOB'],
+                'ssn': client['SSN'],
+                'team': client['CSA (Team)'],
+                'primary_staff': primary_names
+            })
+    client_ids = set()
+    for team_name, team in caseloads.items():
+        for emp_id, employee in team.items():
+            client_ids.update([x['client_id'] for x in employee['caseload']])
+    client_ids.update([x['client_id'] for x in unassigned])
+    if client_ids - set([str(x[' ID']) for x in clients]):
+        raise RuntimeError('while creating caseloads, we seemed to have missed someone, can not continue due to prime directive')
     caseloads['unassigned'] = unassigned
     return {'caseloads': caseloads}
 
@@ -365,12 +395,44 @@ def _build_team_productivity(team_caseload, encounters, unapproved):
     return results
 
 
-def _build_expiration_report(team_caseload, assessment_data):
-    pass
+def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
+    lifespan_delta = timedelta(days=assessment_lifespan)
+    inverted = _invert_caseloads(caseloads)
+    now = datetime.now()
+    max_assessments = {}
+    results = [['Team', 'CSW Name', 'Start Date', 'End Date', 'Expired', 'Days Remaining']]
+    for assessment in assessment_data:
+        client_id = str(assessment['client_id'])
+        if client_id not in max_assessments:
+            max_assessments[client_id] = []
+        max_assessments[client_id].append(assessment['rev_timeout'])
+    for client_id, assessments in max_assessments.items():
+        assignments = inverted.get(client_id, {'team': 'unassigned', 'csw': 'unassigned'})
+        team_name, csw_name = assignments['team'], assignments['csw']
+        max_assessment_date = max(assessments)
+        expiration_date = max_assessment_date + lifespan_delta
+        expired = False
+        days_left = (expiration_date - now).days
+        if expiration_date < now:
+            expired = True
+            days_left = 0
+        results.append([team_name, csw_name, max_assessment_date, expiration_date, expired, days_left])
+    no_assessments = set(inverted.keys()) - set(max_assessments.keys())
+    for client_id in no_assessments:
+        assignments = inverted.get(client_id, {'team': 'unassigned', 'csw': 'unassigned'})
+        team_name, csw_name = assignments['team'], assignments['csw']
+        results.append([team_name, csw_name, '',  '', True, 0])
+    return results
 
 
-def _build_cracks_report(team_caseload, client_data, encounters):
-    pass
+def _build_unassigned_report(caseloads):
+    report = [['Client ID', 'Client Name', 'DOB', 'SSN', 'Medicaid Number', 'Primary Assigned Staff', 'Assigned CSA']]
+    for client in caseloads['unassigned']:
+        report.append([
+            client['client_id'], f'{client["last_name"]}, {client["first_name"]}',
+            client['dob'], client['dob'], client['ssn'], client['team'], client.get('primary_staff', '')
+        ])
+    return report
 
 
 def _send_by_ses(**kwargs):
@@ -437,3 +499,17 @@ def _send_by_pinpoint(**kwargs):
         }
     )
     return response
+
+
+def _invert_caseloads(caseloads):
+    inverted_caseloads = {}
+    for team_name, team_caseload in caseloads.items():
+        if team_name == 'unassigned':
+            for client in team_caseload:
+                inverted_caseloads[client['client_id']] = {'team': 'unassigned', 'csw': 'unassigned'}
+            continue
+        for emp_id, employee in team_caseload.items():
+            csw = f'{employee["last_name"]}, {employee["first_name"]}'
+            for client in employee['caseload']:
+                inverted_caseloads[client['client_id']] = {'team': team_name, 'csw': csw}
+    return inverted_caseloads
