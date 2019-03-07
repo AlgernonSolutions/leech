@@ -1,3 +1,4 @@
+import dateutil
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -79,7 +80,7 @@ def get_payroll_data(**kwargs):
         'sample_data': ('ClientVisit', sample_search_data),
         'recovery_data': ('ClientVisit', recovery_search_data)
     }
-    results = {}
+    results = {'sampled_days': (sample_end_date-sample_start_date).days}
     with CredibleFrontEndDriver(id_source) as driver:
         for report_name, report_arg in report_args.items():
             results[report_name] = driver.process_advanced_search(*report_arg)
@@ -444,10 +445,103 @@ def build_clinical_caseloads(**kwargs):
 @xray_recorder.capture('build_payroll_report')
 @task('build_payroll_report')
 def build_payroll_report(**kwargs):
+    from toll_booth.alg_obj.aws.snakes.stored_statics import StaticCsv
+
+    header_line = [
+        'Team Name', 'CSW Name', 'Service Date', 'Client ID', 'Service ID', 'Service Type',
+        'Units', 'Transfer Date', 'Approved', 'Approved By', 'Approved Date',
+        'Delay', 'Timing', 'Rate', 'Rate Payable'
+    ]
+    pay_csv = StaticCsv.for_pay_rates(kwargs['id_source'])
     payroll_report = {}
-    sample_period_data = kwargs['sample_data']
-    recovery_data = kwargs['recovery_data']
-    raise NotImplementedError('gotta get back to this')
+    sample_period_data = _standardize_encounter_data(kwargs['sample_data'])
+    recovery_data = _standardize_encounter_data(kwargs['recovery_data'])
+    for team_name, team in kwargs['teams'].items():
+        team_report = [header_line]
+        team_unapproved_report = [header_line]
+        team_recovery_report = [header_line]
+        for employee in team:
+            employee_name = f'{employee["last_name"]}, {employee["first_name"]}'
+            emp_id = employee['emp_id']
+            try:
+                pay_row = pay_csv[emp_id][0]
+            except KeyError:
+                pay_row = {'Rate': '$0'}
+            format_args = (team_name, emp_id, employee_name, pay_row, kwargs.get('sampled_days', 16))
+            employee_encounters, employee_unapproved = _format_sampled_encounters(sample_period_data, *format_args, recovery=False)
+            employee_recovery = _format_sampled_encounters(recovery_data, *format_args, recovery=True)
+            team_report.extend(employee_encounters)
+            team_unapproved_report.extend(employee_unapproved)
+            team_recovery_report.extend(employee_recovery)
+        payroll_report[f'payable_{team_name}'] = team_report
+        payroll_report[f'unapproved_{team_name}'] = team_unapproved_report
+        payroll_report[f'recovery_{team_name}'] = team_recovery_report
+    # return payroll_report
+    raise NotImplementedError('need to correct recovery pull to only include services transferred within previous sample period but approved during current sample period')
+
+
+def _format_sampled_encounters(sample_period_data, team_name, emp_id, employee_name, pay_row, sampled_days, recovery):
+    from decimal import Decimal
+    import re
+
+    def match_appr_emp_id(test_row):
+        return str(test_row['emp_id']) == str(emp_id) and test_row['appr'] is True
+
+    def match_emp_id(test_row):
+        return str(test_row['emp_id']) == str(emp_id)
+
+    sampled_encounters = []
+    unapproved_encounters = []
+    average_daily_productivity = sum([int(x['base_units'])/4 for x in filter(match_appr_emp_id, sample_period_data)])/sampled_days
+    base_rate = Decimal(re.sub(r'[^\d.]', '', pay_row['Rate']))
+    if average_daily_productivity > 3.3 and not recovery:
+        base_rate = 25.00
+    for row in filter(match_emp_id, sample_period_data):
+        service_rate = base_rate
+        approved = row['appr']
+        if not approved:
+            service_rate = 0
+        transfer_date = row['transfer_date']
+        service_date = row['rev_timeout']
+        delay_delta = (transfer_date-service_date)
+        delay = ((delay_delta.days * 24) + (delay_delta.seconds//3600))
+        base_units = row['base_units']
+        timing = 'Late'
+        if delay <= 48:
+            timing = 'On Time'
+            if delay <= 24:
+                timing = 'Early'
+                if service_rate:
+                    service_rate += 2
+        rate_payable = int(service_rate) * int(base_units) / 4
+        claim_row =[
+            team_name, employee_name, service_date, row['client_id'], row['clientvisit_id'],
+            row['service_type'], base_units, transfer_date, approved, row['appr_user'], row['appr_date'],
+            delay, timing, service_rate, rate_payable
+        ]
+        if approved:
+            sampled_encounters.append(claim_row)
+        else:
+            unapproved_encounters.append(claim_row)
+    if recovery:
+        return sampled_encounters
+    return sampled_encounters, unapproved_encounters
+
+
+def _standardize_encounter_data(encounter_data):
+    return [{
+        'clientvisit_id': x['Service ID'],
+        'rev_timeout': x['Time Out'],
+        'service_date': x['Service Date'],
+        'service_type': x['Service Type'],
+        'emp_id': x['Staff ID'],
+        'client_id': x['Consumer ID'],
+        'appr': bool(x['Approved']),
+        'appr_date': x['Approved Date'],
+        'appr_user': x['Approved User'],
+        'transfer_date': x['Transfer Date'],
+        'base_units': x['Base Units']
+    } for x in encounter_data]
 
 
 def _parse_staff_names(primary_staff_line):

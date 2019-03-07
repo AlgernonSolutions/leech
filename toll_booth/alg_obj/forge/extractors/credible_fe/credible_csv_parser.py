@@ -16,7 +16,8 @@ class CredibleCsvParser:
         'UTCDate': 'utc_datetime',
         'change_date': 'datetime',
         'by_emp_id': 'number',
-        'Transfer Date': 'datetime'
+        'Transfer Date': 'datetime',
+        'Approved Date': 'datetime'
     }
 
     @classmethod

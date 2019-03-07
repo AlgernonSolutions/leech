@@ -96,6 +96,11 @@ class StaticCsv(StaticAsset):
         }
         return cls(**kwargs, asset_name=asset_name, asset_remote_path=asset_name, header=header)
 
+    @classmethod
+    def for_pay_rates(cls, id_source, **kwargs):
+        asset_name = f'{id_source}_pay_rates.csv'
+        return cls(**kwargs, asset_name=asset_name, asset_remote_path=asset_name)
+
     @property
     def stored_asset(self):
         stored_asset = super().stored_asset
