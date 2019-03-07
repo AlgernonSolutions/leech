@@ -1,8 +1,91 @@
-from datetime import timedelta, datetime
-
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
+
+
+@xray_recorder.capture('get_payroll_data')
+@task('get_payroll_data')
+def get_payroll_data(**kwargs):
+    from toll_booth.alg_obj.aws.snakes.stored_statics import StaticCsv
+    from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
+    import dateutil
+
+    credible_date_format = '%m/%d/%Y'
+    id_source = kwargs['id_source']
+    check_date = kwargs['check_date']
+    check_date_value = dateutil.parser.parse(check_date)
+    check_dates = StaticCsv.for_check_dates(id_source)
+    check_row = check_dates[check_date_value][0]
+    check_row_index = check_dates.index(check_row)
+    previous_row = check_dates.get_by_index(check_row_index-1)
+    sample_start_date = check_row['Sample Start']
+    sample_end_date = check_row['Sample End']
+    recovery_start_date = previous_row['Sample Start']
+    recovery_end_date = previous_row['Sample End']
+    staff_search_data = {
+        'emp_status_f': 'ACTIVE',
+        'first_name': 1,
+        'last_name': 1,
+        'emp_id': 1,
+        'profile_code': 1,
+        'asgn_supervisors': 1,
+        'asgn_supervisees': 1
+    }
+    client_search_data = {
+        'teams': 1,
+        'client_id': 1,
+        'last_name': 1,
+        'first_name': 1,
+        'text28': 1,
+        'dob': 1,
+        'ssn': 1,
+        'primary_assigned': 1,
+        'client_status_f': 'ALL ACTIVE'
+    }
+    sample_search_data = {
+        'clientvisit_id': 1,
+        'service_type': 1,
+        'consumer_name': 1,
+        'staff_name': 1,
+        'client_int_id': 1,
+        'emp_int_id': 1,
+        'non_billable1': 0,
+        'visittype': 1,
+        'orig_rate_amount': 1,
+        'timein': 1,
+        'timeout': 1,
+        'orig_units': 1,
+        'wh_fld1': 'cv.transfer_date',
+        'wh_cmp1': '>=',
+        'wh_val1': sample_start_date.strftime(credible_date_format),
+        'wh_andor': 'AND',
+        'wh_fld2': 'cv.transfer_date',
+        'wh_cmp2': '<=',
+        'wh_val2': sample_end_date.strftime(credible_date_format),
+        'data_dict_ids': [80, 81, 82, 87, 83],
+        'show_unappr': 1
+    }
+    recovery_search_data = sample_search_data.copy()
+    recovery_search_data.update({
+        'wh_fld1': 'cv.appr_date',
+        'wh_val1': recovery_start_date.strftime(credible_date_format),
+        'wh_fld2': 'cv.appr_date',
+        'wh_val2': recovery_end_date.strftime(credible_date_format),
+        'show_unappr': 0
+    })
+    report_args = {
+        'emp_data': ('Employees', staff_search_data),
+        'client_data': ('Clients', client_search_data),
+        'sample_data': ('ClientVisit', sample_search_data),
+        'recovery_data': ('ClientVisit', recovery_search_data)
+    }
+    results = {}
+    with CredibleFrontEndDriver(id_source) as driver:
+        for report_name, report_arg in report_args.items():
+            results[report_name] = driver.process_advanced_search(*report_arg)
+    if not results:
+        return
+    return results
 
 
 @xray_recorder.capture('get_productivity_report_data')
@@ -249,10 +332,14 @@ def send_report(**kwargs):
 @xray_recorder.capture('build_clinical_teams')
 @task('build_clinical_teams')
 def build_clinical_teams(**kwargs):
-    teams = kwargs['teams']
-    manual_assignments = kwargs['manual_assignments']
-    first_level = kwargs['first_level']
-    default_team = kwargs['default_team']
+    from toll_booth.alg_obj.aws.snakes.stored_statics import StaticJson
+
+    id_source = kwargs['id_source']
+    team_json = StaticJson.for_team_data(id_source)
+    teams = team_json['teams']
+    manual_assignments = team_json['manual_assignments']
+    first_level = team_json['first_level']
+    default_team = team_json['default_team']
     emp_data = kwargs['emp_data']
 
     for entry in emp_data:
@@ -354,6 +441,15 @@ def build_clinical_caseloads(**kwargs):
     return {'caseloads': caseloads}
 
 
+@xray_recorder.capture('build_payroll_report')
+@task('build_payroll_report')
+def build_payroll_report(**kwargs):
+    payroll_report = {}
+    sample_period_data = kwargs['sample_data']
+    recovery_data = kwargs['recovery_data']
+    raise NotImplementedError('gotta get back to this')
+
+
 def _parse_staff_names(primary_staff_line):
     import re
 
@@ -396,6 +492,8 @@ def _build_team_productivity(team_caseload, encounters, unapproved):
 
 
 def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
+    from datetime import datetime, timedelta
+
     lifespan_delta = timedelta(days=assessment_lifespan)
     inverted = _invert_caseloads(caseloads)
     now = datetime.now()

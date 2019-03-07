@@ -13,7 +13,7 @@ from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action
     work_remote_id_change_type, work_fip_links, post_process_encounters
 from toll_booth.alg_tasks.rivers.flows import fungus
 from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
-from toll_booth.alg_tasks.rivers.flows.posts import send_routine_reports, surgeon
+from toll_booth.alg_tasks.rivers.flows.posts import send_routine_reports, surgeon, payroll
 
 
 class WorkHistoryRetrievalException(Exception):
@@ -140,7 +140,7 @@ class General:
         flow_modules = [
             command_fungi, work_remote_id, work_remote_id_change_type,
             work_remote_id_change_action, fungus, fungal_leech, send_routine_reports,
-            work_fip_links, post_process_encounters, surgeon
+            work_fip_links, post_process_encounters, surgeon, payroll
         ]
         if work_history:
             flow_type = work_history.flow_type
