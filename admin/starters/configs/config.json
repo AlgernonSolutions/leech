@@ -456,7 +456,7 @@
         }
       },
       {
-        "task_name": "build_payroll_data",
+        "task_name": "build_payroll_report",
         "task_description": "constructs the data structure needed for the payroll report",
         "task_config": {
           "concurrency": 1

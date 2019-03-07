@@ -125,7 +125,7 @@ class StaticCsv(StaticAsset):
 
     def index(self, item):
         self._check_parse()
-        for index_number, entry in self._stored_asset:
+        for index_number, entry in enumerate(self._stored_asset):
             if entry == item:
                 return index_number
         raise IndexError(item)
