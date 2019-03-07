@@ -426,11 +426,15 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
 
 
 def _build_unassigned_report(caseloads):
-    report = [['Client ID', 'Client Name', 'DOB', 'SSN', 'Medicaid Number', 'Primary Assigned Staff', 'Assigned CSA']]
+    report = [['Client ID', 'Client Name', 'DOB', 'SSN', 'Medicaid Number', 'Assigned CSA', 'Primary Assigned Staff']]
     for client in caseloads['unassigned']:
+        primary_staff = client.get('primary_staff', [])
+        if primary_staff:
+            if isinstance(primary_staff, list):
+                primary_staff = ', '.join(primary_staff)
         report.append([
             client['client_id'], f'{client["last_name"]}, {client["first_name"]}',
-            client['dob'], client['dob'], client['ssn'], client['team'], ', '.join(client.get('primary_staff', []))
+            client['dob'], client['dob'], client['ssn'], client['team'], primary_staff
         ])
     return report
 

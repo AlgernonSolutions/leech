@@ -14,3 +14,5 @@ class TestStarter:
         }
         results = start_flow(event, {})
         print()
+
+{"input_string": "{\"id_source\": \"ICFS\", \"report_name\": \"daily_reports\", \"recipients\": [{\"email_address\": \"jcubeta@algernon.solutions\"}]}", "domain_name": "TheLeech","flow_name": "send_icfs_reports","flow_id": "daily_icfs", "run_config": {"fresh_start": True}}
