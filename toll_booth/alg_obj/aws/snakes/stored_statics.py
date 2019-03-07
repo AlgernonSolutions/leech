@@ -201,7 +201,7 @@ class StaticJson(StaticAsset):
     def _parse(self):
         if self._parsed:
             return
-        stored_asset = rapidjson.loads(self._stored_asset, object_hook=AlgDecoder.object_hook)
+        stored_asset = rapidjson.loads(super().stored_asset, object_hook=AlgDecoder.object_hook)
         self._stored_asset = stored_asset
         self._parsed = True
 
