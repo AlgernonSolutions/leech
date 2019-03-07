@@ -17,6 +17,7 @@ def start_flow(event, context):
     domain_name = event['domain_name']
     flow_name = event['flow_name']
     input_string = event.get('input_string')
+    run_config = event.get('run_config', {})
     client = boto3.client('swf')
     versions = Versions.retrieve(domain_name)
     config = LeechConfig.retrieve()
@@ -40,14 +41,14 @@ def start_flow(event, context):
         if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
             raise e
         return
-    _rouse_ruffians(domain_name, flow_id, flow_name, config)
+    _rouse_ruffians(domain_name, flow_id, flow_name, config, run_config)
     return start_results
 
 
-def _rouse_ruffians(domain_name, flow_id, flow_name, leech_config):
+def _rouse_ruffians(domain_name, flow_id, flow_name, leech_config, run_config):
     workflow_config = leech_config.get_workflow_config(flow_name)
     labor_task_lists = workflow_config.get('labor_task_lists', [])
-    execution_arns = RuffianRoost.conscript_ruffians(flow_id, labor_task_lists, domain_name, leech_config)
+    execution_arns = RuffianRoost.conscript_ruffians(flow_id, labor_task_lists, domain_name, leech_config, run_config=run_config)
     return execution_arns
 
 

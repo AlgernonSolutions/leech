@@ -21,17 +21,18 @@ class RuffianRoost:
         default_deciding_machine_arn = os.getenv('DECIDING_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
         ruffian_machine_arn = kwargs.get('machine_arn', default_machine_arn)
         deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
+        run_config = kwargs.get('run_config', {})
         client = boto3.client('stepfunctions')
-        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, client)]
+        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, run_config, client)]
         running_machines = []
         for work_list in work_lists:
             execution_arns.append(
-                cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, client)
+                cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, run_config, client)
             )
             running_machines.append(work_list['list_name'])
         if decider_list not in running_machines:
             base_ruffian = {'list_name': decider_list, 'number_threads': 1}
-            execution_arns.append(cls._start_machine(ruffian_machine_arn, base_ruffian, domain_name, config, client))
+            execution_arns.append(cls._start_machine(ruffian_machine_arn, base_ruffian, domain_name, config, run_config, client))
         return execution_arns
 
     @classmethod
@@ -78,13 +79,14 @@ class RuffianRoost:
         return machine_name
 
     @classmethod
-    def _start_machine(cls, machine_arn, work_list, domain_name, config, client=None):
+    def _start_machine(cls, machine_arn, work_list, domain_name, config, run_config, client=None):
         if not client:
             client = boto3.client('stepfunctions')
         machine_input = json.dumps({
             'work_list': work_list,
             'domain_name': domain_name,
-            'config': config
+            'config': config,
+            'run_config': run_config
         }, cls=AlgEncoder)
         machine_name = cls._build_machine_name(work_list)
         response = client.start_execution(
@@ -123,8 +125,9 @@ class Ruffian:
     @classmethod
     def build(cls, context, domain_name, work_list, config, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 120)
+        run_config = kwargs.get('run_config', {})
         warn_level = (warn_seconds * 1000)
-        return cls(domain_name, work_list, config, warn_level, context)
+        return cls(domain_name, work_list, config, warn_level, context, run_config=run_config)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
