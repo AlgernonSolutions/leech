@@ -137,7 +137,7 @@ class Ruffian:
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
-        logging.info(f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
+        logging.info(f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
         time_remaining = self._check_watch()
         while time_remaining >= self._warn_level:
             general = General(self._domain_name, self._work_list, self._context, self._run_config)
