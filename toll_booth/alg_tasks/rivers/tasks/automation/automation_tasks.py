@@ -9,11 +9,12 @@ def run_credible_command(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
     command = kwargs['command']
+    command_args = kwargs['command_args']
     id_source = kwargs['id_source']
     credentials = kwargs.get('credible_credentials')
     if isinstance(credentials, list):
         credentials = credentials[-1]
     with CredibleFrontEndDriver(id_source, credentials=credentials) as driver:
         credible_function = getattr(driver, command)
-        function_result = credible_function(**kwargs)
+        function_result = credible_function(*command_args)
         return {command: function_result, 'credible_credentials': driver.credentials}

@@ -595,7 +595,7 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
     inverted = _invert_caseloads(caseloads)
     now = datetime.now()
     max_assessments = {}
-    results = [['Team', 'CSW Name', 'Start Date', 'End Date', 'Expired', 'Days Remaining']]
+    results = [['Team', 'CSW Name', 'Client ID', 'Start Date', 'End Date', 'Expired', 'Days Remaining']]
     for assessment in assessment_data:
         client_id = str(assessment['client_id'])
         if client_id not in max_assessments:
@@ -611,7 +611,7 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
         if expiration_date < now:
             expired = True
             days_left = 0
-        results.append([team_name, csw_name, max_assessment_date, expiration_date, expired, days_left])
+        results.append([team_name, csw_name, client_id, max_assessment_date, expiration_date, expired, days_left])
     no_assessments = set(inverted.keys()) - set(max_assessments.keys())
     for client_id in no_assessments:
         assignments = inverted.get(client_id, {'team': 'unassigned', 'csw': 'unassigned'})

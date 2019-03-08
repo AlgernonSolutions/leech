@@ -117,6 +117,10 @@ class StaticCsv(StaticAsset):
             raise KeyError(item)
         return items
 
+    def __iter__(self):
+        self._check_parse()
+        return iter(self.stored_asset)
+
     def get(self, item, default):
         self._check_parse()
         try:
