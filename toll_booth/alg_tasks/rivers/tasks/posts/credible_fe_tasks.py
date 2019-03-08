@@ -367,7 +367,8 @@ def build_clinical_teams(**kwargs):
             if name in supervisor_names:
                 teams[name].append(emp_record)
                 break
-        teams[default_team].append(emp_record)
+        else:
+            teams[default_team].append(emp_record)
     return {'teams': teams}
 
 
@@ -467,7 +468,7 @@ def build_payroll_report(**kwargs):
             employee_name = f'{employee["last_name"]}, {employee["first_name"]}'
             emp_id = employee['emp_id']
             try:
-                pay_row = pay_csv[emp_id][0]
+                pay_row = pay_csv[str(emp_id)][0]
             except KeyError:
                 pay_row = {'Rate': '$0'}
             format_args = (team_name, emp_id, employee_name, pay_row, kwargs.get('sampled_days', 16))
