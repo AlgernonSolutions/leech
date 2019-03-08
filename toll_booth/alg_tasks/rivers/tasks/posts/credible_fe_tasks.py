@@ -479,7 +479,7 @@ def build_payroll_report(**kwargs):
         payroll_report[f'payable_{team_name}'] = team_report
         payroll_report[f'unapproved_{team_name}'] = team_unapproved_report
         payroll_report[f'recovery_{team_name}'] = team_recovery_report
-    return payroll_report
+    return {'report_data': payroll_report}
 
 
 def _format_sampled_encounters(sample_period_data, team_name, emp_id, employee_name, pay_row, sampled_days, recovery):
