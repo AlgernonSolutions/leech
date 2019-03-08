@@ -52,7 +52,7 @@ def lambda_work(production_fn):
     return wrapper
 
 
-# @lambda_logged
+@lambda_logged
 @rough_work
 def decide(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
@@ -63,7 +63,7 @@ def decide(event, context):
     ruffian.supervise()
 
 
-# @lambda_logged
+@lambda_logged
 @rough_work
 def labor(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
