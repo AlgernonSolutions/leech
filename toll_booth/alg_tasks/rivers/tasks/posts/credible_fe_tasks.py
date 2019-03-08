@@ -83,7 +83,10 @@ def get_payroll_data(**kwargs):
     results = {'sampled_days': (sample_end_date-sample_start_date).days}
     with CredibleFrontEndDriver(id_source) as driver:
         for report_name, report_arg in report_args.items():
-            results[report_name] = driver.process_advanced_search(*report_arg)
+            try:
+                results[report_name] = driver.process_advanced_search(*report_arg)
+            except RuntimeError:
+                results[report_name] = []
     if not results:
         return
     return results
