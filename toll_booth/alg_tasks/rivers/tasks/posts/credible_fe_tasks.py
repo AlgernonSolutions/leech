@@ -1,4 +1,3 @@
-import dateutil
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -17,12 +16,11 @@ def get_payroll_data(**kwargs):
     check_date_value = dateutil.parser.parse(check_date)
     check_dates = StaticCsv.for_check_dates(id_source)
     check_row = check_dates[check_date_value][0]
-    check_row_index = check_dates.index(check_row)
-    previous_row = check_dates.get_by_index(check_row_index-1)
     sample_start_date = check_row['Sample Start']
     sample_end_date = check_row['Sample End']
-    recovery_start_date = previous_row['Sample Start']
-    recovery_end_date = previous_row['Sample End']
+    check_row_index = check_dates.index(check_row)
+    previous_row = check_dates.get_by_index(check_row_index - 1)
+    previous_sample_date = previous_row['Sample Date']
     staff_search_data = {
         'emp_status_f': 'ACTIVE',
         'first_name': 1,
@@ -68,10 +66,12 @@ def get_payroll_data(**kwargs):
     }
     recovery_search_data = sample_search_data.copy()
     recovery_search_data.update({
-        'wh_fld1': 'cv.appr_date',
-        'wh_val1': recovery_start_date.strftime(credible_date_format),
+        'wh_fld1': 'cv.transfer_data',
+        'wh_cmp1': '<',
+        'wh_val1': sample_start_date.strftime(credible_date_format),
         'wh_fld2': 'cv.appr_date',
-        'wh_val2': recovery_end_date.strftime(credible_date_format),
+        'wh_cmp2': '>',
+        'wh_val2': previous_sample_date.strftime(credible_date_format),
         'show_unappr': 0
     })
     report_args = {
@@ -476,8 +476,7 @@ def build_payroll_report(**kwargs):
         payroll_report[f'payable_{team_name}'] = team_report
         payroll_report[f'unapproved_{team_name}'] = team_unapproved_report
         payroll_report[f'recovery_{team_name}'] = team_recovery_report
-    # return payroll_report
-    raise NotImplementedError('need to correct recovery pull to only include services transferred within previous sample period but approved during current sample period')
+    return payroll_report
 
 
 def _format_sampled_encounters(sample_period_data, team_name, emp_id, employee_name, pay_row, sampled_days, recovery):
