@@ -522,12 +522,18 @@ class CredibleFrontEndDriver:
         return response.text
 
     @_login_required
-    def set_client_case_manager(self, client_id, case_manager_emp_id):
-        #< a
-        #href = "/client/client_employee.asp?client_id=5198&amp;emp_id=4568&amp;case_manager=1&amp;page=1&amp;sLetter=&amp;showassigned=True&amp;nameid=&amp;status=ACTIVE&amp;cm_action=A"
-
-        #class ="listbtn" > & nbsp;no & nbsp; < / a >
-        pass
+    def set_client_case_manager(self, **kwargs):
+        url_stem = "/client/client_employee.asp"
+        client_id = kwargs['client_id']
+        case_manager_emp_id = kwargs['case_mangager_emp_id']
+        data = {
+            'client_id': client_id,
+            'emp_id': case_manager_emp_id,
+            'case_manager': 1,
+            'cm_action': 'A'
+        }
+        url = _base_stem + url_stem
+        results = self._session.get(url, data=data)
 
     def _strain_emp_ids(self, table_rows, cached_emp_ids):
         name_pattern = re.compile("(?P<last_name>\w+),\s+(?P<first_initial>\w)")

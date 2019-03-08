@@ -539,7 +539,7 @@ def _standardize_encounter_data(encounter_data):
         'service_type': x['Service Type'],
         'emp_id': x['Staff ID'],
         'client_id': x['Consumer ID'],
-        'appr': bool(x['Approved']),
+        'appr': x['Approved'] == 'True',
         'appr_date': x['Approved Date'],
         'appr_user': x['Approved User'],
         'transfer_date': x['Transfer Date'],
