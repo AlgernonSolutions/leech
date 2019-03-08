@@ -516,9 +516,9 @@ def _format_sampled_encounters(sample_period_data, team_name, emp_id, employee_n
                 if service_rate:
                     service_rate += 2
         rate_payable = int(service_rate) * int(base_units) / 4
-        claim_row =[
+        claim_row = [
             team_name, employee_name, service_date, row['client_id'], row['clientvisit_id'],
-            row['service_type'], base_units, transfer_date, approved, row['appr_user'], row['appr_date'],
+            row['service_type'], int(base_units), transfer_date, approved, row['appr_user'], row['appr_date'],
             delay, timing, service_rate, rate_payable
         ]
         if approved:
@@ -622,7 +622,7 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
 def _build_unassigned_report(caseloads):
     report = [['Client ID', 'Client Name', 'DOB', 'SSN', 'Medicaid Number', 'Assigned CSA', 'Primary Assigned Staff']]
     for client in caseloads['unassigned']:
-        primary_staff = client.get('primary_staff', [])
+        primary_staff = client.get('primary_staff')
         if primary_staff:
             if isinstance(primary_staff, list):
                 primary_staff = ', '.join(primary_staff)
