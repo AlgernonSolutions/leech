@@ -39,7 +39,7 @@ class ObjectDownloadLink(AlgObject):
 
     def __str__(self):
         client = boto3.client('s3')
-        if not self._check():
+        if not self._stored:
             self._store()
         pre_signed = client.generate_presigned_url(
             ClientMethod='get_object',

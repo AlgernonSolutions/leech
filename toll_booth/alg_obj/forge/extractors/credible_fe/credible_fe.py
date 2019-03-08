@@ -521,6 +521,14 @@ class CredibleFrontEndDriver:
             raise RuntimeError(f'could not get the encounter data for {encounter_id}, response code: {response.status_code}')
         return response.text
 
+    @_login_required
+    def set_client_case_manager(self, client_id, case_manager_emp_id):
+        #< a
+        #href = "/client/client_employee.asp?client_id=5198&amp;emp_id=4568&amp;case_manager=1&amp;page=1&amp;sLetter=&amp;showassigned=True&amp;nameid=&amp;status=ACTIVE&amp;cm_action=A"
+
+        #class ="listbtn" > & nbsp;no & nbsp; < / a >
+        pass
+
     def _strain_emp_ids(self, table_rows, cached_emp_ids):
         name_pattern = re.compile("(?P<last_name>\w+),\s+(?P<first_initial>\w)")
         emp_ids = {}
