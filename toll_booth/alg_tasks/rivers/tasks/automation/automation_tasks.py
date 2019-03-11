@@ -16,5 +16,5 @@ def run_credible_command(**kwargs):
         credentials = credentials[-1]
     with CredibleFrontEndDriver(id_source, credentials=credentials) as driver:
         credible_function = getattr(driver, command)
-        function_result = credible_function(*command_args)
+        function_result = credible_function(**command_args)
         return {command: function_result, 'credible_credentials': driver.credentials}
