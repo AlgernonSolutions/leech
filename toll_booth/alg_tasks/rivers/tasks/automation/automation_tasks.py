@@ -1,3 +1,5 @@
+import logging
+
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -8,6 +10,7 @@ from toll_booth.alg_tasks.rivers.rocks import task
 def run_credible_command(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
 
+    logging.info(f'started run credible task with kwargs: {kwargs}')
     command = kwargs['command']
     command_args = kwargs['command_args']
     id_source = kwargs['id_source']
