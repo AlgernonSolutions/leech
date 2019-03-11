@@ -9,9 +9,10 @@ from retrying import retry
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.events.markers import MarkerHistory
+from toll_booth.alg_tasks.rivers.flows import fungus
+from toll_booth.alg_tasks.rivers.flows.automation import command_credible
 from toll_booth.alg_tasks.rivers.flows.fungi import work_remote_id_change_action, command_fungi, work_remote_id, \
     work_remote_id_change_type, work_fip_links, post_process_encounters
-from toll_booth.alg_tasks.rivers.flows import fungus, automation
 from toll_booth.alg_tasks.rivers.flows.leech import fungal_leech
 from toll_booth.alg_tasks.rivers.flows.posts import send_routine_reports, surgeon, payroll
 
@@ -140,7 +141,7 @@ class General:
         flow_modules = [
             command_fungi, work_remote_id, work_remote_id_change_type,
             work_remote_id_change_action, fungus, fungal_leech, send_routine_reports,
-            work_fip_links, post_process_encounters, surgeon, payroll, automation
+            work_fip_links, post_process_encounters, surgeon, payroll, command_credible
         ]
         if work_history:
             flow_type = work_history.flow_type
