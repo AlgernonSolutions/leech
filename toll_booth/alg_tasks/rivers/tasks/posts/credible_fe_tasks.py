@@ -616,7 +616,7 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
     for client_id in no_assessments:
         assignments = inverted.get(client_id, {'team': 'unassigned', 'csw': 'unassigned'})
         team_name, csw_name = assignments['team'], assignments['csw']
-        results.append([team_name, csw_name, '',  '', True, 0])
+        results.append([team_name, csw_name, client_id, '',  '', True, 0])
     return results
 
 
