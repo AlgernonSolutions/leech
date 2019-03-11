@@ -525,7 +525,7 @@ class CredibleFrontEndDriver:
     def set_client_case_manager(self, **kwargs):
         url_stem = "/client/client_employee.asp"
         client_id = kwargs['client_id']
-        case_manager_emp_id = kwargs['case_mangager_emp_id']
+        case_manager_emp_id = kwargs['case_manager_emp_id']
         data = {
             'client_id': client_id,
             'emp_id': case_manager_emp_id,

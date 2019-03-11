@@ -3,6 +3,7 @@ import logging
 
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
+from toll_booth.alg_tasks.rivers.tasks.automation import automation_tasks
 
 
 def _set_run_id_logging(flow_id, run_id, task_id, context):
@@ -81,7 +82,7 @@ def lambda_labor(task_name, task_args):
     from toll_booth.alg_tasks.rivers.tasks.posts import credible_fe_tasks
 
     logging.info(f'received a call to run a lambda task named {task_name}, the task_args are {task_args}')
-    task_modules = [fungi_tasks, leech_tasks, email_tasks, credible_fe_tasks]
+    task_modules = [fungi_tasks, leech_tasks, email_tasks, credible_fe_tasks, automation_tasks]
     for task_module in task_modules:
         task_fn = getattr(task_module, task_name, None)
         if task_fn:
