@@ -58,6 +58,7 @@ def lambda_work(production_fn):
 def decide(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
 
+    logging.info(f'received a call to start a deciding ruffian: {event}')
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
     ruffian = Ruffian.build(context, **event)
@@ -69,6 +70,7 @@ def decide(event, context):
 def labor(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
 
+    logging.info(f'received a call to start a working ruffian: {event}')
     ruffian = Ruffian.build(context, **event)
     ruffian.labor()
 
