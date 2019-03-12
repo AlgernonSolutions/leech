@@ -13,7 +13,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import group, chain, ActivitySignatu
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('command_fungi')
+# @xray_recorder.capture('command_fungi')
 @workflow('command_fungi')
 def command_fungi(**kwargs):
     execution_id = kwargs['execution_id']
@@ -38,7 +38,7 @@ def command_fungi(**kwargs):
     decisions.append(CompleteWork())
 
 
-@xray_recorder.capture('command_fungi_build_chain')
+# @xray_recorder.capture('command_fungi_build_chain')
 def _build_chain(names, **kwargs):
     get_local_ids = ActivitySignature(names['local'], 'get_local_ids', **kwargs)
     get_remote_ids = ActivitySignature(names['remote'], 'get_remote_ids', **kwargs)
@@ -51,7 +51,7 @@ def _build_chain(names, **kwargs):
     return great_chain
 
 
-@xray_recorder.capture('command_fungi_build_group')
+# @xray_recorder.capture('command_fungi_build_group')
 def _build_group(names, task_args, **kwargs):
     subtask_name = 'work_remote_id'
     work_history = kwargs['work_history']

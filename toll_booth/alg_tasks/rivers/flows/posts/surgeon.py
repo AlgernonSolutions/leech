@@ -5,7 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, chain
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('send_icfs_reports')
+# @xray_recorder.capture('send_icfs_reports')
 @workflow('send_icfs_reports')
 def send_icfs_reports(**kwargs):
     decisions = kwargs['decisions']
