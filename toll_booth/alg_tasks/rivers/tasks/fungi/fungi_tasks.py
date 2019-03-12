@@ -352,7 +352,10 @@ def post_process_get_encounters(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
     from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 
-    encounter_id = kwargs['encounter_id']
+    encounter_id = kwargs['id_value']
+    id_type = kwargs['id_type']
+    if id_type != 'ClientVisit':
+        raise NotImplementedError(f'cannot post process an encounter off id_type: {id_type}')
     driving_identifier_stem = IdentifierStem.from_raw(kwargs['driving_identifier_stem'])
     id_source = driving_identifier_stem.get('id_source')
 
@@ -514,7 +517,7 @@ def _build_changed_targets(id_source, extracted_data, change_type):
             'change_date_utc': change_date_utc
         })
     if clientvisit_id:
-        if client_id != clientvisit_id:
+        if client_id == clientvisit_id:
             logging.warning(f'while running an extraction, got a row with the same client_id and clientvisit_id, this could be correct, or it could be due to a credible error, '
                             f'we assume it is due to the credible error, but if things go strange, check this out: {extracted_data}')
         else:
