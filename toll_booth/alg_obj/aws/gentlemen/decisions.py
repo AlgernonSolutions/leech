@@ -216,7 +216,7 @@ class CompleteWork(Decision):
         return self.__getitem__('result')
 
     def add_result(self, result_name, results):
-        current_results = self._decision_attributes.get('result')
+        current_results = self._decision_attributes.get('result', {})
         if current_results:
             current_results = json.loads(current_results, cls=AlgDecoder)
         if result_name in current_results:
