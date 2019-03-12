@@ -153,6 +153,7 @@ class General:
 
     def _fail_task(self, work_history, exception, trace):
         failure_reason = json.dumps(exception.args)
+        failure_reason = failure_reason[:200]
         failure_details = json.dumps({
             'workflow_name': work_history.flow_type,
             'trace': trace

@@ -5,7 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import chain, LambdaSignature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-# @xray_recorder.capture('fungal_leech')
+@xray_recorder.capture('fungal_leech')
 @workflow('fungal_leech')
 def fungal_leech(**kwargs):
     decisions = kwargs['decisions']
@@ -33,14 +33,14 @@ def fungal_leech(**kwargs):
     decisions.append(CompleteWork())
 
 
-# @xray_recorder.capture('fungal_leech_build_transform_signature')
+@xray_recorder.capture('fungal_leech_build_transform_signature')
 def _build_transform_signature(**kwargs):
     names = kwargs['names']
     task_identifier = names['transform']
     return ActivitySignature(task_identifier, 'transform', **kwargs)
 
 
-# @xray_recorder.capture('fungal_leech_build_assimilate_signature')
+@xray_recorder.capture('fungal_leech_build_assimilate_signature')
 def _build_assimilate_group(task_args, **kwargs):
     batch_size = 100
     signatures = []
@@ -75,7 +75,7 @@ def _build_assimilate_group(task_args, **kwargs):
     return group(*tuple_signatures)
 
 
-# @xray_recorder.capture('fungal_leech_build_index_group')
+@xray_recorder.capture('fungal_leech_build_index_group')
 def _build_index_signature(**kwargs):
     names = kwargs['names']
     index_task_identifier = names['index']
@@ -83,7 +83,7 @@ def _build_index_signature(**kwargs):
     return index_signature
 
 
-# @xray_recorder.capture('fungal_leech_build_graph_chain')
+@xray_recorder.capture('fungal_leech_build_graph_chain')
 def _build_graph_signature(**kwargs):
     names = kwargs['names']
     graph_task_identifier = names['graph']

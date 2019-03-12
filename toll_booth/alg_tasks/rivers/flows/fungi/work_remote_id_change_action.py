@@ -14,7 +14,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import chain, ActivitySignature, Sub
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-# @xray_recorder.capture('work_remote_id_change_action')
+@xray_recorder.capture('work_remote_id_change_action')
 @workflow('work_remote_id_change_action')
 def work_remote_id_change_action(**kwargs):
     decisions = kwargs['decisions']
@@ -44,7 +44,7 @@ def work_remote_id_change_action(**kwargs):
     decisions.append(CompleteWork())
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_enrich_signature')
+@xray_recorder.capture('work_remote_id_change_action_build_enrich_signature')
 def _build_enrich_signature(**kwargs):
     names = kwargs['names']
     fn_identifier = names['enrich']
@@ -52,7 +52,7 @@ def _build_enrich_signature(**kwargs):
     return enrich_signature
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
+@xray_recorder.capture('work_remote_id_change_action_build_change_data_signatures')
 def _build_change_data_signatures(task_args, **kwargs):
     batch_size = 100
     execution_id = kwargs['execution_id']
@@ -88,7 +88,7 @@ def _build_change_data_signatures(task_args, **kwargs):
     return signatures
 
 
-# @xray_recorder.capture('work_remote_id_change_action_build_fungal_leech')
+@xray_recorder.capture('work_remote_id_change_action_build_fungal_leech')
 def _build_fungal_leech(execution_id, task_args, **kwargs):
     subtask_name = 'fungal_leech'
     subtask_identifier = f'fungal_leech-{execution_id}'
@@ -98,7 +98,7 @@ def _build_fungal_leech(execution_id, task_args, **kwargs):
     return fungal_leech
 
 
- #@xray_recorder.capture('work_remote_id_change_action_build_post_process')
+@xray_recorder.capture('work_remote_id_change_action_build_post_process')
 def _build_post_process_group(execution_id, task_args, **kwargs):
     ext_id_values = task_args.get_argument_value('ext_id_values')
 
