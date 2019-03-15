@@ -8,6 +8,11 @@ from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
 
+class QuickExit:
+    def __init__(self):
+        pass
+
+
 def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
     workflow_id = start_subtask_decision.workflow_id
     open_ruffians = work_history.marker_history.get_open_ruffian_tasks(work_history.run_id)

@@ -5,6 +5,7 @@ import pytest
 import pytz
 
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
+from toll_booth.alg_tasks.rivers.flows.fungi.command_fungi import command_fungi
 
 
 @pytest.mark.serializers
@@ -25,6 +26,12 @@ class TestAlgSerializers:
         test_object = {
             'test_date_time': local_test_date_time
         }
+        serialized = json.dumps(test_object, cls=AlgEncoder)
+        back_again = json.loads(serialized, cls=AlgDecoder)
+        assert back_again == test_object
+
+    def test_serialize_function(self):
+        test_object = {'command_fungi': command_fungi}
         serialized = json.dumps(test_object, cls=AlgEncoder)
         back_again = json.loads(serialized, cls=AlgDecoder)
         assert back_again == test_object

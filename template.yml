@@ -59,6 +59,16 @@ Resources:
       Timeout: 300
       MemorySize: 128
 
+  fire:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/fire_task.fire_task
+      FunctionName: leech-fire
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 128
+
   decide:
     Type: AWS::Serverless::Function
     Properties:

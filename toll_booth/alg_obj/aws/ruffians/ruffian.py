@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 from multiprocessing.pool import ThreadPool
 from queue import Queue
 from threading import Thread
@@ -11,28 +10,117 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from retrying import retry
 
+from toll_booth.alg_obj import AlgObject
+from toll_booth.alg_obj.aws.moorland import cos
+from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.serializers import AlgEncoder
 
 
+class RuffianId(AlgObject):
+    def __init__(self, domain_name, flow_id, flow_name, list_name, **kwargs):
+        is_laborer = kwargs.get('is_laborer', False)
+        self._domain_name = domain_name
+        self._flow_id = flow_id
+        self._flow_name = flow_name
+        self._list_name = list_name
+        self._is_laborer = is_laborer
+
+    @classmethod
+    def parse_json(cls, json_dict):
+        return cls(
+            json_dict['domain_name'], json_dict['flow_id'], json_dict['flow_name'],
+            json_dict['task_list'], is_laborer=json_dict.get('is_laborer')
+        )
+
+    @classmethod
+    def for_overseer(cls, domain_name):
+        flow = 'overseer'
+        return cls(domain_name, flow, flow, flow)
+
+    @property
+    def domain_name(self):
+        return self._domain_name
+
+    @property
+    def flow_id(self):
+        return self._flow_id
+
+    @property
+    def flow_name(self):
+        return self._flow_name
+
+    @property
+    def list_name(self):
+        return self._list_name
+
+    @property
+    def is_laborer(self):
+        return self._is_laborer
+
+    def as_run_identifier_stem(self, execution_arn):
+        paired_identifiers = {
+            'execution_arn': execution_arn,
+            'is_laborer': self._is_laborer,
+            'list_name': self._list_name,
+            'domain_name': self._domain_name
+        }
+        return IdentifierStem('vertex', 'ruffian', paired_identifiers)
+
+    def as_overseer_item(self, execution_arn, start_time):
+        item = self.as_overseer_key(execution_arn)
+        item.update({
+            'start_time': start_time,
+            'running': True,
+            'list_name': self._list_name,
+            'is_laborer': self._is_laborer,
+            'flow_name': self._flow_name,
+            'execution_arn': execution_arn,
+            'domain_name': self._domain_name
+        })
+        return item
+
+    def as_overseer_key(self, execution_arn):
+        identifier_stem = self.as_run_identifier_stem(execution_arn)
+        return {'flow_id': self._flow_id, 'run_identifier_stem ': str(identifier_stem)}
+
+
 class RuffianRoost:
+    _default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
+    _default_deciding_machine_arn = os.getenv('DECIDING_MACHINE',
+                                              'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
+
+    @classmethod
+    def conscript_ruffian(cls, ruffian_id: RuffianId, **kwargs):
+        ruffian_machine_arn = kwargs.get('machine_arn', cls._default_machine_arn)
+        machine_arn = kwargs.get('deciding_machine_arn', cls._default_deciding_machine_arn)
+        task_list = ruffian_id.list_name
+        if ruffian_id.is_laborer:
+            task_list = kwargs['task_list']
+            machine_arn = ruffian_machine_arn
+        return cls._start_machine(machine_arn, task_list, ruffian_id.domain_name, flow_id=ruffian_id.flow_id, **kwargs)
+
     @classmethod
     def conscript_ruffians(cls, decider_list, work_lists, domain_name, config, **kwargs):
-        default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
-        default_deciding_machine_arn = os.getenv('DECIDING_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
-        ruffian_machine_arn = kwargs.get('machine_arn', default_machine_arn)
-        deciding_machine_arn = kwargs.get('deciding_machine_arn', default_deciding_machine_arn)
+        ruffian_machine_arn = kwargs.get('machine_arn', cls._default_machine_arn)
+        deciding_machine_arn = kwargs.get('deciding_machine_arn', cls._default_deciding_machine_arn)
         run_config = kwargs.get('run_config', {})
         client = boto3.client('stepfunctions')
-        execution_arns = [cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, run_config, client)]
+        decider_machine_name = cls._build_machine_name(decider_list)
+        decider_kwargs = {'machine_name': decider_machine_name, 'client': client}
+        execution_arns = [
+            cls._start_machine(deciding_machine_arn, decider_list, domain_name, config, run_config, **decider_kwargs)]
         running_machines = []
         for work_list in work_lists:
+            machine_name = cls._build_machine_name(work_list['list_name'])
+            machine_kwargs = {'machine_name': machine_name, 'client': client}
             execution_arns.append(
-                cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, run_config, client)
+                cls._start_machine(ruffian_machine_arn, work_list, domain_name, config, run_config, **machine_kwargs)
             )
             running_machines.append(work_list['list_name'])
         if decider_list not in running_machines:
             base_ruffian = {'list_name': decider_list, 'number_threads': 1}
-            execution_arns.append(cls._start_machine(ruffian_machine_arn, base_ruffian, domain_name, config, run_config, client))
+            execution_arns.append(cls._start_machine(ruffian_machine_arn, base_ruffian, domain_name, config, run_config,
+                                                     **decider_kwargs))
         return execution_arns
 
     @classmethod
@@ -79,21 +167,25 @@ class RuffianRoost:
         return machine_name
 
     @classmethod
-    def _start_machine(cls, machine_arn, work_list, domain_name, config, run_config, client=None):
+    def _start_machine(cls, machine_arn, work_list, domain_name, config, run_config, **kwargs):
+        client = kwargs.get('client')
         if not client:
             client = boto3.client('stepfunctions')
+        machine_name = kwargs.get('machine_name')
         machine_input = json.dumps({
             'work_list': work_list,
             'domain_name': domain_name,
             'config': config,
-            'run_config': run_config
+            'run_config': run_config,
+            'flow_id': kwargs.get('flow_id')
         }, cls=AlgEncoder)
-        machine_name = cls._build_machine_name(work_list)
-        response = client.start_execution(
-            stateMachineArn=machine_arn,
-            name=machine_name,
-            input=machine_input
-        )
+        start_kwargs = {
+            'stateMachineArn': machine_arn,
+            'input': machine_input
+        }
+        if machine_name:
+            start_kwargs['name'] = machine_name
+        response = client.start_execution(**start_kwargs)
         execution_arn = response['executionArn']
         return execution_arn
 
@@ -111,8 +203,9 @@ class RuffianRoost:
 
 
 class Ruffian:
-    def __init__(self, domain_name, work_list, config, warn_level, context, **kwargs):
+    def __init__(self, flow_id, domain_name, work_list, config, warn_level, context, **kwargs):
         run_config = kwargs.get('run_config', {})
+        self._flow_id = flow_id
         self._domain_name = domain_name
         self._work_list = work_list
         self._config = config
@@ -123,23 +216,29 @@ class Ruffian:
         self._run_config = run_config
 
     @classmethod
-    def build(cls, context, domain_name, work_list, config, **kwargs):
+    def build(cls, context, flow_id, domain_name, work_list, config, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 120)
         run_config = kwargs.get('run_config', {})
         warn_level = (warn_seconds * 1000)
-        return cls(domain_name, work_list, config, warn_level, context, run_config=run_config)
+        return cls(flow_id, domain_name, work_list, config, warn_level, context, run_config=run_config)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
         logging.debug(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
         return time_remaining
 
+    def _check_work_flag(self):
+        work_flag = cos.getenv(self._flow_id)
+        return work_flag is None
+
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
-        logging.info(f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
+        logging.info(
+            f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
         time_remaining = self._check_watch()
-        while time_remaining >= self._warn_level:
+        keep_working = self._check_work_flag()
+        while time_remaining >= self._warn_level and keep_working:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
                 general.command()
@@ -148,10 +247,13 @@ class Ruffian:
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
             time_remaining = self._check_watch()
+            keep_working = self._check_work_flag()
+        return {'keep_working': keep_working}
 
     def labor(self):
         work_list_name = self._work_list['list_name']
-        logging.info(f'starting up a ruffian as a worker for task_list: {work_list_name}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
+        logging.info(
+            f'starting up a ruffian as a worker for task_list: {work_list_name}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
         threads = []
         queue = Queue()
         labor_args = {
@@ -164,16 +266,19 @@ class Ruffian:
             component_thread.start()
             threads.append(component_thread)
         time_remaining = self._check_watch()
-        while time_remaining >= self._warn_level:
+        keep_working = self._check_work_flag()
+        while time_remaining >= self._warn_level and keep_working:
             if len(self._pending_tasks) <= self._work_list['number_threads']:
                 poll_results = self._poll_for_tasks()
                 if 'taskToken' in poll_results:
                     queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
+            keep_working = self._check_work_flag()
         logging.info(f'time is up, preparing to quit')
         queue.put(None)
         for thread in threads:
             thread.join()
+        return {'keep_working': keep_working}
 
     def _poll_for_tasks(self):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
@@ -207,7 +312,7 @@ class Ruffian:
                 logging.info(f'received orders to close a task thread: {new_task}')
                 task_token = new_task['task_token']
                 # self._pending_tasks[task_token].join()
-                del(self._pending_tasks[task_token])
+                del (self._pending_tasks[task_token])
                 logging.info(f'closed out a task thread, total pending tasks: {len(self._pending_tasks)}')
 
     def _run_task(self, **kwargs):

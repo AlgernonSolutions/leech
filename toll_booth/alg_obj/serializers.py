@@ -12,6 +12,10 @@ from toll_booth.alg_obj import AlgObject
 class AlgEncoder(json.JSONEncoder):
     @classmethod
     def default(cls, obj):
+        if callable(obj):
+            function_name = obj.__name__
+            module_name = str(obj.__module__)
+            return {'_alg_class': 'function', '_alg_module': module_name, 'value': function_name}
         if isinstance(obj, AlgObject):
             return {'_alg_class': type(obj).__name__, '_alg_module': str(obj.__module__), 'value': obj.to_json}
         if isinstance(obj, frozenset):
@@ -62,6 +66,11 @@ class AlgDecoder(json.JSONDecoder):
             return obj
         alg_module = obj['_alg_module']
         host_module = importlib.import_module(alg_module)
+        if alg_class == 'function':
+            function = getattr(host_module, obj_value, None)
+            if function is None:
+                raise RuntimeError(f'function: {obj_value}, in alg_module: {alg_module} could not be located')
+            return function
         obj_class = getattr(host_module, alg_class, None)
         if obj_class is None:
             raise RuntimeError(f'alg_class: {alg_class}, in alg_module: {alg_module} could not be located')
