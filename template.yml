@@ -61,13 +61,13 @@ Resources:
 
   cleaner:
     Type: AWS::Serverless::Function
-      Properties:
-        Handler: toll_booth/alg_tasks/cleaner.cleaner
-        FunctionName: leech-clean
-        Role:
-          Ref: LambdaRoleArn
-        Timeout: 300
-        MemorySize: 128
+    Properties:
+      Handler: toll_booth/alg_tasks/cleaner.cleaner
+      FunctionName: leech-clean
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 128
 
   fire:
     Type: AWS::Serverless::Function
