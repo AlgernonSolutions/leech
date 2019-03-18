@@ -231,9 +231,10 @@ class Ruffian:
         warn_seconds = kwargs.get('warn_seconds', 120)
         run_config = kwargs.get('run_config', {})
         ruffian_config = kwargs.get('ruffian_config', {})
+        overseer_token = kwargs.get('overseer_token')
         warn_level = (warn_seconds * 1000)
         return cls(domain_name, flow_name, work_list, config, warn_level, context,
-                   run_config=run_config, ruffian_config=ruffian_config)
+                   run_config=run_config, ruffian_config=ruffian_config, overseer_token=overseer_token)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
@@ -293,12 +294,12 @@ class Ruffian:
 
     @classmethod
     def _rouse_ruffians(cls, pending_ruffians, **kwargs):
-        execution_arns = []
+        execution_arns = {}
         for pending_ruffian in pending_ruffians:
             ruffian_id = RuffianId.from_raw(pending_ruffian['ruffian_id'])
             kwargs['ruffian_config'] = pending_ruffian.get('ruffian_config')
             execution_arn = RuffianRoost.conscript_ruffian(ruffian_id, **kwargs)
-            execution_arns.append(execution_arn)
+            execution_arns[str(ruffian_id)] = execution_arn
         return execution_arns
 
     @classmethod

@@ -10,9 +10,10 @@ def cleaner(event, context):
     logging.info(f'started cleaner task: {event}')
     client = boto3.client('swf')
     if 'overseer_token' in event:
+        error = event.get('error')
         client.respond_activity_task_failed(
             taskToken=event['overseer_token'],
-            reason=event.get('reason'),
-            details=event.get('error')
+            reason=error.get('Error', 'reason not specified'),
+            details=event.get('Cause', 'no details specified')
         )
 
