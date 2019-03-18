@@ -357,7 +357,7 @@ class Ruffian:
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
         domain_name = self._domain_name
         if not list_name:
-            list_name = self._work_list['list_name']
+            list_name = self._work_list
         laborer = Laborer(domain_name, list_name)
         poll_response = laborer.poll_for_tasks()
         logging.info(f'received a response from polling {domain_name} for task_list: {list_name}, {poll_response}')
@@ -417,7 +417,7 @@ class Ruffian:
         from toll_booth.alg_obj.serializers import AlgDecoder
 
         client = boto3.client('lambda', config=Config(connect_timeout=600, read_timeout=600))
-        task_list = self._work_list['list_name']
+        task_list = self._work_list
         poll_response = kwargs['poll_response']
         task_name = poll_response['activityType']['name']
         task_args = poll_response['input']
