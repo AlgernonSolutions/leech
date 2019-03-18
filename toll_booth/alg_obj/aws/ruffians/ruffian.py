@@ -230,8 +230,10 @@ class Ruffian:
     def build(cls, context, domain_name, flow_name, work_list, config, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 120)
         run_config = kwargs.get('run_config', {})
+        ruffian_config = kwargs.get('ruffian_config', {})
         warn_level = (warn_seconds * 1000)
-        return cls(domain_name, flow_name, work_list, config, warn_level, context, run_config=run_config)
+        return cls(domain_name, flow_name, work_list, config, warn_level, context,
+                   run_config=run_config, ruffian_config=ruffian_config)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
