@@ -15,7 +15,7 @@ class OverseerRecorder:
         client = boto3.client('dynamodb')
         self._query_paginator = client.get_paginator('query')
 
-    def record_ruffian_start(self, ruffian_id, execution_arn, start_time):
+    def record_ruffian_start(self,  ruffian_id, execution_arn, start_time):
         item = ruffian_id.as_overseer_item(execution_arn, start_time)
         try:
             response = self._table.put_item(
@@ -29,8 +29,8 @@ class OverseerRecorder:
             raise RuntimeError(f'attempted to record the start of a ruffian: {ruffian_id.as_overseer_key(execution_arn)}, '
                                f'but an entry for that ruffian already exists')
 
-    def record_ruffian_end(self, ruffian_id, execution_arn, end_time):
-        key = ruffian_id.as_overseer_key(execution_arn)
+    def record_ruffian_end(self, ruffian_id, end_time):
+        key = ruffian_id.as_overseer_key
         response = self._table.update_item(
             Key=key,
             UpdateExpression='SET end_time=:et, running=:r',

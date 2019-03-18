@@ -1,6 +1,8 @@
 import json
 import logging
 import os
+from datetime import datetime
+from decimal import Decimal
 from multiprocessing.pool import ThreadPool
 from queue import Queue
 from threading import Thread
@@ -11,9 +13,7 @@ from botocore.exceptions import ClientError
 from retrying import retry
 
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.moorland import cos
 from toll_booth.alg_obj.aws.overseer.overseer import OverseerRecorder
-from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
@@ -79,7 +79,9 @@ class RuffianId(AlgObject):
 
     @property
     def as_overseer_key(self):
-        return {'flow_id': self._flow_id, 'ruffian_id ': str(self)}
+        if self._flow_id is None:
+            raise RuntimeError('attempted to submit a ruffian_id to the db, but the flow_id is not set')
+        return {'workflow_id': self._flow_id, 'ruffian_id': str(self)}
 
     def __str__(self):
         return f'{self._domain_name}#{self._flow_name}#{self._list_name}#{self._is_laborer}'
@@ -246,7 +248,7 @@ class Ruffian:
         response = client.record_activity_task_heartbeat(
             taskToken=self._overseer_token
         )
-        return response['cancelRequested']
+        return response['cancelRequested'] is True
 
     def oversee(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
@@ -271,7 +273,10 @@ class Ruffian:
                         if 'config' not in arg_values:
                             arg_values['config'] = self._config
                         execution_arns = self._manage_ruffians(current_ruffians, **arg_values)
-                        print()
+                        for ruffian_id, execution_arn in execution_arns.items():
+                            ruffian_id = RuffianId.from_raw(ruffian_id, arg_values['flow_id'])
+                            start_time = Decimal(datetime.utcnow().timestamp())
+                            overseer.record_ruffian_start(ruffian_id, execution_arn, start_time)
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
