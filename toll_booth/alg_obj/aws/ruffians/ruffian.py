@@ -248,7 +248,7 @@ class Ruffian:
         response = client.record_activity_task_heartbeat(
             taskToken=self._overseer_token
         )
-        return response['cancelRequested'] is True
+        return response['cancelRequested'] is False
 
     def oversee(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General

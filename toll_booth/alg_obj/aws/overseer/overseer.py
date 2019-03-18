@@ -47,5 +47,9 @@ class OverseerRecorder:
             ExpressionAttributeValues={':fi': {'S': flow_id}, ':f': {'BOOL': True}}
         )
         for page in response:
-            ruffians.extend([{'execution_arn': x['execution_arn'], 'ruffian_id': x['ruffian_id']}] for x in page['Items'])
+            for entry in page['Items']:
+                ruffians.append({
+                    'execution_arn': entry['execution_arn']['S'],
+                    'ruffian_id': entry['ruffian_id']['S']
+                })
         return ruffians
