@@ -214,6 +214,7 @@ class ActivitySignature(Signature):
         super().__init__(task_type, version, config, task_identifier, task_args, **cls_kwargs)
         self._task_list = task_list
         self._timeouts = time_outs
+        self._register_results = kwargs.get('register_results', True)
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
@@ -221,7 +222,8 @@ class ActivitySignature(Signature):
         running_time = self._timeouts.get('running', 300)
         start_kwargs = {
             'task_args': task_args, 'running_time': running_time,
-            'version': self.fn_version, 'task_list': self._task_list
+            'version': self.fn_version, 'task_list': self._task_list,
+            'register_results': self._register_results
         }
         return StartActivity(*self.start_args, **start_kwargs)
 

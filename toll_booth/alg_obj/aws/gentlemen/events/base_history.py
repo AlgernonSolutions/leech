@@ -46,6 +46,10 @@ class History:
     def operation_names(self):
         return [x.operation_name for x in self._operations]
 
+    @property
+    def open_operations(self):
+        return [x for x in self._operations if not x.is_complete]
+
     def add_event(self, event):
         event_type = event.event_type
         add_operation_event = getattr(self, '_add_operation_event')

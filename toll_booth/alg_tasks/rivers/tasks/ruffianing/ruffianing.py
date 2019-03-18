@@ -5,14 +5,14 @@ from aws_xray_sdk.core import xray_recorder
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
-@xray_recorder.capture('ruffianing')
-@task('ruffianing')
-def ruffianing(**kwargs):
-    from toll_booth.alg_obj.aws.overseer.overseer import Overseer
+@xray_recorder.capture('rough_housing')
+@task('rough_housing')
+def rough_housing(**kwargs):
+    from toll_booth.alg_obj.aws.overseer.overseer import OverseerRecorder
 
     logging.info(f'received a call to fire a ruffianing task: {kwargs}')
     flow_id = kwargs['flow_id']
-    overseer = Overseer(**kwargs)
+    overseer = OverseerRecorder(**kwargs)
     current_ruffians = overseer.get_running_ruffians(flow_id)
     execution_arns = _manage_ruffians(current_ruffians, **kwargs)
     return execution_arns

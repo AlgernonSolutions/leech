@@ -5,6 +5,26 @@
     "record_retention": 5,
     "workflows": [
       {
+        "workflow_name": "ruffianing",
+        "workflow_description": "central arbitrating task for the overseer process",
+        "workflow_config": {
+          "concurrency": 1,
+          "time_outs": {
+            "decision": "300"
+          }
+        }
+      },
+      {
+        "workflow_name": "rough_housing",
+        "workflow_description": "child arbitrating task for the overseer process",
+        "workflow_config": {
+          "concurrency": 1,
+          "time_outs": {
+            "decision": "300"
+          }
+        }
+      },
+      {
         "workflow_name": "fungus",
         "workflow_description": "master level workflow for all fungal leech operations",
         "workflow_config": {
@@ -35,12 +55,6 @@
         "workflow_description": "generates, indexes, and graphs, the links needed by fungal data sources",
         "workflow_config": {
           "concurrency": 1,
-          "labor_task_lists": [
-            {
-              "list_name": "links",
-              "number_threads": 5
-            }
-          ],
           "time_outs": {
             "decision": "300"
           }
@@ -61,12 +75,6 @@
         "workflow_description": "workflow for extracting and collecting a change action",
         "workflow_config": {
           "concurrency": 5,
-          "labor_task_lists": [
-            {
-              "list_name": "work_change_action",
-              "number_threads": 1
-            }
-          ],
           "time_outs": {
             "decision": "300"
           }
@@ -77,12 +85,6 @@
         "workflow_description": "workflow for extracting and collecting a change type",
         "workflow_config": {
           "concurrency": 1,
-          "labor_task_lists": [
-            {
-              "list_name": "work_change_type",
-              "number_threads": 1
-            }
-          ],
           "time_outs": {
             "decision": "300"
           }
@@ -185,12 +187,18 @@
       }
     ],
     "tasks": [
+       {
+        "task_name": "rough_housing",
+        "task_description": "retrieves the current maximum value for a given change_type by emp_id",
+        "task_config": {
+          "concurrency": 1
+        }
+      },
       {
         "task_name": "get_local_max_change_type_value",
         "task_description": "retrieves the current maximum value for a given change_type by emp_id",
         "task_config": {
-          "concurrency": 1,
-          "task_list": "work_change_type"
+          "concurrency": 1
         }
       },
       {
@@ -211,8 +219,7 @@
         "task_name": "unlink_old_ids",
         "task_description": "breaks the connection between ext_id and a data source",
         "task_config": {
-          "concurrency": 1,
-          "task_list": "links"
+          "concurrency": 1
         }
       },
       {
@@ -226,8 +233,7 @@
         "task_name": "link_new_ids",
         "task_description": "creates connection between ext_id and a data source",
         "task_config": {
-          "concurrency": 1,
-          "task_list": "links"
+          "concurrency": 1
         }
       },
       {
@@ -241,8 +247,7 @@
         "task_name": "put_new_ids",
         "task_description": "adds id object to the data space",
         "task_config": {
-          "concurrency": 1,
-          "task_list": "links"
+          "concurrency": 1
         }
       },
       {
@@ -250,8 +255,7 @@
         "task_description": "adds new links objects to the graph",
         "task_config": {
           "is_vpc": true,
-          "concurrency": 1,
-          "task_list": "links"
+          "concurrency": 1
         }
       },
       {

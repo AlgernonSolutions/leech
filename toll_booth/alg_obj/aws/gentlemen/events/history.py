@@ -5,6 +5,7 @@ from toll_booth.alg_obj.aws.gentlemen.events.activities import ActivityHistory
 from toll_booth.alg_obj.aws.gentlemen.events.events import Event
 from toll_booth.alg_obj.aws.gentlemen.events.lambdas import LambdaHistory
 from toll_booth.alg_obj.aws.gentlemen.events.markers import MarkerHistory
+from toll_booth.alg_obj.aws.gentlemen.events.signals import WorkflowSignalHistory
 from toll_booth.alg_obj.aws.gentlemen.events.subtasks import SubtaskHistory
 from toll_booth.alg_obj.aws.gentlemen.events.timers import TimerHistory
 from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments, Versions, LeechConfig
@@ -17,7 +18,8 @@ class WorkflowHistory:
     def __init__(self, domain_name, flow_type, task_token, flow_id, run_id, lambda_role, parent_flow_id, parent_run_id,
                  versions: Versions, config: LeechConfig,
                  task_args: TaskArguments, events: [Event], subtask_history: SubtaskHistory, lambda_history: LambdaHistory,
-                 activity_history: ActivityHistory, marker_history: MarkerHistory, timer_history: TimerHistory):
+                 activity_history: ActivityHistory, marker_history: MarkerHistory, timer_history: TimerHistory,
+                 signal_history: WorkflowSignalHistory):
         self._domain_name = domain_name
         self._flow_type = flow_type
         self._flow_id = flow_id
@@ -35,6 +37,7 @@ class WorkflowHistory:
         self._activity_history = activity_history
         self._marker_history = marker_history
         self._timer_history = timer_history
+        self._signal_history = signal_history
 
     @classmethod
     def parse_from_poll(cls, domain_name, poll_response, flow_type=None, task_token=None, flow_id=None, run_id=None):
@@ -56,6 +59,7 @@ class WorkflowHistory:
         activity_history = ActivityHistory.generate_from_events(events, activities.steps)
         marker_history = MarkerHistory.generate_from_events(run_id, events)
         timer_history = TimerHistory.generate_from_events(events)
+        workflow_signal_history = WorkflowSignalHistory.generate_from_events(run_id, events)
         task_args, lambda_role, parent_flow_id, parent_run_id, versions, config = cls._generate_workflow_starter_data(flow_type, events)
         cls_args = {
             'domain_name': domain_name, 'flow_type': flow_type, 'task_token': task_token, 'flow_id': flow_id,
@@ -63,7 +67,7 @@ class WorkflowHistory:
             'run_id': run_id, 'parent_flow_id': parent_flow_id, 'parent_run_id': parent_run_id, 'task_args': task_args,
             'lambda_role': lambda_role, 'events': events, 'subtask_history': subtask_history,
             'lambda_history': lambda_history, 'activity_history': activity_history,
-            'marker_history': marker_history, 'timer_history': timer_history
+            'marker_history': marker_history, 'timer_history': timer_history, 'signal_history': workflow_signal_history
         }
         return cls(**cls_args)
 
@@ -162,6 +166,10 @@ class WorkflowHistory:
     @property
     def timer_history(self):
         return self._timer_history
+
+    @property
+    def signal_history(self):
+        return self._signal_history
 
     @property
     def idle_ruffians(self):

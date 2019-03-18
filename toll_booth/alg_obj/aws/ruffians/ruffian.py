@@ -12,8 +12,9 @@ from retrying import retry
 
 from toll_booth.alg_obj import AlgObject
 from toll_booth.alg_obj.aws.moorland import cos
+from toll_booth.alg_obj.aws.overseer.overseer import OverseerRecorder
 from toll_booth.alg_obj.graph.ogm.regulators import IdentifierStem
-from toll_booth.alg_obj.serializers import AlgEncoder
+from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
 class RuffianId(AlgObject):
@@ -31,6 +32,12 @@ class RuffianId(AlgObject):
             json_dict['domain_name'], json_dict['flow_id'], json_dict['flow_name'],
             json_dict['task_list'], is_laborer=json_dict.get('is_laborer')
         )
+
+    @classmethod
+    def from_raw(cls, raw_string, flow_id=None):
+        raw_parts = raw_string.split('#')
+        is_laborer = raw_parts[3] == 'True'
+        return cls(raw_parts[0], flow_id, raw_parts[1], raw_parts[2], is_laborer=is_laborer)
 
     @classmethod
     def for_overseer(cls, domain_name):
@@ -57,17 +64,8 @@ class RuffianId(AlgObject):
     def is_laborer(self):
         return self._is_laborer
 
-    def as_run_identifier_stem(self, execution_arn):
-        paired_identifiers = {
-            'execution_arn': execution_arn,
-            'is_laborer': self._is_laborer,
-            'list_name': self._list_name,
-            'domain_name': self._domain_name
-        }
-        return IdentifierStem('vertex', 'ruffian', paired_identifiers)
-
     def as_overseer_item(self, execution_arn, start_time):
-        item = self.as_overseer_key(execution_arn)
+        item = self.as_overseer_key
         item.update({
             'start_time': start_time,
             'running': True,
@@ -79,9 +77,12 @@ class RuffianId(AlgObject):
         })
         return item
 
-    def as_overseer_key(self, execution_arn):
-        identifier_stem = self.as_run_identifier_stem(execution_arn)
-        return {'flow_id': self._flow_id, 'run_identifier_stem ': str(identifier_stem)}
+    @property
+    def as_overseer_key(self):
+        return {'flow_id': self._flow_id, 'ruffian_id ': str(self)}
+
+    def __str__(self):
+        return f'{self._domain_name}#{self._flow_name}#{self._list_name}#{self._is_laborer}'
 
 
 class RuffianRoost:
@@ -90,14 +91,18 @@ class RuffianRoost:
                                               'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
 
     @classmethod
-    def conscript_ruffian(cls, ruffian_id: RuffianId, **kwargs):
+    def conscript_ruffian(cls, ruffian_id: RuffianId, config, flow_id=None, flow_name=None, **kwargs):
         ruffian_machine_arn = kwargs.get('machine_arn', cls._default_machine_arn)
         machine_arn = kwargs.get('deciding_machine_arn', cls._default_deciding_machine_arn)
         task_list = ruffian_id.list_name
+        run_config = kwargs.get('run_config', {})
+        if not flow_name:
+            flow_name = ruffian_id.flow_name
+        if not flow_id:
+            flow_id = ruffian_id.flow_id
         if ruffian_id.is_laborer:
-            task_list = kwargs['task_list']
             machine_arn = ruffian_machine_arn
-        return cls._start_machine(machine_arn, task_list, ruffian_id.domain_name, flow_id=ruffian_id.flow_id, **kwargs)
+        return cls._start_machine(machine_arn, task_list, ruffian_id.domain_name, config, run_config, flow_id=flow_id, flow_name=flow_name, **kwargs)
 
     @classmethod
     def conscript_ruffians(cls, decider_list, work_lists, domain_name, config, **kwargs):
@@ -177,7 +182,10 @@ class RuffianRoost:
             'domain_name': domain_name,
             'config': config,
             'run_config': run_config,
-            'flow_id': kwargs.get('flow_id')
+            'flow_id': kwargs.get('flow_id'),
+            'flow_name': kwargs.get('flow_name'),
+            'overseer_token': kwargs.get('overseer_token'),
+            'ruffian_config': kwargs.get('ruffian_config')
         }, cls=AlgEncoder)
         start_kwargs = {
             'stateMachineArn': machine_arn,
@@ -203,10 +211,12 @@ class RuffianRoost:
 
 
 class Ruffian:
-    def __init__(self, flow_id, domain_name, work_list, config, warn_level, context, **kwargs):
+    def __init__(self, domain_name, flow_name, work_list, config, warn_level, context, **kwargs):
         run_config = kwargs.get('run_config', {})
-        self._flow_id = flow_id
+        ruffian_config = kwargs.get('ruffian_config', {})
+        self._overseer_token = kwargs.get('overseer_token')
         self._domain_name = domain_name
+        self._flow_name = flow_name
         self._work_list = work_list
         self._config = config
         self._warn_level = warn_level
@@ -214,22 +224,84 @@ class Ruffian:
         self._pending_tasks = {}
         self._connections = []
         self._run_config = run_config
+        self._ruffian_config = ruffian_config
 
     @classmethod
-    def build(cls, context, flow_id, domain_name, work_list, config, **kwargs):
+    def build(cls, context, domain_name, flow_name, work_list, config, **kwargs):
         warn_seconds = kwargs.get('warn_seconds', 120)
         run_config = kwargs.get('run_config', {})
         warn_level = (warn_seconds * 1000)
-        return cls(flow_id, domain_name, work_list, config, warn_level, context, run_config=run_config)
+        return cls(domain_name, flow_name, work_list, config, warn_level, context, run_config=run_config)
 
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
         logging.debug(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
         return time_remaining
 
-    def _check_work_flag(self):
-        work_flag = cos.getenv(self._flow_id)
-        return work_flag is None
+    def _send_ndy(self):
+        client = boto3.client('swf')
+        response = client.record_activity_task_heartbeat(
+            taskToken=self._overseer_token
+        )
+        return response['cancelRequested']
+
+    def oversee(self):
+        from toll_booth.alg_obj.aws.gentlemen.command import General
+
+        logging.info(
+            f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
+        time_remaining = self._check_watch()
+        self._run_config['fresh_start'] = True
+        overseer = OverseerRecorder()
+        while time_remaining >= (self._warn_level * 1.5):
+            general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
+            try:
+                command_results = general.command()
+                if command_results:
+                    for _ in range(command_results):
+                        poll_response = self._poll_for_tasks(self._work_list)
+                        task_token = poll_response['taskToken']
+                        input_values = json.loads(poll_response['input'], cls=AlgDecoder)
+                        arg_values = input_values['task_args'].for_task
+                        current_ruffians = overseer.get_running_ruffians(arg_values['flow_id'])
+                        arg_values['overseer_token'] = task_token
+                        if 'config' not in arg_values:
+                            arg_values['config'] = self._config
+                        execution_arns = self._manage_ruffians(current_ruffians, **arg_values)
+                        print()
+            except Exception as e:
+                import traceback
+                trace = traceback.format_exc()
+                logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
+            time_remaining = self._check_watch()
+
+    @classmethod
+    def _manage_ruffians(cls, current_ruffians, **kwargs):
+        ruffian_action = kwargs['signal_name']
+        called_ruffians = kwargs['ruffians']
+        called_ruffian_ids = set([x['ruffian_id'] for x in called_ruffians])
+        if ruffian_action == 'start_ruffian':
+            current_ruffian_ids = set([x['ruffian_id'] for x in current_ruffians])
+            pending_ruffian_ids = called_ruffian_ids - current_ruffian_ids
+            pending_ruffians = [x for x in called_ruffians if x['ruffian_id'] in pending_ruffian_ids]
+            return cls._rouse_ruffians(pending_ruffians, **kwargs)
+        if ruffian_action == 'stop_ruffian':
+            return
+        raise NotImplementedError(f'can not perform ruffian action: {ruffian_action}')
+
+    @classmethod
+    def _rouse_ruffians(cls, pending_ruffians, **kwargs):
+        execution_arns = []
+        for pending_ruffian in pending_ruffians:
+            ruffian_id = RuffianId.from_raw(pending_ruffian['ruffian_id'])
+            kwargs['ruffian_config'] = pending_ruffian.get('ruffian_config')
+            execution_arn = RuffianRoost.conscript_ruffian(ruffian_id, **kwargs)
+            execution_arns.append(execution_arn)
+        return execution_arns
+
+    @classmethod
+    def _disband_ruffians(cls, execution_arn):
+        RuffianRoost.disband_ruffians(execution_arn)
 
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
@@ -237,7 +309,7 @@ class Ruffian:
         logging.info(
             f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
         time_remaining = self._check_watch()
-        keep_working = self._check_work_flag()
+        keep_working = True
         while time_remaining >= self._warn_level and keep_working:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
@@ -247,17 +319,16 @@ class Ruffian:
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
             time_remaining = self._check_watch()
-            keep_working = self._check_work_flag()
+            keep_working = self._send_ndy()
         return {'keep_working': keep_working}
 
     def labor(self):
-        work_list_name = self._work_list['list_name']
         logging.info(
-            f'starting up a ruffian as a worker for task_list: {work_list_name}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
+            f'starting up a ruffian as a worker for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}')
         threads = []
         queue = Queue()
         labor_args = {
-            'list_name': work_list_name,
+            'list_name': self._work_list,
             'queue': queue
         }
         labor_components = [self._dispatch_tasks]
@@ -266,24 +337,25 @@ class Ruffian:
             component_thread.start()
             threads.append(component_thread)
         time_remaining = self._check_watch()
-        keep_working = self._check_work_flag()
+        keep_working = True
         while time_remaining >= self._warn_level and keep_working:
-            if len(self._pending_tasks) <= self._work_list['number_threads']:
+            if len(self._pending_tasks) <= self._run_config['number_threads']:
                 poll_results = self._poll_for_tasks()
                 if 'taskToken' in poll_results:
                     queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
-            keep_working = self._check_work_flag()
+            keep_working = self._send_ndy()
         logging.info(f'time is up, preparing to quit')
         queue.put(None)
         for thread in threads:
             thread.join()
         return {'keep_working': keep_working}
 
-    def _poll_for_tasks(self):
+    def _poll_for_tasks(self, list_name=None):
         from toll_booth.alg_obj.aws.gentlemen.labor import Laborer
         domain_name = self._domain_name
-        list_name = self._work_list['list_name']
+        if not list_name:
+            list_name = self._work_list['list_name']
         laborer = Laborer(domain_name, list_name)
         poll_response = laborer.poll_for_tasks()
         logging.info(f'received a response from polling {domain_name} for task_list: {list_name}, {poll_response}')

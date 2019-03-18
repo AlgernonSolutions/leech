@@ -81,11 +81,14 @@ def workflow(workflow_name):
             if workflow_args:
                 workflow_args = workflow_args.data_string
             context_kwargs = {
+                'domain_name': work_history.domain_name,
                 'task_args': task_args,
+                'run_id': work_history.run_id,
                 'decisions': made_decisions,
                 'work_history': work_history,
                 'sub_tasks': work_history.subtask_history,
                 'markers': work_history.marker_history,
+                'signals': work_history.signal_history,
                 'timers': work_history.timer_history,
                 'activities': work_history.activity_history,
                 'lambdas': work_history.lambda_history,

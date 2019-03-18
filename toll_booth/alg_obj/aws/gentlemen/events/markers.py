@@ -83,6 +83,10 @@ class MarkerHistory:
             return marker
         return None
 
+    def get_signal_markers(self, run_id):
+        signal_markers = self.get_markers_by_type('signal')
+        return [x.marker_details for x in signal_markers if x.run_id == run_id]
+
     def get_ruffians(self, run_id):
         ruffians = {}
         ruffian_markers = self.get_markers_by_type('ruffian')

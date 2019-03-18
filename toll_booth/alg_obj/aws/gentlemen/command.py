@@ -51,8 +51,9 @@ class General:
         if work_history is None:
             return
         try:
-            self._make_decisions(work_history)
+            decision_results = self._make_decisions(work_history)
             logging.info(f'completed decision making on task_list: {self._task_list} for flow_id: {work_history.flow_id}')
+            return decision_results
         except Exception as e:
             import traceback
             trace = traceback.format_exc()

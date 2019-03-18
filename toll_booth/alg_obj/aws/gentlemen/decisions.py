@@ -159,7 +159,7 @@ class StartActivity(Decision):
                 'task_args': task_args,
                 'flow_id': kwargs.get('flow_id', '0'), 'run_id': kwargs.get('run_id', '0'),
                 'task_id': activity_id,
-                'register_results': True
+                'register_results': kwargs.get('register_results', True)
             }, cls=AlgEncoder)
         if 'control' in kwargs:
             activity_attributes['control'] = json.dumps(kwargs['control'], cls=AlgEncoder)
@@ -279,6 +279,12 @@ class RecordMarker(Decision):
         ruffian_data = {'task_identifier': task_identifier, 'execution_arn': execution_arn, 'is_close': is_close}
         data_string = json.dumps(ruffian_data, cls=AlgEncoder)
         return cls('ruffian', data_string)
+
+    @classmethod
+    def for_signal_completed(cls, signal_id, signal_name):
+        signal_data = {'signal_id': signal_id, 'signal_name': signal_name}
+        data_string = json.dumps(signal_data, cls=AlgEncoder)
+        return cls('signal', data_string)
 
     @property
     def marker_name(self):

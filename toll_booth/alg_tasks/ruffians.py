@@ -4,6 +4,7 @@ import logging
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 from toll_booth.alg_tasks.rivers.tasks.automation import automation_tasks
+from toll_booth.alg_tasks.rivers.tasks.ruffianing import ruffianing
 
 
 def _set_run_id_logging(flow_id, run_id, task_id, context):
@@ -65,6 +66,23 @@ def decide(event, context):
     ruffian.supervise()
 
 
+@lambda_logged
+def cleaner(event, context):
+    pass
+
+
+# @lambda_logged
+@rough_work
+def oversee(event, context):
+    from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
+
+    logging.info(f'received a call to start the overseer: {event}')
+    if 'warn_seconds' not in event:
+        event['warn_seconds'] = 60
+    ruffian = Ruffian.build(context, **event)
+    ruffian.oversee()
+
+
 # @lambda_logged
 @rough_work
 def labor(event, context):
@@ -84,7 +102,7 @@ def lambda_labor(task_name, task_args):
     from toll_booth.alg_tasks.rivers.tasks.posts import credible_fe_tasks
 
     logging.info(f'received a call to run a lambda task named {task_name}, the task_args are {task_args}')
-    task_modules = [fungi_tasks, leech_tasks, email_tasks, credible_fe_tasks, automation_tasks]
+    task_modules = [fungi_tasks, leech_tasks, email_tasks, credible_fe_tasks, automation_tasks, ruffianing]
     for task_module in task_modules:
         task_fn = getattr(task_module, task_name, None)
         if task_fn:
