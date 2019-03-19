@@ -3,34 +3,21 @@ import logging
 import boto3
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork
+from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
+from toll_booth.alg_obj.aws.gql.gql_client import GqlClient, RuffianGql
+from toll_booth.alg_obj.aws.overseer.overseer import Overseer
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
 
-class QuickExit:
-    def __init__(self):
-        pass
-
-
-def _conscript_ruffian(work_history, start_subtask_decision, leech_config):
-    workflow_id = start_subtask_decision.workflow_id
-    open_ruffians = work_history.marker_history.get_open_ruffian_tasks(work_history.run_id)
-    if workflow_id in open_ruffians:
-        return
-    workflow_config = leech_config.get_workflow_config(start_subtask_decision.type_name)
-    labor_task_lists = workflow_config.get('labor_task_lists', [])
-    execution_arns = RuffianRoost.conscript_ruffians(workflow_id, labor_task_lists, work_history.domain_name, leech_config)
-    return [RecordMarker.for_ruffian(workflow_id, x) for x in execution_arns]
-
-
-def _disband_idle_ruffians(work_history):
-    disband_markers = []
-    idlers = work_history.idle_ruffians
-    for execution_arn, operation_id in idlers.items():
-        RuffianRoost.disband_ruffians(execution_arn)
-        disband_markers.append(RecordMarker.for_ruffian(operation_id, execution_arn, True))
-    return disband_markers
+def _conscript_ruffian(work_history: WorkflowHistory, leech_config, versions):
+    domain_name = work_history.domain_name
+    overseer = Overseer.start(domain_name, versions)
+    flow_id = work_history.flow_id
+    flow_name = work_history.flow_type
+    ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, leech_config, {})
+    return overseer.signal(flow_id, leech_config, ruffians)
 
 
 def _get_versions(work_history):
@@ -100,7 +87,6 @@ def workflow(workflow_name):
                 'workflow_args': workflow_args
             }
             results = production_fn(**context_kwargs)
-            made_decisions.extend(_disband_idle_ruffians(work_history))
             decisions = MadeDecisions(work_history.task_token)
             if version_decision:
                 decisions.add_decision(version_decision)
@@ -109,10 +95,7 @@ def workflow(workflow_name):
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
                     decision.set_parent_data(configs, versions)
-                    mark_ruffian = _conscript_ruffian(work_history, decision, configs)
-                    if mark_ruffian:
-                        for marker in mark_ruffian:
-                            decisions.add_decision(marker)
+                    _conscript_ruffian(work_history, configs, versions)
                 elif isinstance(decision, CompleteWork):
                     decision.add_result('task_args', task_args)
                 try:

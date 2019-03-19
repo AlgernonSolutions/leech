@@ -1,9 +1,66 @@
+import json
 import os
+import uuid
 
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
+from toll_booth.alg_obj.aws.gentlemen.tasks import Versions
+from toll_booth.alg_obj.aws.moorland import cos
+from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianId, RuffianRoost
+from toll_booth.alg_obj.serializers import AlgEncoder
+
+
+class Overseer:
+    def __init__(self, domain_name, overseer_run_id):
+        self._domain_name = domain_name
+        self._overseer_run_id = overseer_run_id
+
+    @classmethod
+    def start(cls, domain_name, versions=None):
+        if not versions:
+            versions = Versions.retrieve(domain_name)
+        client = boto3.client('swf')
+        flow = 'overseer'
+        start_args = {
+            'domain': domain_name,
+            'workflowId': flow,
+            'workflowType': {
+                'name': flow,
+                'version': str(versions.workflow_versions[flow])
+            },
+            'taskList': {'name': flow},
+            'childPolicy': 'TERMINATE',
+            'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
+        }
+        current_overseer_id = cos.environ['global_overseer_run_id']
+        try:
+            overseer_ruffian_id = RuffianId.for_overseer(domain_name)
+            start_results = client.start_workflow_execution(**start_args)
+            run_id = start_results['runId']
+            cos.environ['overseer_run_id'] = run_id
+            RuffianRoost.conscript_ruffian(overseer_ruffian_id)
+            current_overseer_id = run_id
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
+                raise e
+        return cls(domain_name, current_overseer_id)
+
+    def signal(self, flow_id, leech_config, ruffians):
+        client = boto3.client('swf')
+        client.signal_workflow_execution(
+            domain=self._domain_name,
+            workflowId='overseer',
+            runId=self._overseer_run_id,
+            signalName='start_ruffian',
+            input=json.dumps({
+                'signal_id': uuid.uuid4().hex,
+                'flow_id': flow_id,
+                'ruffians': ruffians,
+                'config': leech_config
+            }, cls=AlgEncoder)
+        )
 
 class OverseerRecorder:
     def __init__(self, **kwargs):

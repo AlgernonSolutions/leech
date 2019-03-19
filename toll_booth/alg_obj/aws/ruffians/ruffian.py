@@ -90,7 +90,7 @@ class RuffianRoost:
                                               'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
 
     @classmethod
-    def conscript_ruffian(cls, ruffian_id: RuffianId, config, flow_id=None, flow_name=None, **kwargs):
+    def conscript_ruffian(cls, ruffian_id: RuffianId, config=None, flow_id=None, flow_name=None, **kwargs):
         ruffian_machine_arn = kwargs.get('machine_arn', cls._default_machine_arn)
         machine_arn = kwargs.get('deciding_machine_arn', cls._default_deciding_machine_arn)
         task_list = ruffian_id.list_name
@@ -207,6 +207,29 @@ class RuffianRoost:
         except ClientError as e:
             if e.response['Error']['Code'] != 'ExecutionDoesNotExist':
                 raise e
+
+    @classmethod
+    def generate_ruffians(cls, domain_name, flow_id, flow_name, leech_config, run_config):
+        decider_ruffian = {
+            'ruffian_id': RuffianId(domain_name, flow_id, flow_name, flow_id, is_laborer=False),
+            'run_config': run_config
+        }
+        base_task_ruffian = {
+            'ruffian_id': RuffianId(domain_name, flow_id, flow_name, flow_id, is_laborer=True),
+            'ruffian_config': {'task_list': flow_id, 'number_threads': 1}
+        }
+        ruffians = [decider_ruffian, base_task_ruffian]
+        ruffian_ids = [x['ruffian_id'] for x in ruffians]
+        workflow_config = leech_config.get_workflow_config(flow_name)
+        labor_task_lists = workflow_config.get('labor_task_lists', [])
+        for entry in labor_task_lists:
+            entry_ruffian_id = RuffianId(domain_name, flow_id, flow_name, entry['list_name'], is_laborer=True)
+            if entry_ruffian_id not in ruffian_ids:
+                ruffians.append({
+                    'ruffian_id': entry_ruffian_id,
+                    'ruffian_config': entry
+                })
+        return ruffians
 
 
 class Ruffian:

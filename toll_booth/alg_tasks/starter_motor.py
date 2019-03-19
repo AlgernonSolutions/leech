@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import datetime
 
@@ -6,26 +5,26 @@ import boto3
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
-from toll_booth.alg_obj.aws.moorland import cos
-from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost, RuffianId
+from toll_booth.alg_obj.aws.overseer.overseer import Overseer
+from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
 @lambda_logged
-def start_flow(event, context):
-    logging.info(f'received a call to fire a start_flow task, event: {event}')
+def starter(**kwargs):
+    event = kwargs['event']
+    logging.info(f'received a call to fire a starter task, event: {event}')
+    domain_name = event['domain_name']
+    versions = event.get('versions', Versions.retrieve(domain_name))
+    config = event.get('config', LeechConfig.retrieve())
     provided_flow_id = event['flow_id']
     flow_id = _generate_flow_id(provided_flow_id)
-    domain_name = event['domain_name']
     flow_name = event['flow_name']
     input_string = event.get('input_string')
     run_config = event.get('run_config', {})
+    overseer = Overseer.start(domain_name, versions)
     client = boto3.client('swf')
-
-    versions = Versions.retrieve(domain_name)
-    config = LeechConfig.retrieve()
-    _start_overseer(domain_name, versions)
-
+    ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, config, run_config)
     start_args = {
         'domain': domain_name,
         'workflowId': flow_id,
@@ -45,60 +44,8 @@ def start_flow(event, context):
         if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
             raise e
         return
-    _signal_overseer(domain_name, flow_id, flow_name, config, run_config)
+    overseer.signal(domain_name, flow_id, config, ruffians)
     return start_results
-
-
-def _start_overseer(domain_name, versions):
-    client = boto3.client('swf')
-    flow = 'overseer'
-    start_args = {
-        'domain': domain_name,
-        'workflowId': flow,
-        'workflowType': {
-            'name': flow,
-            'version': str(versions.workflow_versions[flow])
-        },
-        'taskList': {'name': flow},
-        'childPolicy': 'TERMINATE',
-        'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
-    }
-    current_overseer_id = cos.environ['global_overseer_run_id']
-    try:
-        overseer_ruffian_id = RuffianId.for_overseer(domain_name)
-        start_results = client.start_workflow_execution(**start_args)
-        run_id = start_results['runId']
-        cos.environ['overseer_run_id'] = run_id
-        RuffianRoost.conscript_ruffian(overseer_ruffian_id)
-        return run_id
-    except ClientError as e:
-        if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
-            raise e
-        return current_overseer_id
-
-
-def _signal_overseer(domain_name, flow_id, flow_name, leech_config, run_config):
-    client = boto3.client('swf')
-    overseer_id = cos.environ['overseer_run_id']
-    client.signal_workflow_execution(
-        domain=domain_name,
-        workflowId='overseer',
-        runId=overseer_id,
-        signalName='start',
-        input=json.dumps({
-            'flow_id': flow_id,
-            'flow_name': flow_name,
-            'leech_config': leech_config,
-            'run_config': run_config
-        })
-    )
-
-
-def _rouse_ruffians(domain_name, flow_id, flow_name, leech_config, run_config):
-    workflow_config = leech_config.get_workflow_config(flow_name)
-    labor_task_lists = workflow_config.get('labor_task_lists', [])
-    execution_arns = RuffianRoost.conscript_ruffians(flow_id, labor_task_lists, domain_name, leech_config, run_config=run_config)
-    return execution_arns
 
 
 def _generate_flow_id(provided_flow_id):

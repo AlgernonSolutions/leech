@@ -36,3 +36,22 @@ class GqlClient:
         results = self._connection.query(query_text, variables)
         return json.loads(results)
 
+
+class RuffianGql:
+    _fire_workflow_command = '''
+            mutation startWorkflow($flow_name: String!, $flow_id: String!, $domain_name:String!, $input_string: String){
+              startWorkflow(flow_name: $flow_name, flow_id: $flow_id, domain_name: $domain_name, input_string: $input_string)
+            }
+        '''
+
+    def __init__(self, gql_url=None):
+        self._gql_client = GqlClient(gql_url)
+
+    def start_workflow(self, domain_name, flow_id, flow_name, input_string):
+        variables = {
+            'domain_name': domain_name,
+            'flow_id': flow_id,
+            'flow_name': flow_name,
+            'input_string': input_string
+        }
+        return self._gql_client.query(self._fire_workflow_command, variables=variables)
