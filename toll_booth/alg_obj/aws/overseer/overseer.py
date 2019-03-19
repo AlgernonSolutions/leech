@@ -3,7 +3,7 @@ import os
 import uuid
 
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions
@@ -34,7 +34,7 @@ class Overseer:
             'childPolicy': 'TERMINATE',
             'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
         }
-        current_overseer_id = cos.environ['global_overseer_run_id']
+        current_overseer_id = cos.environ.get('global_overseer_run_id')
         try:
             overseer_ruffian_id = RuffianId.for_overseer(domain_name)
             start_results = client.start_workflow_execution(**start_args)
