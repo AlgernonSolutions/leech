@@ -38,13 +38,13 @@ def start_flow(*args):
     }
     if input_string:
         start_args['input'] = input_string
+    start_results = {}
     try:
-        start_results = client.start_workflow_execution(**start_args)
+        start_results['workflow'] = client.start_workflow_execution(**start_args)
     except ClientError as e:
         if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
             raise e
-        return
-    overseer.signal(flow_id, config, ruffians)
+    start_results['overseer'] = overseer.signal(flow_id, config, ruffians)
     return start_results
 
 

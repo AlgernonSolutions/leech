@@ -51,7 +51,7 @@ def _build_group(existing_signatures, task_args, **kwargs):
     sent_tasks = 0
     for ruffian in new_ruffians:
         flow_id = ruffian['flow_id']
-        ruffian_id = ruffian['ruffian_id']
+        ruffian_id = str(ruffian['ruffian_id'])
         cleaned_ruffian_id = ruffian_id.replace('#', '$')
         task_id = f'{flow_id}_{cleaned_ruffian_id}'
         if flow_id not in running_flow_ids:
