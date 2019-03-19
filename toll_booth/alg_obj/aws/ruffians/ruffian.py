@@ -27,7 +27,7 @@ class RuffianId(AlgObject):
     def parse_json(cls, json_dict):
         return cls(
             json_dict['domain_name'], json_dict['flow_id'], json_dict['flow_name'],
-            json_dict['task_list'], is_laborer=json_dict.get('is_laborer')
+            json_dict['list_name'], is_laborer=json_dict.get('is_laborer')
         )
 
     @classmethod
