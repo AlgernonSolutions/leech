@@ -54,7 +54,7 @@ def lambda_work(production_fn):
     return wrapper
 
 
-# @lambda_logged
+@lambda_logged
 @rough_work
 def decide(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian
@@ -63,7 +63,10 @@ def decide(event, context):
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
     ruffian = Ruffian.build(context, **event)
-    ruffian.supervise()
+    action = ruffian.supervise
+    if event.get('is_overseer') is True:
+        action = ruffian.oversee
+    action()
 
 
 @lambda_logged
@@ -71,7 +74,7 @@ def cleaner(event, context):
     pass
 
 
-# @lambda_logged
+@lambda_logged
 @rough_work
 def oversee(event, context):
     from toll_booth.alg_obj.aws.ruffians.ruffian import Ruffian

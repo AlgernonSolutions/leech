@@ -39,8 +39,8 @@ class Overseer:
             overseer_ruffian_id = RuffianId.for_overseer(domain_name)
             start_results = client.start_workflow_execution(**start_args)
             run_id = start_results['runId']
-            cos.environ['overseer_run_id'] = run_id
-            RuffianRoost.conscript_ruffian(overseer_ruffian_id)
+            cos.environ['global_overseer_run_id'] = run_id
+            RuffianRoost.conscript_ruffian(overseer_ruffian_id, is_overseer=True)
             current_overseer_id = run_id
         except ClientError as e:
             if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':

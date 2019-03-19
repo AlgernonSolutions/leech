@@ -38,7 +38,7 @@ class RuffianId(AlgObject):
 
     @classmethod
     def for_overseer(cls, domain_name):
-        flow = 'overseer'
+        flow = 'ruffianing'
         return cls(domain_name, flow, flow, flow)
 
     @property
@@ -176,7 +176,8 @@ class RuffianRoost:
         if not client:
             client = boto3.client('stepfunctions')
         machine_name = kwargs.get('machine_name')
-        machine_input = json.dumps({
+        is_overseer = kwargs.get('is_overseer')
+        input_values = {
             'work_list': work_list,
             'domain_name': domain_name,
             'config': config,
@@ -185,7 +186,10 @@ class RuffianRoost:
             'flow_name': kwargs.get('flow_name'),
             'overseer_token': kwargs.get('overseer_token'),
             'ruffian_config': kwargs.get('ruffian_config')
-        }, cls=AlgEncoder)
+        }
+        if is_overseer:
+            input_values['is_overseer'] = True
+        machine_input = json.dumps(input_values, cls=AlgEncoder)
         start_kwargs = {
             'stateMachineArn': machine_arn,
             'input': machine_input
