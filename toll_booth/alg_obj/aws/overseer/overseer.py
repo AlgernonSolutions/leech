@@ -51,7 +51,7 @@ class Overseer:
         client = boto3.client('swf')
         client.signal_workflow_execution(
             domain=self._domain_name,
-            workflowId='overseer',
+            workflowId='ruffianing',
             runId=self._overseer_run_id,
             signalName='start_ruffian',
             input=json.dumps({
