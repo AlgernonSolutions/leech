@@ -223,9 +223,10 @@ class ActivitySignature(Signature):
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
             task_args.merge_other_task_arguments(self._task_args, overwrite=True)
-        running_time = self._timeouts.get('running', 300)
+        running_time = self._timeouts.get('running_time', 300)
+        heartbeat = self._timeouts.get('heartbeat', 'NONE')
         start_kwargs = {
-            'task_args': task_args, 'running_time': running_time,
+            'task_args': task_args, 'running_time': running_time, 'heartbeat': heartbeat,
             'version': self.fn_version, 'task_list': self._task_list,
             'register_results': self._register_results
         }

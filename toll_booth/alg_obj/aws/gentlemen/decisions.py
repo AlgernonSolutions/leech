@@ -336,6 +336,15 @@ class ContinueAsNew(Decision):
         super().__init__('ContinueAsNewWorkflowExecution', continuation_attributes, attributes_name)
 
 
+class CancelTask(Decision):
+    def __init__(self, **kwargs):
+        cancel_attributes = {
+            'activityId': kwargs['activity_id']
+        }
+        attributes_name = 'requestCancelActivityTaskDecisionAttributes'
+        super().__init__('RequestCancelActivityTask', cancel_attributes, attributes_name)
+
+
 class MadeDecisions:
     def __init__(self, task_token: str, decisions: [Decision] = None):
         if not decisions:

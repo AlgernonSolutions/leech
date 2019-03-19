@@ -53,9 +53,9 @@ class ActivityExecution(Execution):
 
 
 class ActivityOperation(Operation):
-    def __init__(self, operation_id: str, run_ids: str, activity_name: str, activity_version: str, task_args: TaskArguments,
-                 events):
+    def __init__(self, operation_id, run_ids, activity_name, activity_version, task_args: TaskArguments, events):
         super().__init__(operation_id, run_ids, activity_name, activity_version, task_args, events, steps)
+        self._cancel_requests = []
 
     @classmethod
     def generate_from_schedule_event(cls, event: Event):
@@ -81,6 +81,9 @@ class ActivityOperation(Operation):
     @property
     def activity_executions(self):
         return self._executions
+
+    def add_cancel_request(self, event: Event):
+        self._cancel_requests.append(event)
 
 
 class ActivityHistory(History):
@@ -118,7 +121,16 @@ class ActivityHistory(History):
                 return
         raise RuntimeError('attempted to add a failure event to a non-existent activity operation')
 
+    def _add_request_cancel_event(self, event: Event):
+        activity_id = event.event_attributes['activityId']
+        for operation in self._operations:
+            if activity_id == operation.operation_id:
+                operation.add_cancel_request(event)
+                return
+
     def _add_general_event(self, event: Event):
+        if event.event_type == 'ActivityTaskCancelRequested':
+            return self._add_request_cancel_event(event)
         operation_run_id = event.event_attributes['scheduledEventId']
         execution_run_id = event.event_attributes['startedEventId']
         for operation in self._operations:

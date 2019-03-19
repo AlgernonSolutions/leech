@@ -1,8 +1,6 @@
 import json
 import logging
 import os
-from datetime import datetime
-from decimal import Decimal
 from multiprocessing.pool import ThreadPool
 from queue import Queue
 from threading import Thread
@@ -13,7 +11,6 @@ from botocore.exceptions import ClientError
 from retrying import retry
 
 from toll_booth.alg_obj import AlgObject
-from toll_booth.alg_obj.aws.overseer.overseer import OverseerRecorder
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 
 
@@ -254,10 +251,9 @@ class Ruffian:
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
         logging.info(
-            f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
+            f'starting up a ruffian as a overseer for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
         time_remaining = self._check_watch()
         self._run_config['fresh_start'] = True
-        overseer = OverseerRecorder()
         while time_remaining >= (self._warn_level * 1.5):
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
@@ -268,15 +264,10 @@ class Ruffian:
                         task_token = poll_response['taskToken']
                         input_values = json.loads(poll_response['input'], cls=AlgDecoder)
                         arg_values = input_values['task_args'].for_task
-                        current_ruffians = overseer.get_running_ruffians(arg_values['flow_id'])
                         arg_values['overseer_token'] = task_token
                         if 'config' not in arg_values:
                             arg_values['config'] = self._config
-                        execution_arns = self._manage_ruffians(current_ruffians, **arg_values)
-                        for ruffian_id, execution_arn in execution_arns.items():
-                            ruffian_id = RuffianId.from_raw(ruffian_id, arg_values['flow_id'])
-                            start_time = Decimal(datetime.utcnow().timestamp())
-                            overseer.record_ruffian_start(ruffian_id, execution_arn, start_time)
+                        self._manage_ruffians(**arg_values)
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
@@ -284,31 +275,24 @@ class Ruffian:
             time_remaining = self._check_watch()
 
     @classmethod
-    def _manage_ruffians(cls, current_ruffians, **kwargs):
+    def _manage_ruffians(cls, **kwargs):
         ruffian_action = kwargs['signal_name']
-        called_ruffians = kwargs['ruffians']
-        called_ruffian_ids = set([x['ruffian_id'] for x in called_ruffians])
         if ruffian_action == 'start_ruffian':
-            current_ruffian_ids = set([x['ruffian_id'] for x in current_ruffians])
-            pending_ruffian_ids = called_ruffian_ids - current_ruffian_ids
-            pending_ruffians = [x for x in called_ruffians if x['ruffian_id'] in pending_ruffian_ids]
-            return cls._rouse_ruffians(pending_ruffians, **kwargs)
+            return cls._rouse_ruffian(**kwargs)
         if ruffian_action == 'stop_ruffian':
-            return cls._disband_ruffians(**kwargs)
+            return cls._disband_ruffian(**kwargs)
         raise NotImplementedError(f'can not perform ruffian action: {ruffian_action}')
 
     @classmethod
-    def _rouse_ruffians(cls, pending_ruffians, **kwargs):
-        execution_arns = {}
-        for pending_ruffian in pending_ruffians:
-            ruffian_id = RuffianId.from_raw(pending_ruffian['ruffian_id'])
-            kwargs['ruffian_config'] = pending_ruffian.get('ruffian_config')
-            execution_arn = RuffianRoost.conscript_ruffian(ruffian_id, **kwargs)
-            execution_arns[str(ruffian_id)] = execution_arn
-        return execution_arns
+    def _rouse_ruffian(cls, **kwargs):
+        ruffian_id = RuffianId.from_raw(kwargs['ruffian_id'])
+        kwargs['ruffian_config'] = kwargs.get('ruffian_config')
+        kwargs['ruffian_id'] = ruffian_id
+        execution_arn = RuffianRoost.conscript_ruffian(**kwargs)
+        return {str(ruffian_id): execution_arn}
 
     @classmethod
-    def _disband_ruffians(cls, overseer_token):
+    def _disband_ruffian(cls, overseer_token):
         client = boto3.client('swf')
         client.respond_activity_task_completed(
             taskToken=overseer_token
@@ -360,6 +344,7 @@ class Ruffian:
         queue.put(None)
         for thread in threads:
             thread.join()
+        self._send_ndy()
         return {'keep_working': keep_working}
 
     def _poll_for_tasks(self, list_name=None):
