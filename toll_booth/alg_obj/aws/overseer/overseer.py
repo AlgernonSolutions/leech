@@ -34,7 +34,7 @@ class Overseer:
             'childPolicy': 'TERMINATE',
             'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
         }
-        current_overseer_id = cos.environ.get('global_overseer_run_id')
+        current_overseer_id = cos.getenv('global_overseer_run_id')
         try:
             overseer_ruffian_id = RuffianId.for_overseer(domain_name)
             start_results = client.start_workflow_execution(**start_args)
