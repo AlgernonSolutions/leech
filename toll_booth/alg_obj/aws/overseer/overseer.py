@@ -22,7 +22,7 @@ class Overseer:
         if not versions:
             versions = Versions.retrieve(domain_name)
         client = boto3.client('swf')
-        flow = 'overseer'
+        flow = 'ruffianing'
         start_args = {
             'domain': domain_name,
             'workflowId': flow,
@@ -61,6 +61,7 @@ class Overseer:
                 'config': leech_config
             }, cls=AlgEncoder)
         )
+
 
 class OverseerRecorder:
     def __init__(self, **kwargs):

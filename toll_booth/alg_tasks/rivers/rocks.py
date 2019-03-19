@@ -5,7 +5,6 @@ import boto3
 from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
-from toll_booth.alg_obj.aws.gql.gql_client import GqlClient, RuffianGql
 from toll_booth.alg_obj.aws.overseer.overseer import Overseer
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData

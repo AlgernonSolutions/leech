@@ -187,7 +187,7 @@
       }
     ],
     "tasks": [
-       {
+      {
         "task_name": "rough_housing",
         "task_description": "retrieves the current maximum value for a given change_type by emp_id",
         "task_config": {
@@ -485,7 +485,7 @@
           "task_list": "credible"
         }
       },
-       {
+      {
         "task_name": "run_credible_command",
         "task_description": "executes a single credible command against an identified domain",
         "task_config": {
