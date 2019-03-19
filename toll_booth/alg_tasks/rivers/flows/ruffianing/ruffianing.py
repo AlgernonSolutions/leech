@@ -42,7 +42,9 @@ def _build_group(existing_signatures, task_args, **kwargs):
         flow_id = signal['flow_id']
         if flow_id not in running_flow_ids:
             new_task_args = task_args.replace_argument_value(subtask_name, signal, flow_id)
-            existing_signatures.append(ActivitySignature(flow_id, subtask_name, task_args=new_task_args, **kwargs))
+            existing_signatures.append(
+                ActivitySignature(flow_id, subtask_name, task_args=new_task_args, running_time='NONE', heartbeat=120, **kwargs)
+            )
             running_flow_ids.append(flow_id)
             decisions.append(RecordMarker.for_signal_completed(signal['signal_id'], signal['signal_name']))
             sent_tasks += 1

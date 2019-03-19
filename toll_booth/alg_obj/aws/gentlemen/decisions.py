@@ -144,6 +144,7 @@ class StartSubtask(Decision):
 class StartActivity(Decision):
     def __init__(self, activity_id, activity_name, task_args=None, **kwargs):
         running_time = kwargs.get('running_time', 300)
+        heartbeat = kwargs.get('heartbeat', 'NONE')
         activity_attributes = {
             'activityType': {
                 'name': activity_name,
@@ -151,7 +152,8 @@ class StartActivity(Decision):
             },
             'taskList': {'name': kwargs.get('task_list', 'Leech')},
             'activityId': activity_id,
-            'startToCloseTimeout': str(running_time)
+            'startToCloseTimeout': str(running_time),
+            'heartbeatTimeout': str(heartbeat)
         }
         if task_args:
             activity_attributes['input'] = json.dumps({

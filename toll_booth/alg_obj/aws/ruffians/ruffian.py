@@ -294,7 +294,7 @@ class Ruffian:
             pending_ruffians = [x for x in called_ruffians if x['ruffian_id'] in pending_ruffian_ids]
             return cls._rouse_ruffians(pending_ruffians, **kwargs)
         if ruffian_action == 'stop_ruffian':
-            return
+            return cls._disband_ruffians(**kwargs)
         raise NotImplementedError(f'can not perform ruffian action: {ruffian_action}')
 
     @classmethod
@@ -308,8 +308,11 @@ class Ruffian:
         return execution_arns
 
     @classmethod
-    def _disband_ruffians(cls, execution_arn):
-        RuffianRoost.disband_ruffians(execution_arn)
+    def _disband_ruffians(cls, overseer_token):
+        client = boto3.client('swf')
+        client.respond_activity_task_completed(
+            taskToken=overseer_token
+        )
 
     def supervise(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General

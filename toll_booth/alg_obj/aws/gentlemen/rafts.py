@@ -207,6 +207,10 @@ class ActivitySignature(Signature):
     def __init__(self, task_identifier, task_type, task_args: TaskArguments = None, task_list=None, **kwargs):
         config = kwargs['configs'][('task', task_type)]
         time_outs = config.get('time_outs', {})
+        if 'heartbeat' in kwargs:
+            time_outs['heartbeat'] = kwargs['heartbeat']
+        if 'running_time' in kwargs:
+            time_outs['running_time'] = kwargs['running_time']
         if not task_list:
             task_list = config.get('task_list', kwargs['work_history'].flow_id)
         version = getattr(kwargs['versions'], 'task_versions')[task_type]
