@@ -11,7 +11,7 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
 @lambda_logged
-def starter(**kwargs):
+def start_flow(**kwargs):
     event = kwargs['event']
     logging.info(f'received a call to fire a starter task, event: {event}')
     domain_name = event['domain_name']
