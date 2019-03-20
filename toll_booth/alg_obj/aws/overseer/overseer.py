@@ -34,13 +34,13 @@ class Overseer:
             'childPolicy': 'TERMINATE',
             'lambdaRole': 'arn:aws:iam::803040539655:role/swf-lambda'
         }
+        overseer_ruffian_id = RuffianId.for_overseer(domain_name)
+        RuffianRoost.conscript_ruffian(overseer_ruffian_id, is_overseer=True)
         current_overseer_id = cos.getenv('global_overseer_run_id')
         try:
-            overseer_ruffian_id = RuffianId.for_overseer(domain_name)
             start_results = client.start_workflow_execution(**start_args)
             run_id = start_results['runId']
             cos.environ['global_overseer_run_id'] = run_id
-            RuffianRoost.conscript_ruffian(overseer_ruffian_id, is_overseer=True)
             current_overseer_id = run_id
         except ClientError as e:
             if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':

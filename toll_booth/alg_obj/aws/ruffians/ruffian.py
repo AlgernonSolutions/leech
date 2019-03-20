@@ -85,9 +85,12 @@ class RuffianId(AlgObject):
 
 
 class RuffianRoost:
-    _default_machine_arn = os.getenv('RUFFIAN_MACHINE', 'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
+    _default_machine_arn = os.getenv('RUFFIAN_MACHINE',
+                                     'arn:aws:states:us-east-1:803040539655:stateMachine:ruffians')
     _default_deciding_machine_arn = os.getenv('DECIDING_MACHINE',
                                               'arn:aws:states:us-east-1:803040539655:stateMachine:decider')
+    _default_overseer_machine_arn = os.getenv('OVERSEER_MACHINE',
+                                              'arn:aws:states:us-east-1:803040539655:stateMachine:overseer')
 
     @classmethod
     def conscript_ruffian(cls, ruffian_id: RuffianId, config=None, flow_id=None, flow_name=None, **kwargs):
@@ -189,6 +192,7 @@ class RuffianRoost:
         }
         if is_overseer:
             input_values['is_overseer'] = True
+            machine_arn = kwargs.get('overseer_machine_arn', cls._default_overseer_machine_arn)
         machine_input = json.dumps(input_values, cls=AlgEncoder)
         start_kwargs = {
             'stateMachineArn': machine_arn,
@@ -274,11 +278,36 @@ class Ruffian:
         )
         return response['cancelRequested'] is False
 
+    @classmethod
+    def _find_overseer_arn(cls):
+        client = boto3.client('stepfunctions')
+        paginator = client.get_paginator('list_state_machines')
+        for page in paginator:
+            for entry in page['stateMachines']:
+                if entry['name'] == 'overseer':
+                    return entry['stateMachineArn']
+        raise RuntimeError(f'could not find overseer machine arn, verify it has been created in the domain')
+
+    def _check_for_other_overseers(self):
+        overseer_arn = self._find_overseer_arn()
+        client = boto3.client('stepfunctions')
+        response = client.list_executions(
+            stateMachineArn=overseer_arn,
+            statusFilter='RUNNING'
+        )
+        if response['executions']:
+                return True
+        return False
+
     def oversee(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
 
         logging.info(
-            f'starting up a ruffian as a overseer for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
+            f'starting up a ruffian as a overseer for task_list: {self._work_list}, '
+            f'for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, '
+            f'with run_config: {self._run_config}')
+        if self._check_for_other_overseers():
+            return {'keep_working': False}
         time_remaining = self._check_watch()
         self._run_config['fresh_start'] = True
         while time_remaining >= (self._warn_level * 1.5):
@@ -300,6 +329,7 @@ class Ruffian:
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
             time_remaining = self._check_watch()
+        return {'keep_working': True}
 
     @classmethod
     def _manage_ruffians(cls, **kwargs):
