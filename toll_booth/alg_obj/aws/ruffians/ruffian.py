@@ -282,7 +282,8 @@ class Ruffian:
     def _find_overseer_arn(cls):
         client = boto3.client('stepfunctions')
         paginator = client.get_paginator('list_state_machines')
-        for page in paginator:
+        response_iterator = paginator.paginate()
+        for page in response_iterator:
             for entry in page['stateMachines']:
                 if entry['name'] == 'overseer':
                     return entry['stateMachineArn']
