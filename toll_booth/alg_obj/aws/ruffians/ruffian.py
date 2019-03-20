@@ -311,7 +311,7 @@ class Ruffian:
             return {'keep_working': False}
         time_remaining = self._check_watch()
         self._run_config['fresh_start'] = True
-        while time_remaining >= (self._warn_level * 1.5):
+        while time_remaining >= self._warn_level:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
                 command_results = general.command()
