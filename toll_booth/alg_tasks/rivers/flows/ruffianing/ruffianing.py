@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 
 import boto3
@@ -16,6 +17,7 @@ def ruffianing(**kwargs):
     if group_result:
         great_group = group_result[0]
         great_group(**kwargs)
+        logging.info(f'the number of new_activities is: {group_result[1]}')
         return group_result[1]
 
 

@@ -317,6 +317,7 @@ class Ruffian:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
                 command_results = general.command()
+                logging.info(f'overseer command results are: {command_results}')
                 if command_results:
                     for _ in range(command_results):
                         poll_response = self._poll_for_tasks(self._work_list)
