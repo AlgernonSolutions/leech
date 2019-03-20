@@ -321,7 +321,9 @@ class Ruffian:
                 if command_results:
                     for _ in range(command_results):
                         poll_response = self._poll_for_tasks(self._work_list)
-                        task_token = poll_response['taskToken']
+                        task_token = poll_response.get('taskToken')
+                        if task_token is None:
+                            continue
                         input_values = json.loads(poll_response['input'], cls=AlgDecoder)
                         arg_values = input_values['task_args'].for_task
                         arg_values['overseer_token'] = task_token
@@ -346,6 +348,7 @@ class Ruffian:
 
     @classmethod
     def _rouse_ruffian(cls, **kwargs):
+        logging.info(f'received a call to rouse a ruffian: {kwargs}')
         ruffian_id = RuffianId.from_raw(kwargs['ruffian_id'])
         kwargs['ruffian_config'] = kwargs.get('ruffian_config')
         kwargs['ruffian_id'] = ruffian_id
