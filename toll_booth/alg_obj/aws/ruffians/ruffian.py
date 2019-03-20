@@ -32,6 +32,8 @@ class RuffianId(AlgObject):
 
     @classmethod
     def from_raw(cls, raw_string, flow_id=None):
+        if isinstance(raw_string, cls):
+            return raw_string
         raw_parts = raw_string.split('#')
         is_laborer = raw_parts[3] == 'True'
         return cls(raw_parts[0], flow_id, raw_parts[1], raw_parts[2], is_laborer=is_laborer)
