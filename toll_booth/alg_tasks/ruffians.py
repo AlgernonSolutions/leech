@@ -63,15 +63,7 @@ def decide(event, context):
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
     ruffian = Ruffian.build(context, **event)
-    action = ruffian.supervise
-    if event.get('is_overseer') is True:
-        action = ruffian.oversee
-    action()
-
-
-@lambda_logged
-def cleaner(event, context):
-    pass
+    ruffian.supervise()
 
 
 @lambda_logged

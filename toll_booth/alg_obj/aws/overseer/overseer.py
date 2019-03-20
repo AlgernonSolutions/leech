@@ -49,7 +49,7 @@ class Overseer:
 
     def signal(self, flow_id, leech_config, ruffians):
         client = boto3.client('swf')
-        client.signal_workflow_execution(
+        return client.signal_workflow_execution(
             domain=self._domain_name,
             workflowId='ruffianing',
             runId=self._overseer_run_id,

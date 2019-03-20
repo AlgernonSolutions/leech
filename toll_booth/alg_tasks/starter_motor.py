@@ -44,6 +44,7 @@ def start_flow(*args):
     except ClientError as e:
         if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
             raise e
+        start_results['workflow'] = 'workflow already running'
     start_results['overseer'] = overseer.signal(flow_id, config, ruffians)
     return start_results
 

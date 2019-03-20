@@ -79,6 +79,16 @@ Resources:
       Timeout: 300
       MemorySize: 128
 
+  oversee:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.oversee
+      FunctionName: leech-oversee
+      Role:
+        Ref: LambdaRoleArn
+      Timeout: 300
+      MemorySize: 128
+
   decide:
     Type: AWS::Serverless::Function
     Properties:
