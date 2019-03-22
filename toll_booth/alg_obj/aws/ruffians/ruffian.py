@@ -290,17 +290,18 @@ class Ruffian:
 
     def _send_ndy(self):
         try:
-            self._send_not_dead_yet()
+            return self._send_not_dead_yet()
         except ClientError as e:
             if e.response['Error']['Code'] != 'ThrottlingException':
                 raise e
             if self.persist_heartbeat:
                 while self.persist_heartbeat:
                     try:
-                        self._send_not_dead_yet()
+                        return self._send_not_dead_yet()
                     except ClientError as e:
                         if e.response['Error']['Code'] != 'ThrottlingException':
                             raise e
+        return True
 
     @classmethod
     def _find_overseer_arn(cls):

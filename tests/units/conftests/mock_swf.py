@@ -32,7 +32,7 @@ class MockSwfEvent:
 _lambda_labor_params = [
     (
         'get_productivity_report_data',
-        '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"send_icfs_reports": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/send_icfs_reports!1553271859.120303.json"}}}}}'
+        ' {"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"send_icfs_reports": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/send_icfs_reports!1553283858.141728.json"}}}}}'
     )
 ]
 
