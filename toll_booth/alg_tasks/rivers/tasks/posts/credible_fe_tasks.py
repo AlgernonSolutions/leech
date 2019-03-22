@@ -1,3 +1,5 @@
+import logging
+
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_tasks.rivers.rocks import task
@@ -98,6 +100,7 @@ def get_productivity_report_data(**kwargs):
     from toll_booth.alg_obj.forge.extractors.credible_fe import CredibleFrontEndDriver
     from datetime import datetime, timedelta
 
+    logging.info(f'called a get_productivity report data, kwargs: {kwargs}')
     credible_date_format = '%m/%d/%Y'
 
     today = datetime.utcnow()

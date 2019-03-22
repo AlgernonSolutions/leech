@@ -498,6 +498,7 @@ class Ruffian:
     def _fire_task(self, **kwargs):
         from toll_booth.alg_obj.serializers import AlgDecoder
 
+        logging.info(f'received the order to fire a controlled task: {kwargs}')
         client = boto3.client('lambda', config=Config(connect_timeout=600, read_timeout=600))
         task_list = self._work_list
         poll_response = kwargs['poll_response']
