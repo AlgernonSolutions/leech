@@ -358,6 +358,7 @@ class Ruffian:
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
             time_remaining = self._check_watch()
+        logging.info('time up on overseer, restarting and trying again')
         return {'keep_working': True}
 
     @classmethod
