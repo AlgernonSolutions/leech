@@ -332,6 +332,7 @@ class Ruffian:
             f'for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, '
             f'with run_config: {self._run_config}')
         if self._check_for_other_overseers():
+            logging.info('tried to start an overseer, but an existing overseer is already running')
             return {'keep_working': False}
         time_remaining = self._check_watch()
         self._run_config['fresh_start'] = True
