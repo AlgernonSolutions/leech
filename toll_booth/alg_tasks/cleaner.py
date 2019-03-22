@@ -1,6 +1,7 @@
 import logging
 
 import boto3
+from botocore.exceptions import ClientError
 
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
@@ -12,7 +13,11 @@ def cleaner(event, context):
     if 'overseer_token' in event:
         if 'error' in event:
             error = event['error']
-            _mark_activity_failed(client, event, error)
+            try:
+                _mark_activity_failed(client, event, error)
+            except ClientError as e:
+                if e.response['Error']['Code'] != 'UnknownResourceFault':
+                    raise e
             return
         client.respond_activity_task_completed(
             taskToken=event['overseer_token']
