@@ -75,7 +75,7 @@ def oversee(event, context):
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
     ruffian = Ruffian.build(context, **event)
-    ruffian.oversee()
+    return ruffian.oversee()
 
 
 @lambda_logged
