@@ -254,7 +254,6 @@ class Ruffian:
         self._work_list = work_list
         self._config = config
         self._warn_level = warn_level
-        self._millisecond_warn_level = warn_level * 1000
         self._context = context
         self._pending_tasks = {}
         self._connections = []
@@ -336,7 +335,7 @@ class Ruffian:
             return {'keep_working': False}
         time_remaining = self._check_watch()
         self._run_config['fresh_start'] = True
-        while time_remaining >= self._millisecond_warn_level:
+        while time_remaining >= self._warn_level:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
                 command_results = general.command()
@@ -393,7 +392,7 @@ class Ruffian:
             f'starting up a ruffian as a supervisor for task_list: {self._work_list}, for domain_name: {self._domain_name}, with warn_level: {self._warn_level}, with run_config: {self._run_config}')
         time_remaining = self._check_watch()
         keep_working = True
-        while time_remaining >= self._millisecond_warn_level and keep_working:
+        while time_remaining >= self._warn_level and keep_working:
             general = General(self._domain_name, self._work_list, self._context, run_config=self._run_config)
             try:
                 general.command()
@@ -421,7 +420,7 @@ class Ruffian:
             threads.append(component_thread)
         time_remaining = self._check_watch()
         keep_working = True
-        while time_remaining >= self._millisecond_warn_level and keep_working:
+        while time_remaining >= self._warn_level and keep_working:
             if len(self._pending_tasks) <= self._ruffian_config['number_threads']:
                 poll_results = self._poll_for_tasks()
                 if 'taskToken' in poll_results:
