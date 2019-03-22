@@ -95,11 +95,12 @@ class RuffianRoost:
                                               'arn:aws:states:us-east-1:803040539655:stateMachine:overseer')
 
     @classmethod
-    def conscript_ruffian(cls, ruffian_id: RuffianId, config=None, flow_id=None, flow_name=None, **kwargs):
+    def conscript_ruffian(cls, ruffian_id: RuffianId, config=None, flow_id=None, flow_name=None, run_config=None, **kwargs):
         ruffian_machine_arn = kwargs.get('machine_arn', cls._default_machine_arn)
         machine_arn = kwargs.get('deciding_machine_arn', cls._default_deciding_machine_arn)
         task_list = ruffian_id.list_name
-        run_config = kwargs.get('run_config', {})
+        if not run_config:
+            run_config = {}
         if not flow_name:
             flow_name = ruffian_id.flow_name
         if not flow_id:

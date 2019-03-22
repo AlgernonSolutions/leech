@@ -60,9 +60,8 @@ def _build_group(existing_signatures, task_args, **kwargs):
             signal_name = ruffian['signal_name']
             if signal_name == 'start_ruffian':
                 new_task_args = task_args.replace_argument_value(subtask_name, ruffian, task_id)
-                kwargs.update({'task_args': new_task_args, 'running_time': 'NONE', 'heartbeat': 360})
+                kwargs.update({'task_args': new_task_args, 'running_time': 'NONE', 'heartbeat': 180})
                 existing_signatures.append(ActivitySignature(task_id, subtask_name, **kwargs))
-                running_flow_ids.append(flow_id)
                 decisions.append(RecordMarker.for_signal_completed(ruffian['signal_id'], ruffian['signal_name']))
                 sent_tasks += 1
             if signal_name == 'stop_ruffian':
