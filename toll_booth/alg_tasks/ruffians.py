@@ -63,7 +63,7 @@ def decide(event, context):
     if 'warn_seconds' not in event:
         event['warn_seconds'] = 60
     ruffian = Ruffian.build(context, **event)
-    ruffian.supervise()
+    return ruffian.supervise()
 
 
 @lambda_logged
