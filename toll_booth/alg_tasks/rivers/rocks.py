@@ -16,7 +16,16 @@ def _conscript_ruffian(work_history: WorkflowHistory, leech_config, versions):
     flow_id = work_history.flow_id
     flow_name = work_history.flow_type
     ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, leech_config, {})
-    return overseer.signal(flow_id, leech_config, ruffians)
+    return overseer.signal('start_ruffian', flow_id, leech_config, ruffians)
+
+
+def _disband_ruffian(work_history: WorkflowHistory, leech_config, versions):
+    domain_name = work_history.domain_name
+    overseer = Overseer.start(domain_name, versions)
+    flow_id = work_history.flow_id
+    flow_name = work_history.flow_type
+    ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, leech_config, {})
+    return overseer.signal('stop_ruffian', flow_id, leech_config, ruffians)
 
 
 def _get_versions(work_history):
@@ -97,6 +106,7 @@ def workflow(workflow_name):
                     _conscript_ruffian(work_history, configs, versions)
                 elif isinstance(decision, CompleteWork):
                     decision.add_result('task_args', task_args)
+                    _disband_ruffian(work_history, configs, versions)
                 try:
                     decision.set_id_info(work_history.flow_id, work_history.run_id)
                 except AttributeError:

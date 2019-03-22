@@ -48,7 +48,7 @@ class Overseer:
                 raise e
         return cls(domain_name, current_overseer_id)
 
-    def signal(self, flow_id, leech_config, ruffians):
+    def signal(self, signal_name, flow_id, leech_config, ruffians):
         client = boto3.client('swf')
         input_values = {
             'signal_id': uuid.uuid4().hex,
