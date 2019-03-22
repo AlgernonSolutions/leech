@@ -33,12 +33,13 @@ def _find_new_ruffians(markers, signals, **kwargs):
     for ruffian_signal in ruffian_signals:
         ruffians = ruffian_signal['ruffians']
         flow_id = ruffian_signal['flow_id']
+        leech_config = ruffian_signal['config']
         signal_id = ruffian_signal['signal_id']
         signal_name = ruffian_signal['signal_name']
         for ruffian in ruffians:
             ruffian.update({
                 'flow_id': flow_id, 'signal_id': signal_id,
-                'signal_name': signal_name
+                'signal_name': signal_name, 'config': leech_config
             })
             if signal_id in pending_ruffian_signal_ids:
                 new_ruffians.append(ruffian)

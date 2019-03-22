@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import uuid
 
@@ -49,17 +50,19 @@ class Overseer:
 
     def signal(self, flow_id, leech_config, ruffians):
         client = boto3.client('swf')
+        input_values = {
+            'signal_id': uuid.uuid4().hex,
+            'flow_id': flow_id,
+            'ruffians': ruffians,
+            'config': leech_config
+        }
+        logging.info(f'sending a signal to the overseer, {input_values}')
         return client.signal_workflow_execution(
             domain=self._domain_name,
             workflowId='ruffianing',
             runId=self._overseer_run_id,
             signalName='start_ruffian',
-            input=json.dumps({
-                'signal_id': uuid.uuid4().hex,
-                'flow_id': flow_id,
-                'ruffians': ruffians,
-                'config': leech_config
-            }, cls=AlgEncoder)
+            input=json.dumps(input_values, cls=AlgEncoder)
         )
 
 
