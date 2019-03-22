@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from queue import Queue
 from threading import Thread
@@ -258,6 +259,7 @@ class Ruffian:
         self._connections = []
         self._run_config = run_config
         self._ruffian_config = ruffian_config
+        self._last_heartbeat = datetime.utcnow()
 
     @classmethod
     def build(cls, context, domain_name, flow_name, work_list, config, **kwargs):
@@ -269,17 +271,36 @@ class Ruffian:
         return cls(domain_name, flow_name, work_list, config, warn_level, context,
                    run_config=run_config, ruffian_config=ruffian_config, overseer_token=overseer_token)
 
+    @property
+    def persist_heartbeat(self):
+        return (datetime.utcnow() - self._last_heartbeat).seconds > 300
+
     def _check_watch(self):
         time_remaining = self._context.get_remaining_time_in_millis()
         logging.debug(f'ruffian checked their watch, remaining time in millis: {time_remaining}')
         return time_remaining
 
-    def _send_ndy(self):
+    def _send_not_dead_yet(self):
         client = boto3.client('swf')
         response = client.record_activity_task_heartbeat(
             taskToken=self._overseer_token
         )
+        self._last_heartbeat = datetime.utcnow()
         return response['cancelRequested'] is False
+
+    def _send_ndy(self):
+        try:
+            self._send_ndy()
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'ThrottlingException':
+                raise e
+            if self.persist_heartbeat:
+                while self.persist_heartbeat:
+                    try:
+                        self._send_ndy()
+                    except ClientError as e:
+                        if e.response['Error']['Code'] != 'ThrottlingException':
+                            raise e
 
     @classmethod
     def _find_overseer_arn(cls):

@@ -10,7 +10,8 @@ from toll_booth.alg_tasks.lambda_logging import lambda_logged
 def cleaner(event, context):
     logging.info(f'started cleaner task: {event}')
     client = boto3.client('swf')
-    if 'overseer_token' in event:
+    overseer_token = event.get('overseer_token')
+    if overseer_token:
         if 'error' in event:
             error = event['error']
             try:
