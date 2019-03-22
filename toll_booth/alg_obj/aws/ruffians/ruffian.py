@@ -321,9 +321,8 @@ class Ruffian:
             stateMachineArn=overseer_arn,
             statusFilter='RUNNING'
         )
-        if response['executions']:
-                return True
-        return False
+        running_overseers = response['executions']
+        return len(running_overseers) > 1
 
     def oversee(self):
         from toll_booth.alg_obj.aws.gentlemen.command import General
