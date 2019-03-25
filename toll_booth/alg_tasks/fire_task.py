@@ -2,7 +2,7 @@ from toll_booth.alg_obj.aws.gql.gql_client import RuffianGql
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
-@lambda_logged
+# @lambda_logged
 def fire_task(event, context):
     gql_client = RuffianGql()
     variables = {

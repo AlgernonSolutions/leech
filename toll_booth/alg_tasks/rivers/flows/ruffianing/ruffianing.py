@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import SubtaskSignature, group, Acti
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-# @xray_recorder.capture('ruffianing')
+@xray_recorder.capture('ruffianing')
 @workflow('ruffianing')
 def ruffianing(**kwargs):
     existing_signatures = _build_existing_signatures(**kwargs)

@@ -228,6 +228,22 @@ class CompleteWork(Decision):
         self._decision_attributes['result'] = json.dumps(current_results, cls=AlgEncoder)
 
 
+class CancelWork(Decision):
+    def __init__(self, cancel_details=None):
+        complete_work_attributes = {}
+        if cancel_details:
+            results = json.dumps(cancel_details, cls=AlgEncoder)
+            complete_work_attributes = {
+                'details': results
+            }
+        attributes_name = 'cancelWorkflowExecutionDecisionAttributes'
+        super().__init__('CancelWorkflowExecution', complete_work_attributes, attributes_name)
+
+    @property
+    def cancel_details(self):
+        return self.__getitem__('details')
+
+
 class SignalExternalFlow(Decision):
     def __init__(self, flow_id, run_id, signal_name, signal_payload=None):
         signal_attributes = {
