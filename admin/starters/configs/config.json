@@ -138,8 +138,8 @@
         }
       },
       {
-        "workflow_name": "send_icfs_reports",
-        "workflow_description": "sends reports to ICFS based on static configurations",
+        "workflow_name": "send_canned_reports",
+        "workflow_description": "sends reports based on static configurations",
         "workflow_config": {
           "concurrency": 1,
            "labor_task_lists": [

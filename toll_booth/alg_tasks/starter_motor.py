@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime
 
@@ -7,6 +8,7 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.overseer.overseer import Overseer
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
+from toll_booth.alg_obj.serializers import AlgDecoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
@@ -18,7 +20,7 @@ def start_flow(*args):
     versions = event.get('versions', Versions.retrieve(domain_name))
     config = event.get('config', LeechConfig.retrieve())
     provided_flow_id = event['flow_id']
-    flow_id = _generate_flow_id(provided_flow_id)
+    flow_id = _generate_flow_id(provided_flow_id, **event)
     flow_name = event['flow_name']
     input_string = event.get('input_string')
     run_config = event.get('run_config', {})
@@ -49,10 +51,12 @@ def start_flow(*args):
     return start_results
 
 
-def _generate_flow_id(provided_flow_id):
-    if provided_flow_id == 'daily_icfs':
+def _generate_flow_id(provided_flow_id, **kwargs):
+    if provided_flow_id == 'daily_reports':
+        input_string = kwargs['input_string']
+        input_value = json.loads(input_string, cls=AlgDecoder)
         iso_date_format = '%Y-%m-%d'
         now = datetime.now()
-        flow_id = f'icfs_{now.strftime(iso_date_format)}'
+        flow_id = f'ci_{input_value["id_source"]}_{now.strftime(iso_date_format)}'
         return flow_id
     return provided_flow_id
