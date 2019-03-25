@@ -290,6 +290,9 @@ def write_report_data(**kwargs):
 @xray_recorder.capture('send_report')
 @task('send_report')
 def send_report(**kwargs):
+    from toll_booth.alg_obj.aws.snakes.stored_statics import StaticJson
+
+    report_recipients = StaticJson.for_report_recipients(**kwargs).stored_asset
     download_link = kwargs['download_link']
     subject_line = 'Algernon Solutions Clinical Intelligence Report'
     text_body = f''' 
@@ -332,7 +335,7 @@ def send_report(**kwargs):
         </html>
     '''
 
-    response = _send_by_ses(subject_line=subject_line, text_body=text_body, html_body=html_body, **kwargs)
+    response = _send_by_ses(recipients=report_recipients['recipients'], subject_line=subject_line, text_body=text_body, html_body=html_body, **kwargs)
     return {'message_id': response['MessageId'], 'text_body': text_body, 'html_body': html_body}
 
 

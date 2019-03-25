@@ -199,6 +199,11 @@ class StaticJson(StaticAsset):
         asset_name = f'{id_source}_teams.json'
         return cls(**kwargs, asset_name=asset_name, asset_remote_path=asset_name)
 
+    @classmethod
+    def for_report_recipients(cls, id_source, **kwargs):
+        asset_name = f'{id_source}_report_recipients.json'
+        return cls(**kwargs, asset_name=asset_name, asset_remote_path=asset_name)
+
     @property
     def stored_asset(self):
         stored_asset = super().stored_asset
