@@ -8,7 +8,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.exceptions import ClientError
 
-from toll_booth.alg_obj.forge.credible_specifics import ChangeTypeCategory
+from toll_booth.alg_obj.forge.credible_specifics.change_types import ChangeTypeCategory
 from toll_booth.alg_obj.graph.ogm.regulators import PotentialVertex, IdentifierStem, VertexRegulator, PotentialEdge
 from toll_booth.alg_obj.serializers import AlgEncoder, AlgDecoder
 

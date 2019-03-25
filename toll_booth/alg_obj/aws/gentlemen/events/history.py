@@ -12,6 +12,7 @@ from toll_booth.alg_obj.aws.gentlemen.tasks import TaskArguments, Versions, Leec
 from toll_booth.alg_obj.serializers import AlgDecoder
 
 _starting_step = 'WorkflowExecutionStarted'
+_request_cancel_step = 'WorkflowExecutionCancelRequested'
 
 
 class WorkflowHistory:
@@ -19,7 +20,9 @@ class WorkflowHistory:
                  versions: Versions, config: LeechConfig,
                  task_args: TaskArguments, events: [Event], subtask_history: SubtaskHistory, lambda_history: LambdaHistory,
                  activity_history: ActivityHistory, marker_history: MarkerHistory, timer_history: TimerHistory,
-                 signal_history: WorkflowSignalHistory):
+                 signal_history: WorkflowSignalHistory, cancel_signals: [Event] = None):
+        if not cancel_signals:
+            cancel_signals = []
         self._domain_name = domain_name
         self._flow_type = flow_type
         self._flow_id = flow_id
@@ -38,6 +41,7 @@ class WorkflowHistory:
         self._marker_history = marker_history
         self._timer_history = timer_history
         self._signal_history = signal_history
+        self._cancel_signals = cancel_signals
 
     @classmethod
     def parse_from_poll(cls, domain_name, poll_response, flow_type=None, task_token=None, flow_id=None, run_id=None):
@@ -54,6 +58,7 @@ class WorkflowHistory:
         if not raw_events:
             raise RuntimeError(f'no events were returned from a poll for work history')
         events = [Event.parse_from_decision_poll_event(x) for x in raw_events]
+        cancel_events = [x for x in events if x.event_type == _request_cancel_step]
         lambda_history = LambdaHistory.generate_from_events(events, lambdas.steps)
         subtask_history = SubtaskHistory.generate_from_events(events, subtasks.steps)
         activity_history = ActivityHistory.generate_from_events(events, activities.steps)
@@ -67,7 +72,8 @@ class WorkflowHistory:
             'run_id': run_id, 'parent_flow_id': parent_flow_id, 'parent_run_id': parent_run_id, 'task_args': task_args,
             'lambda_role': lambda_role, 'events': events, 'subtask_history': subtask_history,
             'lambda_history': lambda_history, 'activity_history': activity_history,
-            'marker_history': marker_history, 'timer_history': timer_history, 'signal_history': workflow_signal_history
+            'marker_history': marker_history, 'timer_history': timer_history, 'signal_history': workflow_signal_history,
+            'cancel_signals': cancel_events
         }
         return cls(**cls_args)
 
@@ -182,6 +188,12 @@ class WorkflowHistory:
                     ruffian = open_ruffians[subtask_operation.operation_id]
                     idlers[ruffian['execution_arn']] = subtask_operation.operation_id
         return idlers
+
+    @property
+    def is_cancelled(self):
+        if self._cancel_signals:
+            return True
+        return False
 
     def merge_history(self, work_history):
         self._events.extend(work_history.events)

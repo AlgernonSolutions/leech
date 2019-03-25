@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from aws_xray_sdk.core import xray_recorder
 
-from toll_booth.alg_obj.forge.credible_specifics import FungalStem
+from toll_booth.alg_obj.forge.credible_specifics.fungus import FungalStem
 from toll_booth.alg_obj.graph.index_manager.indexes import EmptyIndexException
 from toll_booth.alg_tasks.rivers.rocks import task
 
@@ -34,7 +34,7 @@ def get_local_max_change_type_value(**kwargs):
 @xray_recorder.capture('pull_change_types')
 @task('pull_change_types')
 def pull_change_types(**kwargs):
-    from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
+    from toll_booth.alg_obj.forge.credible_specifics.change_types import ChangeTypes
 
     change_types = ChangeTypes.retrieve(**kwargs)
     return {'changelog_types': change_types}

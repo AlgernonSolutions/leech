@@ -187,7 +187,7 @@ def build_daily_report(**kwargs):
         'clientvisit_id': int(x['Service ID']),
         'transfer_date': x['Transfer Date'],
         'visit_type': x['Service Type'],
-        'non_billable': bool(x['Non Billable']),
+        'non_billable': x['Non Billable'] == 'True',
         'emp_id': int(x['Staff ID']),
         'client_id': int(x['Consumer ID']),
         'base_rate': Decimal(re.sub(r'[^\d.]', '', x['Base Rate'])),
@@ -225,10 +225,12 @@ def build_daily_report(**kwargs):
         daily_report[page_name] = productivity_results
     tx_report = _build_expiration_report(caseloads, tx_plans, 180)
     da_report = _build_expiration_report(caseloads, diagnostics, 180)
+    thirty_sixty_ninety = _build_not_seen_report(caseloads, encounters)
     unassigned_report = _build_unassigned_report(caseloads)
     daily_report['tx_plans'] = tx_report
     daily_report['diagnostics'] = da_report
     daily_report['unassigned'] = unassigned_report
+    daily_report['30, 60, 90'] = thirty_sixty_ninety
     return {'report_data': daily_report}
 
 
@@ -626,6 +628,42 @@ def _build_expiration_report(caseloads, assessment_data, assessment_lifespan):
     return results
 
 
+def _build_not_seen_report(caseloads, encounter_data):
+    from datetime import datetime
+    today = datetime.now()
+    results = [['Team', 'CSW Name', 'Client ID', 'Last Service by CSW', 'Last Billable Service', '30/60/90 per CSW', '30/60/90 per Last Billable']]
+    inverted = _invert_caseloads(caseloads)
+    for client_id, assignments in inverted.items():
+        team = assignments['team']
+        if team == 'unassigned':
+            continue
+        csw_id = assignments['emp_id']
+        csw_name = assignments['csw']
+        client_encounters = [x for x in encounter_data if int(x['client_id']) == int(client_id)]
+        if not client_encounters:
+            results.append([team, csw_name, client_id, '?', '?', '90', '90'])
+            continue
+        max_encounter_date = max([x['rev_timeout'] for x in client_encounters])
+        per_billable = _calculate_thirty_sixty_ninety(today, max_encounter_date)
+        csw_encounters = [x for x in client_encounters if int(x['emp_id']) == int(csw_id)]
+        if not csw_encounters:
+            results.append([team, csw_name, client_id, '?', max_encounter_date, '90', per_billable])
+            continue
+        max_csw_date = max([x['rev_timeout'] for x in csw_encounters])
+        per_csw = _calculate_thirty_sixty_ninety(today, max_csw_date)
+        results.append([team, csw_name, client_id, max_csw_date, max_encounter_date, per_csw, per_billable])
+    return results
+
+
+def _calculate_thirty_sixty_ninety(today, max_encounter_date):
+    encounter_age = (today - max_encounter_date).days
+    if encounter_age <= 30:
+        return '30'
+    if encounter_age <= 60:
+        return '60'
+    return '90'
+
+
 def _build_unassigned_report(caseloads):
     report = [['Client ID', 'Client Name', 'DOB', 'SSN', 'Medicaid Number', 'Assigned CSA', 'Primary Assigned Staff']]
     for client in caseloads['unassigned']:
@@ -711,10 +749,10 @@ def _invert_caseloads(caseloads):
     for team_name, team_caseload in caseloads.items():
         if team_name == 'unassigned':
             for client in team_caseload:
-                inverted_caseloads[client['client_id']] = {'team': 'unassigned', 'csw': 'unassigned'}
+                inverted_caseloads[client['client_id']] = {'team': 'unassigned', 'csw': 'unassigned', 'emp_id': 0}
             continue
         for emp_id, employee in team_caseload.items():
             csw = f'{employee["last_name"]}, {employee["first_name"]}'
             for client in employee['caseload']:
-                inverted_caseloads[client['client_id']] = {'team': team_name, 'csw': csw}
+                inverted_caseloads[client['client_id']] = {'team': team_name, 'csw': csw, 'emp_id': emp_id}
     return inverted_caseloads

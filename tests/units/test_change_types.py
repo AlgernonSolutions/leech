@@ -1,6 +1,6 @@
 import pytest
 
-from toll_booth.alg_obj.forge.credible_specifics import ChangeTypes
+from toll_booth.alg_obj.forge.credible_specifics.change_types import ChangeTypes
 
 
 @pytest.mark.change_types
