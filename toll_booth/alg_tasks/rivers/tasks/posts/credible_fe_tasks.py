@@ -185,6 +185,7 @@ def build_daily_report(**kwargs):
     encounter_data = kwargs['encounter_data']
     encounters = [{
         'clientvisit_id': int(x['Service ID']),
+        'rev_timeout': x['Service Date'],
         'transfer_date': x['Transfer Date'],
         'visit_type': x['Service Type'],
         'non_billable': x['Non Billable'] == 'True',
@@ -639,7 +640,7 @@ def _build_not_seen_report(caseloads, encounter_data):
             continue
         csw_id = assignments['emp_id']
         csw_name = assignments['csw']
-        client_encounters = [x for x in encounter_data if int(x['client_id']) == int(client_id)]
+        client_encounters = [x for x in encounter_data if int(x['client_id']) == int(client_id) and x['non_billable'] is False]
         if not client_encounters:
             results.append([team, csw_name, client_id, '?', '?', '90', '90'])
             continue
