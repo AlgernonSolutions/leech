@@ -2,7 +2,7 @@ import logging
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork, Decision
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.overseer.overseer import Overseer
@@ -10,11 +10,11 @@ from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
 from toll_booth.alg_obj.aws.snakes.snakes import StoredData
 
 
-def _conscript_ruffian(work_history: WorkflowHistory, leech_config, versions):
+def _conscript_ruffian(decision: StartSubtask, work_history: WorkflowHistory, leech_config, versions):
     domain_name = work_history.domain_name
     overseer = Overseer.start(domain_name, versions)
-    flow_id = work_history.flow_id
-    flow_name = work_history.flow_type
+    flow_id = decision.workflow_id
+    flow_name = decision.workflow_type
     ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, leech_config, {})
     return overseer.signal('start_ruffian', flow_id, leech_config, ruffians)
 
@@ -103,7 +103,7 @@ def workflow(workflow_name):
             for decision in made_decisions:
                 if isinstance(decision, StartSubtask):
                     decision.set_parent_data(configs, versions)
-                    _conscript_ruffian(work_history, configs, versions)
+                    _conscript_ruffian(decision, work_history, configs, versions)
                 elif isinstance(decision, CompleteWork):
                     decision.add_result('task_args', task_args)
                     _disband_ruffian(work_history, configs, versions)
