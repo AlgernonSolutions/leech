@@ -14,7 +14,7 @@ def _conscript_ruffian(decision: StartSubtask, work_history: WorkflowHistory, le
     domain_name = work_history.domain_name
     overseer = Overseer.start(domain_name, versions)
     flow_id = decision.workflow_id
-    flow_name = decision.workflow_type
+    flow_name = decision.type_name
     ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, leech_config, {})
     return overseer.signal('start_ruffian', flow_id, leech_config, ruffians)
 
