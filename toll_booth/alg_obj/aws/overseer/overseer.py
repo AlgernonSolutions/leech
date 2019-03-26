@@ -61,7 +61,7 @@ class Overseer:
             domain=self._domain_name,
             workflowId='ruffianing',
             runId=self._overseer_run_id,
-            signalName='start_ruffian',
+            signalName=signal_name,
             input=json.dumps(input_values, cls=AlgEncoder)
         )
 
