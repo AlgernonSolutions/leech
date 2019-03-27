@@ -316,8 +316,7 @@
         "task_name": "transform",
         "task_description": "changes raw extracted data into potential vertexes based on the schema",
         "task_config": {
-          "concurrency": 1,
-          "task_list": "work_change_action"
+          "concurrency": 1
         }
       },
       {

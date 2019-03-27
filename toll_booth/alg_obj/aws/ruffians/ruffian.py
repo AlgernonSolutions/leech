@@ -348,6 +348,7 @@ class Ruffian:
                         if task_token is None:
                             continue
                         input_values = json.loads(poll_response['input'], cls=AlgDecoder)
+                        logging.info(f'decoded input_values for the overseer are: {input_values}')
                         arg_values = input_values['task_args'].for_task
                         arg_values['overseer_token'] = task_token
                         if 'config' not in arg_values:
