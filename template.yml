@@ -86,7 +86,7 @@ Resources:
       FunctionName: leech-oversee
       Role:
         Ref: LambdaRoleArn
-      Timeout: 300
+      Timeout: 900
       MemorySize: 128
 
   decide:
@@ -96,7 +96,7 @@ Resources:
       FunctionName: leech-decide
       Role:
         Ref: LambdaRoleArn
-      Timeout: 300
+      Timeout: 900
       MemorySize: 448
 
   labor:
@@ -106,7 +106,7 @@ Resources:
       FunctionName: leech-labor
       Role:
         Ref: LambdaRoleArn
-      Timeout: 300
+      Timeout: 900
       MemorySize: 448
 
   lambdaLabor:
@@ -116,7 +116,7 @@ Resources:
       FunctionName: leech-lambda-labor
       Role:
         Ref: LambdaRoleArn
-      Timeout: 300
+      Timeout: 900
       MemorySize: 448
 
   vpclabor:
