@@ -36,7 +36,7 @@ class General:
         self._identity = identity
         self._run_config = run_config
         self._client = boto3.client('swf', config=Config(
-            connect_timeout=70, read_timeout=70, retries={'max_attempts': 0}))
+            connect_timeout=70, read_timeout=70, retries={'max_attempts': 2}))
 
     def command(self):
         try:

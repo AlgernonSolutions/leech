@@ -73,7 +73,7 @@ def oversee(event, context):
 
     logging.info(f'received a call to start the overseer: {event}')
     if 'warn_seconds' not in event:
-        event['warn_seconds'] = 120
+        event['warn_seconds'] = 480
     ruffian = Ruffian.build(context, **event)
     return ruffian.oversee()
 
