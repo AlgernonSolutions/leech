@@ -351,7 +351,11 @@ class Ruffian:
                         logging.info(f'decoded input_values for the overseer are: {input_values}')
                         task_args = input_values['task_args']
                         logging.info(f'decoded task_args arguments are: {task_args.for_inspection}')
-                        arg_values = input_values['task_args'].for_task
+                        try:
+                            arg_values = input_values['task_args'].for_task
+                        except AttributeError:
+                            logging.error(f'task arguments presented to the overseer for execution: {poll_response["input"]} are no good')
+                            continue
                         arg_values['overseer_token'] = task_token
                         if 'config' not in arg_values:
                             arg_values['config'] = self._config
