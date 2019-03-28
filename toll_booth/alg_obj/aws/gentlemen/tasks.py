@@ -177,8 +177,7 @@ class TaskArguments(AlgObject):
             if operation_arguments is None:
                 task_args[operation_name] = None
                 continue
-            for argument_name, arguments in operation_arguments.items():
-                task_args.append([argument_name, arguments])
+            task_args.append(operation_arguments)
         return task_args
 
     @classmethod
