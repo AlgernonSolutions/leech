@@ -166,6 +166,21 @@ class TaskArguments(AlgObject):
                 task_args[argument_name] = arguments
         return task_args
 
+    @property
+    def for_inspection(self):
+        task_args = []
+        for operation_name, operation_arguments in self._arguments.items():
+            try:
+                operation_arguments = operation_arguments.data_string
+            except AttributeError:
+                pass
+            if operation_arguments is None:
+                task_args[operation_name] = None
+                continue
+            for argument_name, arguments in operation_arguments.items():
+                task_args.append([argument_name, arguments])
+        return task_args
+
     @classmethod
     def parse_json(cls, json_dict):
         return cls(json_dict['_arguments'])
