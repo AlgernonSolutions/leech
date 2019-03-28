@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import SubtaskSignature, group, Acti
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('ruffianing')
+# @xray_recorder.capture('ruffianing')
 @workflow('ruffianing')
 def ruffianing(**kwargs):
     existing_signatures = _build_existing_signatures(**kwargs)
@@ -51,7 +51,8 @@ def _build_group(existing_signatures, task_args, **kwargs):
     decisions = kwargs['decisions']
     running_flow_ids = [x.fn_identifier for x in existing_signatures]
     new_ruffians = _find_new_ruffians(**kwargs)
-    sent_tasks = 0
+    pending_ruffians = [x for x in existing_signatures if x.is_scheduled_pending_start]
+    sent_tasks = len(pending_ruffians)
     for ruffian in new_ruffians:
         flow_id = ruffian['flow_id']
         ruffian_id = str(ruffian['ruffian_id'])

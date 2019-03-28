@@ -219,6 +219,8 @@ class ActivitySignature(Signature):
         self._task_list = task_list
         self._timeouts = time_outs
         self._register_results = kwargs.get('register_results', True)
+        signature_activity = kwargs['activities'].get(task_identifier)
+        self._is_scheduled_pending_start = getattr(signature_activity, 'is_live', False) is False
 
     def _build_start(self, task_args: TaskArguments, **kwargs):
         if self._task_args:
@@ -236,6 +238,10 @@ class ActivitySignature(Signature):
         operations = kwargs['activities']
         operation_type = 'ScheduleActivityTask'
         super()._check_concurrency(operations, operation_type, **kwargs)
+
+    @property
+    def is_scheduled_pending_start(self):
+        return self._is_scheduled_pending_start
 
 
 class LambdaSignature(Signature):
