@@ -373,22 +373,24 @@ class Ruffian:
         ruffian = kwargs['ruffian']
         ruffian_action = ruffian['signal_name']
         if ruffian_action == 'start_ruffian':
-            return cls._rouse_ruffian(**ruffian)
+            return cls._rouse_ruffian(**kwargs)
         if ruffian_action == 'stop_ruffian':
-            return cls._disband_ruffian(**ruffian)
+            return cls._disband_ruffian(**kwargs)
         raise NotImplementedError(f'can not perform ruffian action: {ruffian_action}')
 
     @classmethod
     def _rouse_ruffian(cls, **kwargs):
+        ruffian = kwargs['ruffian']
         logging.info(f'received a call to rouse a ruffian: {kwargs}')
-        ruffian_id = RuffianId.from_raw(kwargs['ruffian_id'])
-        kwargs['ruffian_config'] = kwargs.get('ruffian_config')
+        ruffian_id = RuffianId.from_raw(ruffian['ruffian_id'])
+        kwargs['ruffian_config'] = ruffian.get('ruffian_config')
         kwargs['ruffian_id'] = ruffian_id
         execution_arn = RuffianRoost.conscript_ruffian(**kwargs)
         return {str(ruffian_id): execution_arn}
 
     @classmethod
-    def _disband_ruffian(cls, overseer_token):
+    def _disband_ruffian(cls, **kwargs):
+        overseer_token = kwargs['overseer_token']
         client = boto3.client('swf')
         client.respond_activity_task_completed(
             taskToken=overseer_token
