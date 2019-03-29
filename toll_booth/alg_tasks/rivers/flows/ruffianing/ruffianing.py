@@ -9,7 +9,7 @@ from toll_booth.alg_obj.aws.gentlemen.rafts import SubtaskSignature, group, Acti
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-# @xray_recorder.capture('ruffianing')
+@xray_recorder.capture('ruffianing')
 @workflow('ruffianing')
 def ruffianing(**kwargs):
     existing_signatures = _build_existing_signatures(**kwargs)
@@ -61,7 +61,7 @@ def _build_group(existing_signatures, task_args, **kwargs):
         if flow_id not in running_flow_ids:
             signal_name = ruffian['signal_name']
             if signal_name == 'start_ruffian':
-                new_task_args = task_args.replace_argument_value(subtask_name, ruffian, task_id)
+                new_task_args = task_args.replace_argument_value(subtask_name, {'ruffian': ruffian}, task_id)
                 kwargs.update({'running_time': 'NONE', 'heartbeat': 180})
                 existing_signatures.append(ActivitySignature(task_id, subtask_name, task_args=new_task_args, **kwargs))
                 decisions.append(RecordMarker.for_signal_completed(ruffian['signal_id'], ruffian['signal_name']))
