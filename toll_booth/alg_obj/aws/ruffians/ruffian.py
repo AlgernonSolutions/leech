@@ -370,11 +370,12 @@ class Ruffian:
 
     @classmethod
     def _manage_ruffians(cls, **kwargs):
-        ruffian_action = kwargs['signal_name']
+        ruffian = kwargs['ruffian']
+        ruffian_action = ruffian['signal_name']
         if ruffian_action == 'start_ruffian':
-            return cls._rouse_ruffian(**kwargs)
+            return cls._rouse_ruffian(**ruffian)
         if ruffian_action == 'stop_ruffian':
-            return cls._disband_ruffian(**kwargs)
+            return cls._disband_ruffian(**ruffian)
         raise NotImplementedError(f'can not perform ruffian action: {ruffian_action}')
 
     @classmethod
