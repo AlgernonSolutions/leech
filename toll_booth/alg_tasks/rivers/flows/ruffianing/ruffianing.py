@@ -31,6 +31,7 @@ def _find_new_ruffians(markers, signals, **kwargs):
     pending_ruffian_signal_ids = ruffian_signal_ids - completed_ruffian_signal_ids
     new_ruffians = []
     for ruffian_signal in ruffian_signals:
+        logging.info(f'building a ruffian signal: {ruffian_signal}')
         ruffians = ruffian_signal['ruffians']
         flow_id = ruffian_signal['flow_id']
         leech_config = ruffian_signal['config']
@@ -42,6 +43,7 @@ def _find_new_ruffians(markers, signals, **kwargs):
                 'signal_name': signal_name, 'config': leech_config
             })
             if signal_id in pending_ruffian_signal_ids:
+                logging.info(f'created ruffian from signal: {ruffian}')
                 new_ruffians.append(ruffian)
     return new_ruffians
 

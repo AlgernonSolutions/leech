@@ -357,8 +357,6 @@ class Ruffian:
                             logging.error(f'task arguments presented to the overseer for execution: {poll_response["input"]} are no good')
                             continue
                         arg_values['overseer_token'] = task_token
-                        if arg_values.get('config', None) is None:
-                            arg_values['config'] = self._config
                         self._manage_ruffians(**arg_values)
             except Exception as e:
                 import traceback
@@ -383,9 +381,8 @@ class Ruffian:
         ruffian = kwargs['ruffian']
         logging.info(f'received a call to rouse a ruffian: {kwargs}')
         ruffian_id = RuffianId.from_raw(ruffian['ruffian_id'])
-        kwargs['ruffian_config'] = ruffian.get('ruffian_config')
-        kwargs['ruffian_id'] = ruffian_id
-        execution_arn = RuffianRoost.conscript_ruffian(**kwargs)
+        ruffian['ruffian_id'] = ruffian_id
+        execution_arn = RuffianRoost.conscript_ruffian(**ruffian)
         return {str(ruffian_id): execution_arn}
 
     @classmethod
