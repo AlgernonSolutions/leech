@@ -412,7 +412,7 @@ class Ruffian:
                 trace = traceback.format_exc()
                 logging.error(f'error occurred in the decide task for list {self._work_list}: {e}, trace: {trace}')
             time_remaining = self._check_watch()
-            keep_working = self._send_ndy()
+            # keep_working = self._send_ndy()
         return {'keep_working': keep_working}
 
     def labor(self):
@@ -437,7 +437,7 @@ class Ruffian:
                 if 'taskToken' in poll_results:
                     queue.put({'task_type': 'new_task', 'poll_response': poll_results})
             time_remaining = self._check_watch()
-            keep_working = self._send_ndy()
+            # keep_working = self._send_ndy()
         logging.info(f'time is up, preparing to quit')
         queue.put(None)
         for thread in threads:

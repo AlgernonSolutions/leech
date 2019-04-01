@@ -31,8 +31,8 @@ class MockSwfEvent:
 
 _lambda_labor_params = [
     (
-        'send_report',
-        '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"send_canned_reports": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/send_canned_reports!1553784119.012624.json"}}, "get_productivity_report_data": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/get_productivity_report_data!1553783997.61241.json"}}, "build_clinical_teams": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/build_clinical_teams!1553784008.432073.json"}}, "build_clinical_caseloads": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/build_clinical_caseloads!1553784018.072399.json"}}, "build_daily_report": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/build_daily_report!1553784051.732821.json"}}, "write_report_data": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/write_report_data!1553784073.372588.json"}}}}}'
+        'pull_schema_entry',
+        '{"_alg_class": "TaskArguments", "_alg_module": "toll_booth.alg_obj.aws.gentlemen.tasks", "value": {"_arguments": {"command_fungi": {"_alg_class": "StoredData", "_alg_module": "toll_booth.alg_obj.aws.snakes.snakes", "value": {"pointer": "the-leech#cache/command_fungi!1553882916.79512.json"}}}}}'
     )
 ]
 

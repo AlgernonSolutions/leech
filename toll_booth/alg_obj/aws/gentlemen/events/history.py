@@ -1,4 +1,5 @@
 import json
+import os
 
 from toll_booth.alg_obj.aws.gentlemen.events import lambdas, subtasks, activities
 from toll_booth.alg_obj.aws.gentlemen.events.activities import ActivityHistory
@@ -99,7 +100,8 @@ class WorkflowHistory:
                 parent_data = event.event_attributes.get('parentWorkflowExecution', {})
                 parent_flow_id = parent_data.get('workflowId', None)
                 parent_run_id = parent_data.get('runId', None)
-                return task_args, event.event_attributes['lambdaRole'], parent_flow_id, parent_run_id, versions, config
+                lambda_role = event.event_attributes.get('lambdaRole', os.getenv('SWF_LAMBDA_ROLE', 'arn:aws:iam::803040539655:role/swf-lambda'))
+                return task_args, lambda_role, parent_flow_id, parent_run_id, versions, config
 
     @property
     def domain_name(self):
