@@ -357,7 +357,7 @@ class Ruffian:
                             logging.error(f'task arguments presented to the overseer for execution: {poll_response["input"]} are no good')
                             continue
                         arg_values['overseer_token'] = task_token
-                        if 'config' not in arg_values:
+                        if arg_values.get('config', None) is None:
                             arg_values['config'] = self._config
                         self._manage_ruffians(**arg_values)
             except Exception as e:

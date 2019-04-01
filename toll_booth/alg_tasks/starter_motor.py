@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.overseer.overseer import Overseer
 from toll_booth.alg_obj.aws.ruffians.ruffian import RuffianRoost
-from toll_booth.alg_obj.serializers import AlgDecoder
+from toll_booth.alg_obj.serializers import AlgDecoder, AlgEncoder
 from toll_booth.alg_tasks.lambda_logging import lambda_logged
 
 
@@ -22,7 +22,13 @@ def start_flow(*args):
     provided_flow_id = event['flow_id']
     flow_id = _generate_flow_id(provided_flow_id, **event)
     flow_name = event['flow_name']
-    input_string = event.get('input_string')
+    input_string = event.get('input_string', '{}')
+    input_value = json.loads(input_string, cls=AlgDecoder)
+    if input_value.get('config', None) is None:
+        input_value['config'] = config
+    if input_value.get('versions', None) is None:
+        input_value['versions'] = versions
+    input_string = json.dumps(input_value, cls=AlgEncoder)
     run_config = event.get('run_config', {})
     overseer = Overseer.start(domain_name, versions)
     client = boto3.client('swf')
