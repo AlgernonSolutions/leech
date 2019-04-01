@@ -79,7 +79,7 @@ def _build_existing_signatures(task_args, **kwargs):
     open_operations = operations.open_operations
     running_signatures = [
         ActivitySignature(
-            x.operation_id, x.operation_name, x.task_args, register_results=False, **kwargs) for x in open_operations
+            x.operation_id, x.operation_name, task_args=x.task_args, **kwargs) for x in open_operations
     ]
     return running_signatures
 
