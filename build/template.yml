@@ -1,0 +1,790 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
+  leechBucketName:
+    Type: String
+    Description: Name of the bucket to be used by the leech for caching and local storage
+  VpcCidr:
+    Type: String
+    Description: Cidr Block of VPC
+    Default: 192.168.0.0/16
+  FirstSubnetCidr:
+    Type: String
+    Description: Cidr Block of First Created Subnet
+    Default: 192.168.1.0/24
+  SecondSubnetCidr:
+    Type: String
+    Description: Cidr Block of Second Created Subnet
+    Default: 192.168.2.0/24
+  ThirdSubnetCidr:
+    Type: String
+    Description: Cidr Block of Third Created Subnet
+    Default: 192.168.3.0/24
+  CodeDeployRole:
+    Type: String
+    Description: IAM role to be used to deploy code to AWS
+  LeechVpcSg:
+    Type: 'List<AWS::EC2::SecurityGroup::Id>'
+    Description: List of security groups the Leech will use to access the data space
+    Default: sg-06b3a26ff04155688
+  LeechVpcSn:
+    Type: 'List<AWS::EC2::Subnet::Id>'
+    Description: List of subnet ids that the Leech can launch into to access the data space
+    Default: 'subnet-872a24cc, subnet-29497e4d, subnet-acef95f1'
+  LambdaRoleArn:
+    Type: String
+    Description: >-
+      The ARN of the IAM role that lambda functions will use to interact with
+      the resources
+    Default: 'arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE'
+Globals:
+  Function:
+    Runtime: python3.6
+    Layers:
+      - 'arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:9'
+    Tracing: Active
+    Environment:
+      Variables:
+        WORK_FUNCTION: leech-work
+        SCHEMA_TABLE: Schema
+        EXTRACTION_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/extraction'
+        TRANSFORM_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/transform'
+        ASSIMILATE_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
+        LOAD_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/load'
+        LINK_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/link'
+        GRAPH_DB_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+        GRAPH_DB_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
+Resources:
+  work:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.work
+      FunctionName: leech-work
+      Role: !Ref worker
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b3eba24a-a58a-4ac2-86bf-34a278318206
+  starter:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/starter_motor.start_flow
+      FunctionName: leech-start
+      Role: !Ref worker
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 7e350454-6075-4255-9ff7-5b13d449e546
+  cleaner:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/cleaner.cleaner
+      FunctionName: leech-clean
+      Role: !Ref worker
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 25ae1830-3f23-4632-9b12-c0a383f4158b
+  fire:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/fire_task.fire_task
+      FunctionName: leech-fire
+      Role:
+        Ref: worker
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 8a28347d-b611-420f-89ac-b999085e2881
+  oversee:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.oversee
+      FunctionName: leech-oversee
+      Role:
+        Ref: worker
+      Timeout: 900
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f2141ab7-0df3-4962-b55c-9d5067d92e55
+  decide:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.decide
+      FunctionName: leech-decide
+      Role:
+        Ref: worker
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f8f07f6c-cc0c-4ca1-bf40-405c50f48d54
+  labor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.labor
+      FunctionName: leech-labor
+      Role:
+        Ref: worker
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 997f0043-ff2f-46d5-93f3-eebaec7c0e73
+  lambdaLabor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
+      FunctionName: leech-lambda-labor
+      Role:
+        Ref: worker
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b10f32a3-e368-4dcd-8f6c-d7aef1656ed0
+  vpclabor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
+      FunctionName: leech-vpc-labor
+      Role:
+        Ref: worker
+      Timeout: 300
+      MemorySize: 448
+      VpcConfig:
+        SecurityGroupIds:
+          Ref: LambdaSg
+        SubnetIds: !Join
+          - ', '
+          - - !Ref FirstSubnet
+            - !Ref SecondSubnet
+            - !Ref ThirdSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 12616994-028b-4f97-87fa-e1ce7bde6087
+  aphid:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.aphid
+      FunctionName: leech-aphid
+      Role:
+        Ref: worker
+      VpcConfig:
+        SecurityGroupIds:
+          Ref: LeechVpcSg
+        SubnetIds:
+          Ref: LeechVpcSn
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3b7b731b-3641-4e55-9841-7259ca1660cf
+  log:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/log_process.handler
+      FunctionName: leech-process-log
+      Role:
+        Ref: worker
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3758ff2d-4532-42f2-a7fc-5e78a3c23a41
+  credibleWsExtractor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
+      FunctionName: leech-extract-crediblews
+      Role:
+        Ref: worker
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d2797fb8-7237-4a71-b509-706b4ee7bf1b
+  credibleFeExtractor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
+      FunctionName: leech-extract-crediblefe
+      Role:
+        Ref: worker
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: dd8aacd1-c1a3-409b-83b3-46e3fb5755d6
+  Vpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Ref VpcCidr
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f309f1b9-ac09-4838-b8df-72a9c3a235f7
+  FirstSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref FirstSubnetCidr
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e94f82fc-27a5-4f3f-9c8c-9928247992fa
+  SecondSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref SecondSubnetCidr
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 9fc65d22-2218-4ef3-b93b-6607326e5553
+  ThirdSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Ref ThirdSubnetCidr
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ccda3246-4d55-4c4e-a19e-fe933db6e970
+  RouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref Vpc
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 524fd573-66dd-45a5-a3e4-65291313a8e4
+  InternetRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+    DependsOn:
+      - InternetGateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c664d9a9-f402-44a6-a8f3-9a91d8c74d6f
+  EC2SRTA429KF:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref ThirdSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: bfeaedd8-f016-4f9f-8705-9e22cd96087a
+  EC2SRTA1MF09:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SecondSubnet
+      RouteTableId: !Ref RouteTable
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ad6d614b-501c-4d27-b37d-df90508796bc
+  EC2SRTA1HJ1H:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref FirstSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2b0e5325-4e37-4ca4-96c8-e5bd8a48733b
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties: {}
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 19b59139-9f62-4417-b20e-a94c1389ff0a
+  IgwAttach:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: aaa7ed66-f911-4519-ac02-74db02992655
+  worker:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Policies:
+        - PolicyName: !Ref workGraph
+        - PolicyName: !Ref workParameterStore
+        - PolicyName: !Ref queryGql
+        - PolicyName: !Ref accessVpc
+        - PolicyName: !Ref workSensitives
+        - PolicyName: !Ref workSwf
+        - PolicyName: !Ref invokeLambda
+        - PolicyName: !Ref passRole
+        - PolicyName: !Ref workStateMachine
+        - PolicyName: !Ref readSecrets
+        - PolicyName: !Ref workDynamo
+        - PolicyName: !Ref workS3
+        - PolicyName: !Ref sendSesEmail
+        - PolicyName: !Ref writeXray
+        - PolicyName: !Ref workLogs
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
+  workGraph:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workGraph
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 'neptune-db:*'
+            Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a0906c04-fe82-43cd-8fd2-e33640f6c60e
+  queryGql:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: queryGql
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'appsync:ListDataSources'
+              - 'appsync:ListFunctions'
+              - 'appsync:GetDataSource'
+              - 'appsync:ListApiKeys'
+              - 'appsync:GetSchemaCreationStatus'
+              - 'appsync:GetFunction'
+              - 'appsync:GetResolver'
+              - 'appsync:ListGraphqlApis'
+              - 'appsync:GetGraphqlApi'
+              - 'appsync:ListTypes'
+              - 'appsync:GetIntrospectionSchema'
+              - 'appsync:GraphQL'
+              - 'appsync:ListResolvers'
+              - 'appsync:GetType'
+            Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f3e15ed0-c92d-4a19-a62d-b94f968d9f6a
+  accessVpc:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: accessVpc
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:DescribeNetworkInterfaces'
+              - 'ec2:DeleteNetworkInterface'
+            Effect: Allow
+            Resource: !Ref Vpc
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0f90e117-5e72-4d1f-a571-bcbe3a52c37e
+  workSensitives:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workSenstives
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'dynamodb:BatchGetItem'
+              - 'dynamodb:BatchWriteItem'
+              - 'dynamodb:ListGlobalTables'
+              - 'dynamodb:PutItem'
+              - 'dynamodb:ListTables'
+              - 'dynamodb:DescribeTable'
+              - 'dynamodb:ListBackups'
+              - 'dynamodb:GetItem'
+              - 'dynamodb:Scan'
+              - 'dynamodb:Query'
+              - 'dynamodb:UpdateItem'
+              - 'dynamodb:DescribeTimeToLive'
+            Resource: !Ref sensitivesTable
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 877ab62e-4136-449e-9f46-de8409fb3a7a
+  workSwf:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workSwf
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'swf:CountPendingActivityTasks'
+              - 'swf:RespondActivityTaskCanceled'
+              - 'swf:RequestCancelWorkflowExecution'
+              - 'swf:SignalExternalWorkflowExecution'
+              - 'swf:RespondDecisionTaskCompleted'
+              - 'swf:CountClosedWorkflowExecutions'
+              - 'swf:RespondActivityTaskFailed'
+              - 'swf:StartWorkflowExecution'
+              - 'swf:PollForDecisionTask'
+              - 'swf:FailWorkflowExecution'
+              - 'swf:RequestCancelExternalWorkflowExecution'
+              - 'swf:RequestCancelActivityTask'
+              - 'swf:ListOpenWorkflowExecutions'
+              - 'swf:StartTimer'
+              - 'swf:DescribeDomain'
+              - 'swf:RecordActivityTaskHeartbeat'
+              - 'swf:SignalWorkflowExecution'
+              - 'swf:ContinueAsNewWorkflowExecution'
+              - 'swf:RespondActivityTaskCompleted'
+              - 'swf:TerminateWorkflowExecution'
+              - 'swf:DescribeActivityType'
+              - 'swf:PollForActivityTask'
+              - 'swf:ListActivityTypes'
+              - 'swf:CancelWorkflowExecution'
+              - 'swf:StartChildWorkflowExecution'
+              - 'swf:CompleteWorkflowExecution'
+              - 'swf:DescribeWorkflowType'
+              - 'swf:CancelTimer'
+              - 'swf:RecordMarker'
+              - 'swf:ListWorkflowTypes'
+              - 'swf:GetWorkflowExecutionHistory'
+              - 'swf:CountOpenWorkflowExecutions'
+              - 'swf:ScheduleActivityTask'
+              - 'swf:CountPendingDecisionTasks'
+              - 'swf:DescribeWorkflowExecution'
+              - 'swf:ListDomains'
+              - 'swf:ListClosedWorkflowExecutions'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: afe684b7-95eb-448c-bdcf-938bbd88b60c
+  invokeLambda:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: invokeLambda
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'lambda:InvokeFunction'
+            Resource: '*'
+            Effect: Allow
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e66672b8-1ef3-4766-800d-c165c38b0cc4
+  passRole:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: passRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 'iam:PassRole'
+            Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0c7e5b36-d381-417d-bc6c-2d7c165bc363
+  readSecrets:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: readSecrets
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'secretsmanager:GetSecretValue'
+            Resource: '*'
+            Effect: Allow
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ac060457-fddd-4e0d-aecc-8e482255db82
+  workStateMachine:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Resource: '*'
+          Action:
+            - 'states:DescribeStateMachineForExecution'
+            - 'states:ListStateMachines'
+            - 'states:DescribeStateMachine'
+            - 'states:DescribeExecution'
+            - 'states:ListExecutions'
+            - 'states:GetExecutionHistory'
+            - 'states:StartExecution'
+            - 'states:StopExecution'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: cf058dc5-cb5e-4125-a30d-237405143e58
+  workDynamo:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Action:
+            - 'dynamodb:BatchGetItem'
+            - 'dynamodb:BatchWriteItem'
+            - 'dynamodb:ListGlobalTables'
+            - 'dynamodb:PutItem'
+            - 'dynamodb:ListTables'
+            - 'dynamodb:DescribeTable'
+            - 'dynamodb:ListBackups'
+            - 'dynamodb:GetItem'
+            - 'dynamodb:Scan'
+            - 'dynamodb:Query'
+            - 'dynamodb:UpdateItem'
+            - 'dynamodb:DescribeTimeToLive'
+          Resource: !Ref indexTable
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d65053f9-8fa4-4018-940e-05e56bcbc8fd
+  workS3:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workS3
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:*'
+            Resource: !Join
+              - ', '
+              - - !Ref leechBucket
+                - !Ref leechLogBucket
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3cd965b5-6bce-4792-b3d9-1f2c4be1dae6
+  sendSesEmail:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: sendSesEmail
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ses:ListTemplates'
+              - 'ses:ListCustomVerificationEmailTemplates'
+              - 'ses:VerifyEmailIdentity'
+              - 'ses:GetIdentityPolicies'
+              - 'ses:GetSendQuota'
+              - 'ses:DescribeConfigurationSet'
+              - 'ses:ListReceiptFilters'
+              - 'ses:GetIdentityMailFromDomainAttributes'
+              - 'ses:VerifyDomainDkim'
+              - 'ses:VerifyDomainIdentity'
+              - 'ses:SendEmail'
+              - 'ses:ListConfigurationSets'
+              - 'ses:SendTemplatedEmail'
+              - 'ses:SendCustomVerificationEmail'
+              - 'ses:GetIdentityDkimAttributes'
+              - 'ses:UpdateTemplate'
+              - 'ses:DescribeReceiptRuleSet'
+              - 'ses:ListReceiptRuleSets'
+              - 'ses:GetTemplate'
+              - 'ses:ListIdentities'
+              - 'ses:VerifyEmailAddress'
+              - 'ses:GetCustomVerificationEmailTemplate'
+              - 'ses:SendRawEmail'
+              - 'ses:GetSendStatistics'
+              - 'ses:SendBounce'
+              - 'ses:GetIdentityVerificationAttributes'
+              - 'ses:GetIdentityNotificationAttributes'
+              - 'ses:ListIdentityPolicies'
+              - 'ses:DescribeReceiptRule'
+              - 'ses:DescribeActiveReceiptRuleSet'
+              - 'ses:GetAccountSendingEnabled'
+              - 'ses:SendBulkTemplatedEmail'
+              - 'ses:ListVerifiedEmailAddresses'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 9ed57ab8-3b9f-4a90-b69e-f9585f299673
+  workParameterStore:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workParameterStore
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter'
+              - 'ssm:PutParameter'
+              - 'ssm:GetParameterHistory'
+              - 'ssm:DeleteParameter'
+            Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: adde90b8-3f78-42aa-b5b4-1b73ebfb7339
+  writeXray:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: writeXray
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'xray:PutTraceSegments'
+              - 'xray:PutTelemetryRecords'
+              - 'xray:GetSamplingRules'
+              - 'xray:GetSamplingTargets'
+              - 'xray:GetSamplingStatisticSummaries'
+            Resource: '*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0290bfe2-6c1b-4aa8-b508-2904fbe67d7d
+  workLogs:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workLogs
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+              - 'logs:*'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a5668090-bc9a-4956-9c15-5db0a855b235
+  LambdaSg:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: LambdaSg
+      GroupDescription: security group allowing lambda functions access to VPC resources
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: All
+          FromPort: All
+          ToPort: All
+          CidrIp: !GetAtt Vpc.CidrBlock
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 536193f1-c349-490a-a47d-e299dfa64ea5
+  leechBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref leechBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: 'aws:kms'
+            KMSMasterKeyID: !Ref s3Key
+      LoggingConfiguration:
+        DestinationBucketName: !GetAtt leechLogBucket.BucketName
+        LogFilePrefix: s3_logs
+      LifecycleConfiguration:
+        Rules:
+          Id: expire_cache
+          Prefix: cache
+          NoncurrentVersionExpirationInDays: 2
+          ExpirationInDays: 2
+      VersioningConfiguration:
+        Status: Enabled
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 4e7f7174-226a-4f80-ad85-86535d3ffceb
+  leechLogBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Join
+        - _
+        - - !Ref leechBucketName
+          - _logs
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: 'aws:kms'
+            KMSMasterKeyID: !Ref s3Key
+      VersioningConfiguration:
+        Status: Enabled
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e5db2f4a-844f-4381-965e-11e1a397c187
+  s3Key:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: key used to encrypt and protect data in s3 buckets
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy: !Join
+        - ''
+        - - null
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 72731cc6-46ca-445d-9349-a0a34344f85f
+  sensitivesTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: Sensitives
+      AttributeDefinitions:
+        - AttributeName: insenstive
+          AttributeType: S
+      KeySchema:
+        - AttributeName: insensitive
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 14c7ed9a-8efa-4b0c-8d83-1342c5f8c3eb
+  indexTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: leech_indexes
+      AttributeDefinitions:
+        - AttributeName: identifier_stem
+          AttributeType: S
+        - AttributeName: sid_value
+          AttributeType: S
+        - AttributeName: internal_id
+          AttributeType: S
+        - AttributeName: fungal_stem
+          AttributeType: S
+        - AttributeName: numeric_id_value
+          AttributeType: 'N'
+      KeySchema:
+        - AttributeName: identifier_stem
+          KeyType: HASH
+        - AttributeName: sid_value
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: internal_id_index
+          KeySchema:
+            - AttributeName: internal_id
+              KeyType: HASH
+            - AttributeName: identifier_stem
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: fungal_index
+          KeySchema:
+            - AttributeName: fungal_stem
+              KeyType: HASH
+            - AttributeName: numeric_id_value
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: identifier_stem_index
+          KeySchema:
+            - AttributeName: identifier_stem
+              KeyType: HASH
+            - AttributeName: numeric_id_value
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
