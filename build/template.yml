@@ -672,7 +672,7 @@ Resources:
             SSEAlgorithm: 'aws:kms'
             KMSMasterKeyID: !Ref s3Key
       LoggingConfiguration:
-        DestinationBucketName: !GetAtt leechLogBucket.BucketName
+        DestinationBucketName: !GetAtt leechLogBucket.DomainName
         LogFilePrefix: s3_logs
       LifecycleConfiguration:
         Rules:
