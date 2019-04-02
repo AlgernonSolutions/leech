@@ -708,9 +708,6 @@ Resources:
       Description: key used to encrypt and protect data in s3 buckets
       Enabled: true
       EnableKeyRotation: true
-      KeyPolicy: !Join
-        - ''
-        - - null
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 72731cc6-46ca-445d-9349-a0a34344f85f
