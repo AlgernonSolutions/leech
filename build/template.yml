@@ -693,8 +693,8 @@ Resources:
       BucketName: !Ref leechBucketName
       BucketEncryption:
         ServerSideEncryptionConfiguration:
-          ServerSideEncryptionByDefault:
-            SSEAlgorithm: 'aws:kms'
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
       LoggingConfiguration:
         DestinationBucketName: !GetAtt leechLogBucket.DomainName
         LogFilePrefix: s3_logs
@@ -718,8 +718,8 @@ Resources:
           - _logs
       BucketEncryption:
         ServerSideEncryptionConfiguration:
-          ServerSideEncryptionByDefault:
-            SSEAlgorithm: 'aws:kms'
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
       VersioningConfiguration:
         Status: Enabled
     Metadata:
