@@ -713,9 +713,9 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Join
-        - _
+        - "-"
         - - !Ref leechBucketName
-          - _logs
+          - logs
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
