@@ -3,7 +3,10 @@ version: 0.2
 phases:
   build:
     commands:
-      - pip3 install python-rapidjson -t .
+      - pip3 install --upgrade pip
+      - mkdir python
+      - pip3 install -r requirements.txt -t python
+      - zip -r9 layer.zip python
       - aws cloudformation package --template build/template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
 
 artifacts:
