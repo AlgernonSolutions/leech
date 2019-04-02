@@ -28,20 +28,6 @@ Parameters:
   CodeDeployRole:
     Type: String
     Description: IAM role to be used to deploy code to AWS
-  LeechVpcSg:
-    Type: 'List<AWS::EC2::SecurityGroup::Id>'
-    Description: List of security groups the Leech will use to access the data space
-    Default: sg-06b3a26ff04155688
-  LeechVpcSn:
-    Type: 'List<AWS::EC2::Subnet::Id>'
-    Description: List of subnet ids that the Leech can launch into to access the data space
-    Default: 'subnet-872a24cc, subnet-29497e4d, subnet-acef95f1'
-  LambdaRoleArn:
-    Type: String
-    Description: >-
-      The ARN of the IAM role that lambda functions will use to interact with
-      the resources
-    Default: 'arn:aws:iam::803040539655:role/midnightRed-graphWorkerRole-1KSOKSCZ2OLZE'
 Globals:
   Function:
     Runtime: python3.6
@@ -182,9 +168,13 @@ Resources:
         Ref: worker
       VpcConfig:
         SecurityGroupIds:
-          Ref: LeechVpcSg
+          Ref: LambdaSg
         SubnetIds:
-          Ref: LeechVpcSn
+          Ref: !Join
+                 - ', '
+                 - - !Ref FirstSubnet
+                   - !Ref SecondSubnet
+                   - !Ref ThirdSubnet
       Timeout: 300
       MemorySize: 448
     Metadata:
