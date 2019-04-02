@@ -7,6 +7,9 @@ Parameters:
   ProjectId:
     Type: String
     Description: CodeStar projectId used to associate new resources to team members
+  CodeDeployRole:
+    Type: String
+    Description: IAM role to be used to deploy code to AWS
   LeechVpcSg:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: List of security groups the Leech will use to access the data space
