@@ -170,11 +170,11 @@ Resources:
         SecurityGroupIds:
           Ref: LambdaSg
         SubnetIds:
-          Ref: !Join
-                 - ', '
-                 - - !Ref FirstSubnet
-                   - !Ref SecondSubnet
-                   - !Ref ThirdSubnet
+          !Join
+             - ', '
+             - - !Ref FirstSubnet
+               - !Ref SecondSubnet
+               - !Ref ThirdSubnet
       Timeout: 300
       MemorySize: 448
     Metadata:
