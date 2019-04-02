@@ -9,6 +9,12 @@ Parameters:
   leechBucketName:
     Type: String
     Description: Name of the bucket to be used by the leech for caching and local storage
+  layerBucket:
+    Type: String
+    Description: Name of the bucket containing the compiled python dependencies for the application
+  layerKey:
+    Type: String
+    Description: Name of the file in the layerBucket which contains the compiled python dependencies
   VpcCidr:
     Type: String
     Description: Cidr Block of VPC
@@ -32,17 +38,11 @@ Globals:
   Function:
     Runtime: python3.6
     Layers:
-      - 'arn:aws:lambda:us-east-1:803040539655:layer:leechLayer:9'
+      - Ref lambdaLayer
     Tracing: Active
     Environment:
       Variables:
         WORK_FUNCTION: leech-work
-        SCHEMA_TABLE: Schema
-        EXTRACTION_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/extraction'
-        TRANSFORM_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/transform'
-        ASSIMILATE_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/assimilate'
-        LOAD_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/load'
-        LINK_URL: 'https://sqs.us-east-1.amazonaws.com/803040539655/link'
         GRAPH_DB_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
         GRAPH_DB_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
 Resources:
@@ -309,14 +309,13 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service:
                 - appsync.amazonaws.com
                 - events.amazonaws.com
                 - lambda.amazonaws.com
-            Action: sts.AssumeRole
+            Action: sts:AssumeRole
     Metadata:
       'AWS::CloudFormation::Designer':
         id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
@@ -713,7 +712,7 @@ Resources:
     Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Join
-        - "-"
+        - '-'
         - - !Ref leechBucketName
           - logs
       BucketEncryption:
@@ -792,6 +791,18 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 0b5b2eea-7e9d-454c-94d4-f394c6e71b88
+  lambdaLayer:
+    Type: 'AWS::Lambda::LayerVersion'
+    Properties:
+        CompatibleRuntimes:
+            - python3.6
+        Description: compiled pure python dependencies for the leech
+        Content:
+            S3Bucket: !Ref layerBucket
+            S3Key: !Ref layerKey
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3f1e62a7-66b3-488f-8eb8-962b5fb9b1f2
 Metadata:
   'AWS::CloudFormation::Designer':
     0b5b2eea-7e9d-454c-94d4-f394c6e71b88:
@@ -809,15 +820,6 @@ Metadata:
         height: 60
       position:
         x: 180
-        'y': 750
-      z: 1
-      embeds: []
-    72731cc6-46ca-445d-9349-a0a34344f85f:
-      size:
-        width: 60
-        height: 60
-      position:
-        x: 300
         'y': 750
       z: 1
       embeds: []
@@ -1029,6 +1031,8 @@ Metadata:
       iscontainedinside:
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
     0f90e117-5e72-4d1f-a571-bcbe3a52c37e:
       size:
         width: 60
@@ -1085,6 +1089,8 @@ Metadata:
       iscontainedinside:
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
     c664d9a9-f402-44a6-a8f3-9a91d8c74d6f:
       size:
         width: 60
@@ -1096,6 +1102,8 @@ Metadata:
       parent: 524fd573-66dd-45a5-a3e4-65291313a8e4
       embeds: []
       iscontainedinside:
+        - 524fd573-66dd-45a5-a3e4-65291313a8e4
+        - 524fd573-66dd-45a5-a3e4-65291313a8e4
         - 524fd573-66dd-45a5-a3e4-65291313a8e4
         - 524fd573-66dd-45a5-a3e4-65291313a8e4
       dependson:
@@ -1111,6 +1119,8 @@ Metadata:
       parent: f309f1b9-ac09-4838-b8df-72a9c3a235f7
       embeds: []
       iscontainedinside:
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
     bfeaedd8-f016-4f9f-8705-9e22cd96087a:
@@ -1132,6 +1142,8 @@ Metadata:
       iscontainedinside:
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
     ad6d614b-501c-4d27-b37d-df90508796bc:
       source:
         id: 524fd573-66dd-45a5-a3e4-65291313a8e4
@@ -1149,6 +1161,8 @@ Metadata:
       parent: f309f1b9-ac09-4838-b8df-72a9c3a235f7
       embeds: []
       iscontainedinside:
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
+        - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
         - f309f1b9-ac09-4838-b8df-72a9c3a235f7
     2b0e5325-4e37-4ca4-96c8-e5bd8a48733b:
@@ -1274,103 +1288,12 @@ Metadata:
         'y': 990
       z: 1
       embeds: []
-    40706a4e-00d5-49dc-a5c4-a9638f13e030:
-      source:
-        id: f3e15ed0-c92d-4a19-a62d-b94f968d9f6a
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 4
-    24110cb8-36d4-4fb8-a088-a05b5df77a07:
-      source:
-        id: d65053f9-8fa4-4018-940e-05e56bcbc8fd
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 5
-    5951e0c6-75e7-4c42-a2d1-3a105a8550e5:
-      source:
-        id: 877ab62e-4136-449e-9f46-de8409fb3a7a
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 6
-    64eff415-2c38-4488-b5db-4f79e6ee4e3c:
-      source:
-        id: 3cd965b5-6bce-4792-b3d9-1f2c4be1dae6
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 7
-    d6b77c2a-d2ed-4aa3-acaf-9e97d9a49c58:
-      source:
-        id: cf058dc5-cb5e-4125-a30d-237405143e58
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 8
-    3881ca5d-84c8-479a-a01f-901f24a9ddc7:
-      source:
-        id: ac060457-fddd-4e0d-aecc-8e482255db82
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 9
-    c6b058c7-3da8-4fff-a71c-c053403fd799:
-      source:
-        id: afe684b7-95eb-448c-bdcf-938bbd88b60c
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 10
-    b9076a16-77f1-41ab-b189-fc7c4e7dc37a:
-      source:
-        id: 877ab62e-4136-449e-9f46-de8409fb3a7a
-        selector: 'g:nth-child(1) g:nth-child(4) g:nth-child(3) circle:nth-child(1)     '
-        port: 'AWS::RefLink-AWS::IAM::Role-Roles'
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 12
-    1710d748-4fbf-4f2b-8431-f961d5ea4ca8:
-      source:
-        id: 9ed57ab8-3b9f-4a90-b69e-f9585f299673
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 11
-    beefb138-40d1-4008-b936-1bc96267cbfa:
-      source:
-        id: d65053f9-8fa4-4018-940e-05e56bcbc8fd
-        selector: 'g:nth-child(1) g:nth-child(4) g:nth-child(3) circle:nth-child(1)     '
-        port: 'AWS::RefLink-AWS::IAM::Role-Roles'
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 13
-    7e8df9f9-f21b-4c65-9e3b-3a2079b68ac5:
-      source:
-        id: a5668090-bc9a-4956-9c15-5db0a855b235
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 12
-    114775ed-7d01-4ec8-a9c8-798fc9156021:
-      source:
-        id: adde90b8-3f78-42aa-b5b4-1b73ebfb7339
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 13
-    758e1820-843b-4bfe-b5a6-e46196ce0eed:
-      source:
-        id: e66672b8-1ef3-4766-800d-c165c38b0cc4
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 14
-    4562670c-aff3-41a3-8e64-e81744c1896c:
-      source:
-        id: 0c7e5b36-d381-417d-bc6c-2d7c165bc363
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 15
-    12953de0-bde4-4774-9e9d-ad3441286437:
-      source:
-        id: 0290bfe2-6c1b-4aa8-b508-2904fbe67d7d
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 16
-    d199a6b7-ed2b-42cd-8d56-2901640c73d7:
-      source:
-        id: 0f90e117-5e72-4d1f-a571-bcbe3a52c37e
-      target:
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-      z: 17
+    3f1e62a7-66b3-488f-8eb8-962b5fb9b1f2:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 258
+        'y': -1
+      z: 0
+      embeds: []
