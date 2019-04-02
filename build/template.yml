@@ -306,6 +306,17 @@ Resources:
     Type: 'AWS::IAM::Role'
     Properties:
       RoleName: worker
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - appsync.amazonaws.com
+                - events.amazonaws.com
+                - lambda.amazonaws.com
+            Action: sts.AssumeRole
     Metadata:
       'AWS::CloudFormation::Designer':
         id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
@@ -684,7 +695,6 @@ Resources:
         ServerSideEncryptionConfiguration:
           ServerSideEncryptionByDefault:
             SSEAlgorithm: 'aws:kms'
-            KMSMasterKeyID: !Ref s3Key
       LoggingConfiguration:
         DestinationBucketName: !GetAtt leechLogBucket.DomainName
         LogFilePrefix: s3_logs
@@ -710,27 +720,17 @@ Resources:
         ServerSideEncryptionConfiguration:
           ServerSideEncryptionByDefault:
             SSEAlgorithm: 'aws:kms'
-            KMSMasterKeyID: !Ref s3Key
       VersioningConfiguration:
         Status: Enabled
     Metadata:
       'AWS::CloudFormation::Designer':
         id: e5db2f4a-844f-4381-965e-11e1a397c187
-  s3Key:
-    Type: 'AWS::KMS::Key'
-    Properties:
-      Description: key used to encrypt and protect data in s3 buckets
-      Enabled: true
-      EnableKeyRotation: true
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 72731cc6-46ca-445d-9349-a0a34344f85f
   sensitivesTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: Sensitives
       AttributeDefinitions:
-        - AttributeName: insenstive
+        - AttributeName: insensitive
           AttributeType: S
       KeySchema:
         - AttributeName: insensitive
