@@ -35,8 +35,11 @@ Parameters:
     Type: String
     Description: IAM role to be used to deploy code to AWS
 Globals:
+  LayerVersion:
+    ContentUri: /lib
   Function:
     Runtime: python3.6
+    CodeUri: /src
     Layers:
       - Ref lambdaLayer
     Tracing: Active
@@ -46,6 +49,16 @@ Globals:
         GRAPH_DB_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
         GRAPH_DB_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
 Resources:
+  leechLayer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      LayerName: leechLayer
+      Description: compiled dependencies for the leech
+      ContentUri:
+        !Join
+          - ""
+          - - 's3://my-bucket/my-layer.zip'
+      RetentionPolicy: Retain
   work:
     Type: 'AWS::Serverless::Function'
     Properties:
