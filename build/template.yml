@@ -674,7 +674,7 @@ Resources:
       GroupDescription: security group allowing lambda functions access to VPC resources
       VpcId: !Ref Vpc
       SecurityGroupIngress:
-        - IpProtocol: All
+        - IpProtocol: -1
           FromPort: -1
           ToPort: -1
           CidrIp: !GetAtt Vpc.CidrBlock
