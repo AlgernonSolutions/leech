@@ -3,11 +3,11 @@ version: 0.2
 phases:
   build:
     commands:
-      - mkdir python
-      - mkdir lib
+      - mkdir build/python
+      - mkdir build/lib
       - pip3 install --upgrade pip
       - pip3 install -r build/requirements.txt -t python
-      - zip -r9 lib/layer.zip python
+      - zip -r9 build/lib/layer.zip python
       - aws cloudformation package --template build/template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
 
 artifacts:
