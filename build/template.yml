@@ -31,7 +31,7 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.6
-    CodeUri: /src
+    CodeUri: /src/toll_booth
     Layers:
       - !Ref leechLayer
     Tracing: Active
