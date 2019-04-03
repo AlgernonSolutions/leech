@@ -366,7 +366,7 @@ Resources:
               - 'ec2:DescribeNetworkInterfaces'
               - 'ec2:DeleteNetworkInterface'
             Effect: Allow
-            Resource: !Ref Vpc
+            Resource: "*"
       Roles:
         - !Ref worker
     Metadata:
