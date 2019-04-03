@@ -36,7 +36,7 @@ Parameters:
     Description: IAM role to be used to deploy code to AWS
 Globals:
   LayerVersion:
-    ContentUri: /lib
+    ContentUri: /layer.zip
   Function:
     Runtime: python3.6
     CodeUri: /src
@@ -54,10 +54,6 @@ Resources:
     Properties:
       LayerName: leechLayer
       Description: compiled dependencies for the leech
-      ContentUri:
-        !Join
-          - ""
-          - - 's3://my-bucket/my-layer.zip'
       RetentionPolicy: Retain
   work:
     Type: 'AWS::Serverless::Function'
