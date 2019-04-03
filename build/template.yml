@@ -694,7 +694,8 @@ Resources:
         LogFilePrefix: s3_logs
       LifecycleConfiguration:
         Rules:
-           - Id: expire_cache
+          -
+            Id: expire_cache
             Prefix: cache
             NoncurrentVersionExpirationInDays: 2
             ExpirationInDays: 2
