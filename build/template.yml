@@ -210,7 +210,10 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        AWS CloudFormation Stack Parameters
+        VpcCidr: VpcCidr
+        FirstSubnetCidr: FirstSubnetCidr
+        SecondSubnetCidr: SecondSubnetCidr
+        ThirdSubnetCidr: ThirdSubnetCidr
       TemplateURL: /src/build/templates/vpc.yml
   worker:
     Type: 'AWS::IAM::Role'
