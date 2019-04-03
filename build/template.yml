@@ -149,9 +149,9 @@ Resources:
           Ref: LambdaSg
         SubnetIds: !Join
           - ', '
-          - - !Ref FirstSubnet
-            - !Ref SecondSubnet
-            - !Ref ThirdSubnet
+          - - !GetAtt VpcStack.FirstSubnetId
+            - !GetAtt VpcStack.SecondSubnetId
+            - !GetAtt VpcStack.ThirdSubnetId
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 12616994-028b-4f97-87fa-e1ce7bde6087
@@ -166,9 +166,9 @@ Resources:
           Ref: LambdaSg
         SubnetIds: !Join
           - ', '
-          - - !Ref FirstSubnet
-            - !Ref SecondSubnet
-            - !Ref ThirdSubnet
+          - - !GetAtt VpcStack.FirstSubnetId
+            - !GetAtt VpcStack.SecondSubnetId
+            - !GetAtt VpcStack.ThirdSubnetId
       Timeout: 300
       MemorySize: 448
     Metadata:
@@ -206,93 +206,12 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: dd8aacd1-c1a3-409b-83b3-46e3fb5755d6
-  Vpc:
-    Type: 'AWS::EC2::VPC'
+  VpcStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      CidrBlock: !Ref VpcCidr
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: f309f1b9-ac09-4838-b8df-72a9c3a235f7
-  FirstSubnet:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      VpcId: !Ref Vpc
-      CidrBlock: !Ref FirstSubnetCidr
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e94f82fc-27a5-4f3f-9c8c-9928247992fa
-  SecondSubnet:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      VpcId: !Ref Vpc
-      CidrBlock: !Ref SecondSubnetCidr
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 9fc65d22-2218-4ef3-b93b-6607326e5553
-  ThirdSubnet:
-    Type: 'AWS::EC2::Subnet'
-    Properties:
-      VpcId: !Ref Vpc
-      CidrBlock: !Ref ThirdSubnetCidr
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: ccda3246-4d55-4c4e-a19e-fe933db6e970
-  RouteTable:
-    Type: 'AWS::EC2::RouteTable'
-    Properties:
-      VpcId: !Ref Vpc
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 524fd573-66dd-45a5-a3e4-65291313a8e4
-  InternetRoute:
-    Type: 'AWS::EC2::Route'
-    Properties:
-      RouteTableId: !Ref RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-    DependsOn:
-      - InternetGateway
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: c664d9a9-f402-44a6-a8f3-9a91d8c74d6f
-  EC2SRTA429KF:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref ThirdSubnet
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: bfeaedd8-f016-4f9f-8705-9e22cd96087a
-  EC2SRTA1MF09:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      SubnetId: !Ref SecondSubnet
-      RouteTableId: !Ref RouteTable
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: ad6d614b-501c-4d27-b37d-df90508796bc
-  EC2SRTA1HJ1H:
-    Type: 'AWS::EC2::SubnetRouteTableAssociation'
-    Properties:
-      RouteTableId: !Ref RouteTable
-      SubnetId: !Ref FirstSubnet
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 2b0e5325-4e37-4ca4-96c8-e5bd8a48733b
-  InternetGateway:
-    Type: 'AWS::EC2::InternetGateway'
-    Properties: {}
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 19b59139-9f62-4417-b20e-a94c1389ff0a
-  IgwAttach:
-    Type: 'AWS::EC2::VPCGatewayAttachment'
-    Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref Vpc
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: aaa7ed66-f911-4519-ac02-74db02992655
+      Parameters:
+        AWS CloudFormation Stack Parameters
+      TemplateURL: /src/build/templates/vpc.yml
   worker:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -696,6 +615,7 @@ Resources:
         Rules:
           -
             Id: expire_cache
+            Status: Enabled
             Prefix: cache
             NoncurrentVersionExpirationInDays: 2
             ExpirationInDays: 2
