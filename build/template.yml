@@ -694,10 +694,10 @@ Resources:
         LogFilePrefix: s3_logs
       LifecycleConfiguration:
         Rules:
-          Id: expire_cache
-          Prefix: cache
-          NoncurrentVersionExpirationInDays: 2
-          ExpirationInDays: 2
+           - Id: expire_cache
+            Prefix: cache
+            NoncurrentVersionExpirationInDays: 2
+            ExpirationInDays: 2
       VersioningConfiguration:
         Status: Enabled
     Metadata:
