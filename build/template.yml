@@ -9,12 +9,6 @@ Parameters:
   leechBucketName:
     Type: String
     Description: Name of the bucket to be used by the leech for caching and local storage
-  layerBucket:
-    Type: String
-    Description: Name of the bucket containing the compiled python dependencies for the application
-  layerKey:
-    Type: String
-    Description: Name of the file in the layerBucket which contains the compiled python dependencies
   VpcCidr:
     Type: String
     Description: Cidr Block of VPC
@@ -41,7 +35,7 @@ Globals:
     Runtime: python3.6
     CodeUri: /src
     Layers:
-      - Ref lambdaLayer
+      - Ref leechLayer
     Tracing: Active
     Environment:
       Variables:
@@ -800,18 +794,6 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 0b5b2eea-7e9d-454c-94d4-f394c6e71b88
-  lambdaLayer:
-    Type: 'AWS::Lambda::LayerVersion'
-    Properties:
-        CompatibleRuntimes:
-            - python3.6
-        Description: compiled pure python dependencies for the leech
-        Content:
-            S3Bucket: !Ref layerBucket
-            S3Key: !Ref layerKey
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 3f1e62a7-66b3-488f-8eb8-962b5fb9b1f2
 Metadata:
   'AWS::CloudFormation::Designer':
     0b5b2eea-7e9d-454c-94d4-f394c6e71b88:
