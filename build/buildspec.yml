@@ -5,7 +5,7 @@ phases:
     commands:
       - cd ..
       - mkdir python
-      - mdir lib
+      - mkdir lib
       - pip3 install --upgrade pip
       - pip3 install -r src/build/requirements.txt -t python
       - zip -r9 lib/layer.zip python
