@@ -33,7 +33,7 @@ Globals:
     Runtime: python3.6
     CodeUri: /src
     Layers:
-      - Ref leechLayer
+      - !Ref leechLayer
     Tracing: Active
     Environment:
       Variables:
@@ -53,7 +53,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.work
       FunctionName: leech-work
-      Role: !Ref worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 448
     Metadata:
@@ -64,7 +64,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/starter_motor.start_flow
       FunctionName: leech-start
-      Role: !Ref worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 128
     Metadata:
@@ -75,7 +75,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/cleaner.cleaner
       FunctionName: leech-clean
-      Role: !Ref worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 128
     Metadata:
@@ -86,8 +86,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/fire_task.fire_task
       FunctionName: leech-fire
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 128
     Metadata:
@@ -98,8 +97,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/ruffians.oversee
       FunctionName: leech-oversee
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 900
       MemorySize: 128
     Metadata:
@@ -110,8 +108,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/ruffians.decide
       FunctionName: leech-decide
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 900
       MemorySize: 448
     Metadata:
@@ -122,8 +119,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/ruffians.labor
       FunctionName: leech-labor
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 900
       MemorySize: 448
     Metadata:
@@ -134,8 +130,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/ruffians.lambda_labor
       FunctionName: leech-lambda-labor
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 900
       MemorySize: 448
     Metadata:
@@ -146,8 +141,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/ruffians.lambda_labor
       FunctionName: leech-vpc-labor
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 448
       VpcConfig:
@@ -166,8 +160,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/toll_booth.aphid
       FunctionName: leech-aphid
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       VpcConfig:
         SecurityGroupIds:
           Ref: LambdaSg
@@ -186,9 +179,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/log_process.handler
       FunctionName: leech-process-log
-      Role:
-        Ref: worker
-      Timeout: 300
+      Role: !GetAtt worker.Arn
       MemorySize: 128
     Metadata:
       'AWS::CloudFormation::Designer':
@@ -198,8 +189,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
       FunctionName: leech-extract-crediblews
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 448
     Metadata:
@@ -210,8 +200,7 @@ Resources:
     Properties:
       Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
       FunctionName: leech-extract-crediblefe
-      Role:
-        Ref: worker
+      Role: !GetAtt worker.Arn
       Timeout: 300
       MemorySize: 448
     Metadata:
@@ -511,21 +500,23 @@ Resources:
   workStateMachine:
     Type: 'AWS::IAM::Policy'
     Properties:
-      Version: 2012-10-17
-      Statement:
-        - Effect: Allow
-          Resource: '*'
-          Action:
-            - 'states:DescribeStateMachineForExecution'
-            - 'states:ListStateMachines'
-            - 'states:DescribeStateMachine'
-            - 'states:DescribeExecution'
-            - 'states:ListExecutions'
-            - 'states:GetExecutionHistory'
-            - 'states:StartExecution'
-            - 'states:StopExecution'
-      Roles:
-        - !Ref worker
+      PolicyName: readSecrets
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+              - 'states:DescribeStateMachineForExecution'
+              - 'states:ListStateMachines'
+              - 'states:DescribeStateMachine'
+              - 'states:DescribeExecution'
+              - 'states:ListExecutions'
+              - 'states:GetExecutionHistory'
+              - 'states:StartExecution'
+              - 'states:StopExecution'
+          Roles:
+            - !Ref worker
     Metadata:
       'AWS::CloudFormation::Designer':
         id: cf058dc5-cb5e-4125-a30d-237405143e58
