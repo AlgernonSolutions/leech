@@ -675,8 +675,8 @@ Resources:
       VpcId: !Ref Vpc
       SecurityGroupIngress:
         - IpProtocol: All
-          FromPort: All
-          ToPort: All
+          FromPort: -1
+          ToPort: -1
           CidrIp: !GetAtt Vpc.CidrBlock
     Metadata:
       'AWS::CloudFormation::Designer':
