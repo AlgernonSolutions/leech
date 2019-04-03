@@ -46,7 +46,7 @@ Resources:
     Properties:
       LayerName: leechLayer
       Description: compiled dependencies for the leech
-      ContentUri: /layer.zip
+      ContentUri: layer.zip
       RetentionPolicy: Retain
   work:
     Type: 'AWS::Serverless::Function'
