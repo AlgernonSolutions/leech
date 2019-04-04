@@ -31,7 +31,7 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.6
-    CodeUri: src/toll_booth
+    CodeUri: ../toll_booth
     Layers:
       - !Ref leechLayer
     Tracing: Active
@@ -214,7 +214,7 @@ Resources:
         FirstSubnetCidr: FirstSubnetCidr
         SecondSubnetCidr: SecondSubnetCidr
         ThirdSubnetCidr: ThirdSubnetCidr
-      TemplateURL: src/build/templates/vpc.yml
+      TemplateURL: templates/vpc.yml
   worker:
     Type: 'AWS::IAM::Role'
     Properties:
