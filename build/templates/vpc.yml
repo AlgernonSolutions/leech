@@ -108,6 +108,9 @@ Resources:
         'AWS::CloudFormation::Designer':
           id: aaa7ed66-f911-4519-ac02-74db02992655
 Output:
+  VpcId:
+    Description: id value of generated VPC
+    Value: !Ref Vpc
   FirstSubnetId:
     Description: id value of first generated subnet
     Value: !Ref FirstSubnet

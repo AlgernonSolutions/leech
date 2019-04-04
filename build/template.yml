@@ -594,12 +594,12 @@ Resources:
     Properties:
       GroupName: LambdaSg
       GroupDescription: security group allowing lambda functions access to VPC resources
-      VpcId: !Ref Vpc
+      VpcId: !Ref VpcStack.VpcId
       SecurityGroupIngress:
         - IpProtocol: -1
           FromPort: -1
           ToPort: -1
-          CidrIp: !GetAtt Vpc.CidrBlock
+          CidrIp: !Ref VpcCidr
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 536193f1-c349-490a-a47d-e299dfa64ea5
