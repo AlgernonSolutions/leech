@@ -594,7 +594,7 @@ Resources:
     Properties:
       GroupName: LambdaSg
       GroupDescription: security group allowing lambda functions access to VPC resources
-      VpcId: !Ref VpcStack.VpcId
+      VpcId: !GetAtt VpcStack.VpcId
       SecurityGroupIngress:
         - IpProtocol: -1
           FromPort: -1
