@@ -98,8 +98,8 @@ Resources:
     Properties:
       Parameters:
         ProjectId: !Ref ProjectId
-        IndexTableArn: !GetAtt S3Stack.Outputs.IndexTableArn
-        SensitivesTableArn: !GetAtt S3Stack.Outputs.SensitivesTableArn
+        IndexTableArn: !GetAtt DynamoStack.Outputs.IndexTableArn
+        SensitivesTableArn: !GetAtt DynamoStack.Outputs.SensitivesTableArn
         LeechLogBucketArn: !GetAtt S3Stack.Outputs.LeechLogBucketArn
         LeechBucketArn: !GetAtt S3Stack.Outputs.LeechBucketArn
       TemplateURL: templates/iam.yml
