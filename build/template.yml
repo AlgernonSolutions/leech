@@ -64,31 +64,31 @@ Resources:
       TemplateURL: templates/vpc.yml
   S3Stack:
     Type: AWS::CloudFormation::Stack
-      Properties:
-        Parameters:
-          LeechBucketName: !Ref LeechBucketName
-        TemplateURL: templates/s3.yml
+    Properties:
+      Parameters:
+        LeechBucketName: !Ref LeechBucketName
+      TemplateURL: templates/s3.yml
   DynamoStack:
     Type: AWS::CloudFormation::Stack
-      Properties:
-        Parameters:
-          SensitivesTableName: !Ref SensitivesTableName
-          IndexTableName: !Ref IndexTableName
-        TemplateURL: templates/dynamo.yml
+    Properties:
+      Parameters:
+        SensitivesTableName: !Ref SensitivesTableName
+        IndexTableName: !Ref IndexTableName
+      TemplateURL: templates/dynamo.yml
   NeptuneStack:
     Type: AWS::CloudFormation::Stack
-      Properties:
-        Parameters:
-          GraphClusterName: !Ref GraphClusterName
-          GraphInstanceType: !Ref GraphInstanceType
-          LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
-          FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
-          FirstSubnetAZ: !GetAtt VpcStack.Outputs.FirstSubnetAZ
-          SecondSubnetId: !GetAtt VpcStack.Outputs.SecondSubnetId
-          SecondSubnetAZ: !GetAtt VpcStack.Outputs.SecondSubnetAZ
-          ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
-          ThirdSubnetAZ: !GetAtt VpcStack.Outputs.ThirdSubnetAZ
-        TemplateURL: templates/neptune.yml
+    Properties:
+      Parameters:
+        GraphClusterName: !Ref GraphClusterName
+        GraphInstanceType: !Ref GraphInstanceType
+        LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
+        FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
+        FirstSubnetAZ: !GetAtt VpcStack.Outputs.FirstSubnetAZ
+        SecondSubnetId: !GetAtt VpcStack.Outputs.SecondSubnetId
+        SecondSubnetAZ: !GetAtt VpcStack.Outputs.SecondSubnetAZ
+        ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
+        ThirdSubnetAZ: !GetAtt VpcStack.Outputs.ThirdSubnetAZ
+      TemplateURL: templates/neptune.yml
   IamStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -110,15 +110,15 @@ Resources:
       TemplateURL: templates/lambda.yml
   GqlStack:
     Type: AWS::CloudFormation::Stack
-      Properties:
-        Parameters:
-          GqlApiName: !Ref GqlApiName
-          WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
-          AphidLambdaArn: !GetAtt LambdaStack.Outputs.AphidLambdaArn
-          StarterLambdaArn: GetAtt LambdaStack.Outputs.StarterLambdaArn
-          SensitivesTableName: !Ref SenstivesTableName
-          SensitivesTableRegion: !Ref "AWS::Region"
-        TemplateURL: templates/gql.yml
+    Properties:
+      Parameters:
+        GqlApiName: !Ref GqlApiName
+        WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
+        AphidLambdaArn: !GetAtt LambdaStack.Outputs.AphidLambdaArn
+        StarterLambdaArn: GetAtt LambdaStack.Outputs.StarterLambdaArn
+        SensitivesTableName: !Ref SenstivesTableName
+        SensitivesTableRegion: !Ref "AWS::Region"
+      TemplateURL: templates/gql.yml
 Metadata:
   'AWS::CloudFormation::Designer':
     0b5b2eea-7e9d-454c-94d4-f394c6e71b88:
