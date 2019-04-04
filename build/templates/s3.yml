@@ -36,6 +36,7 @@ Resources:
   LeechLogBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
+      AccessControl:  LogDeliveryWrite
       BucketName: !Join
         - '-'
         - - !Ref LeechBucketName
