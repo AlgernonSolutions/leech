@@ -19,7 +19,7 @@ Resources:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: 'aws:kms'
       LoggingConfiguration:
-        DestinationBucketName: !GetAtt LeechLogBucket.DomainName
+        DestinationBucketName: !Ref LeechLogBucket
         LogFilePrefix: s3_logs
       LifecycleConfiguration:
         Rules:
