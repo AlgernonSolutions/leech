@@ -107,6 +107,20 @@ Resources:
       Metadata:
         'AWS::CloudFormation::Designer':
           id: aaa7ed66-f911-4519-ac02-74db02992655
+  LambdaSg:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupName: LambdaSg
+      GroupDescription: security group allowing lambda functions access to VPC resources
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: !Ref VpcCidr
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 536193f1-c349-490a-a47d-e299dfa64ea5
 Output:
   VpcId:
     Description: id value of generated VPC
@@ -120,3 +134,6 @@ Output:
   ThirdSubnetId:
     Description: id value of third generated subnet
     Value: !Ref ThirdSubnet
+  LambdaSgId:
+    Description: id value of generated security group
+    Value: !Ref LambdaSg

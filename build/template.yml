@@ -146,7 +146,7 @@ Resources:
       MemorySize: 448
       VpcConfig:
         SecurityGroupIds:
-          Ref: LambdaSg
+          !GetAtt VpcStack.Outputs.LambdaSgId
         SubnetIds: !Join
           - ', '
           - - !GetAtt VpcStack.Outputs.FirstSubnetId
@@ -163,12 +163,12 @@ Resources:
       Role: !GetAtt worker.Arn
       VpcConfig:
         SecurityGroupIds:
-          Ref: LambdaSg
+          !GetAtt VpcStack.Outputs.LambdaSgId
         SubnetIds: !Join
           - ', '
-          - - !GetAtt VpcStack.FirstSubnetId
-            - !GetAtt VpcStack.SecondSubnetId
-            - !GetAtt VpcStack.ThirdSubnetId
+          - - !GetAtt VpcStack.Outputs.FirstSubnetId
+            - !GetAtt VpcStack.Outputs.SecondSubnetId
+            - !GetAtt VpcStack.Outputs.ThirdSubnetId
       Timeout: 300
       MemorySize: 448
     Metadata:
@@ -589,20 +589,7 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: a5668090-bc9a-4956-9c15-5db0a855b235
-  LambdaSg:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupName: LambdaSg
-      GroupDescription: security group allowing lambda functions access to VPC resources
-      VpcId: !GetAtt VpcStack.Outputs.VpcId
-      SecurityGroupIngress:
-        - IpProtocol: -1
-          FromPort: -1
-          ToPort: -1
-          CidrIp: !Ref VpcCidr
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 536193f1-c349-490a-a47d-e299dfa64ea5
+
   leechBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
