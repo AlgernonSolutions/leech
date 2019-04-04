@@ -3,6 +3,9 @@ Transform:
   - 'AWS::Serverless-2016-10-31'
   - 'AWS::CodeStar'
 Parameters:
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
   VpcCidr:
     Type: String
     Description: Cidr Block of VPC

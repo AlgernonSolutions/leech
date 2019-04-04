@@ -3,6 +3,9 @@ Transform:
   - 'AWS::Serverless-2016-10-31'
   - 'AWS::CodeStar'
 Parameters:
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
   WorkerRoleArn:
     Type: String
     Description: the ARN of the dynamo table acting as the index manager

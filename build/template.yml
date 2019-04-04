@@ -57,7 +57,8 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        VpcCidr: VpcCidr
+        ProjectId: !Ref ProjectId
+        VpcCidr: !Ref VpcCidr
         FirstSubnetCidr: !Ref FirstSubnetCidr
         SecondSubnetCidr: !Ref SecondSubnetCidr
         ThirdSubnetCidr: !Ref ThirdSubnetCidr
@@ -66,12 +67,14 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         LeechBucketName: !Ref LeechBucketName
       TemplateURL: templates/s3.yml
   DynamoStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         SensitivesTableName: !Ref SensitivesTableName
         IndexTableName: !Ref IndexTableName
       TemplateURL: templates/dynamo.yml
@@ -79,6 +82,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         GraphClusterName: !Ref GraphClusterName
         GraphInstanceType: !Ref GraphInstanceType
         LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
@@ -93,6 +97,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         IndexTableArn: !GetAtt S3Stack.Outputs.IndexTableArn
         SensitivesTableArn: !GetAtt S3Stack.Outputs.SensitivesTableArn
         LeechLogBucketArn: !GetAtt S3Stack.Outputs.LeechLogBucketArn
@@ -102,6 +107,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
         LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
         FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
@@ -112,6 +118,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ProjectId: !Ref ProjectId
         GqlApiName: !Ref GqlApiName
         WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
         AphidLambdaArn: !GetAtt LambdaStack.Outputs.AphidLambdaArn

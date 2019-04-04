@@ -3,6 +3,9 @@ Transform:
   - 'AWS::Serverless-2016-10-31'
   - 'AWS::CodeStar'
 Parameters:
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
   LeechBucketName:
     Type: String
     Description: name to be applied to the S3 buckets generated for the leech
