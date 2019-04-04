@@ -116,7 +116,7 @@ Resources:
         WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
         AphidLambdaArn: !GetAtt LambdaStack.Outputs.AphidLambdaArn
         StarterLambdaArn: GetAtt LambdaStack.Outputs.StarterLambdaArn
-        SensitivesTableName: !Ref SenstivesTableName
+        SensitivesTableName: !Ref SensitivesTableName
         SensitivesTableRegion: !Ref "AWS::Region"
       TemplateURL: templates/gql.yml
 Metadata:
