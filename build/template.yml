@@ -93,7 +93,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        IndexTableArn: !GetAttS3Stack.Outputs.IndexTableArn
+        IndexTableArn: !GetAtt S3Stack.Outputs.IndexTableArn
         SensitivesTableArn: !GetAtt S3Stack.Outputs.SensitivesTableArn
         LeechLogBucketArn: !GetAtt S3Stack.Outputs.LeechLogBucketArn
         LeechBucketArn: !GetAtt S3Stack.Outputs.LeechBucketArn
