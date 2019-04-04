@@ -74,13 +74,13 @@ Resources:
   LeechSchema:
     Type: "AWS::AppSync::GraphQLSchema"
     Properties:
-      DefinitionS3Location: gql/schema.graphql
+      DefinitionS3Location: ../gql/schema.graphql
       ApiId: !GetAtt LeechApi.ApiId
   StarterResolver:
     Type: "AWS::AppSync::Resolver"
     Properties:
-      RequestMappingTemplateS3Location: gql/resolvers/generic_lambda_request.vtl
-      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      RequestMappingTemplateS3Location: ../gql/resolvers/generic_lambda_request.vtl
+      ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
       TypeName: Mutation
       DataSourceName: !GetAtt GraphDataSource.Name
       ApiId: !GetAtt LeechApi.ApiId
@@ -89,8 +89,8 @@ Resources:
   QueryEdgesResolver:
       Type: "AWS::AppSync::Resolver"
       Properties:
-        RequestMappingTemplateS3Location: gql/resolvers/query_edges_request.vtl
-        ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+        RequestMappingTemplateS3Location: ../gql/resolvers/query_edges_request.vtl
+        ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
         TypeName: Query
         DataSourceName: !GetAtt GraphDataSource.Name
         ApiId: !GetAtt LeechApi.ApiId
@@ -99,8 +99,8 @@ Resources:
   QueryFindVertexesResolver:
     Type: "AWS::AppSync::Resolver"
     Properties:
-      RequestMappingTemplateS3Location: gql/resolvers/query_find_vertexes_request.vtl
-      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      RequestMappingTemplateS3Location: ../gql/resolvers/query_find_vertexes_request.vtl
+      ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
       TypeName: Query
       DataSourceName: !GetAtt GraphDataSource.Name
       ApiId: !GetAtt LeechApi.ApiId
@@ -109,8 +109,8 @@ Resources:
   QueryVertexResolver:
     Type: "AWS::AppSync::Resolver"
     Properties:
-      RequestMappingTemplateS3Location: gql/resolvers/query_vertex_request.vtl
-      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      RequestMappingTemplateS3Location: ../gql/resolvers/query_vertex_request.vtl
+      ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
       TypeName: Query
       DataSourceName: !GetAtt GraphDataSource.Name
       ApiId: !GetAtt LeechApi.ApiId
@@ -119,8 +119,8 @@ Resources:
   VertexConnectedEdgesResolver:
     Type: "AWS::AppSync::Resolver"
     Properties:
-      RequestMappingTemplateS3Location: gql/resolvers/vertex_connected_edges_request.vtl
-      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      RequestMappingTemplateS3Location: ../gql/resolvers/vertex_connected_edges_request.vtl
+      ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
       TypeName: Query
       DataSourceName: !GetAtt GraphDataSource.Name
       ApiId: !GetAtt LeechApi.ApiId
@@ -129,8 +129,8 @@ Resources:
   VertexVertexPropertiesResolver:
     Type: "AWS::AppSync::Resolver"
     Properties:
-      RequestMappingTemplateS3Location: gql/resolvers/vertex_vertex_properties_request.vtl
-      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      RequestMappingTemplateS3Location: ../gql/resolvers/vertex_vertex_properties_request.vtl
+      ResponseMappingTemplateS3Location: ../gql/resolvers/generic_lambda_response.vtl
       TypeName: Query
       DataSourceName: !GetAtt GraphDataSource.Name
       ApiId: !GetAtt LeechApi.ApiId
