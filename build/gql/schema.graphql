@@ -1,0 +1,124 @@
+﻿schema {
+  query: Query
+  mutation: Mutation
+}
+
+#  all the edges originating from or terminating at a vertex
+type ConnectedEdges {
+  #  all the edges connected to the vertex
+  all: [Edge]!
+  #  only the edges terminating at the vertex
+  inbound: [Edge]!
+  #  only the edges originating at the vertex
+  outbound: [Edge]!
+}
+
+#  designates a relationship between two vertexes
+type Edge {
+  #  the descriptive label for the edge
+  edge_label: String!
+  #  the properties of the edge, filterable by property name
+  edge_properties(property_names: [String]): [ObjectProperty]!
+  #  the vertex the edge originates from
+  from_vertex: Vertex!
+  #  the unique identifier of the edge
+  internal_id: ID!
+  #  the vertex the edge terminates at
+  to_vertex: Vertex!
+}
+
+#  the connection object used to inspect and paginate ConnectedEdges
+type EdgeConnection {
+  #  the connected edges, grouped by their direction (all, inbound, outbound), filterable by edge_label
+  edges(edge_labels: [String]): ConnectedEdges!
+  #  the count of the edges terminating at the vertex
+  in_count: Int!
+  #  the count of the edges originating at the vertex
+  out_count: Int!
+  #  information about the returned page of the pagination
+  page_info: PageInfo!
+  #  the count of all the edges originating from, or terminating at, the vertex
+  total_count: Int!
+}
+
+#  the entry that exist in the dynamo table, representing the progress of each leeched object
+type GraphObject {
+  assimilation_clear_time: Float
+  #  the state of the object in the leeching process
+  disposition: String!
+  extraction_clear_time: Float
+  #  in cases where the sid_value is an int, the integer value is reported here
+  id_value: Int
+  #  the string used to identify a class of objects
+  identifier_stem: String!
+  #  the internal uniquely identifying id
+  internal_id: ID
+  #  a timestamp representing when the object was last seen by a leech actor
+  last_seen_time: Float!
+  load_clear_time: Float
+  monitoring_clear_time: Float!
+  #  the single unique identifier of a given object, as seen in the remote system
+  sid_value: String!
+  transformation_clear_time: Float
+}
+
+#  a single leech stage
+type LeechStage {
+  #  the number of objects last seen at the stage
+  population: Int!
+  #  the name of the leech stage
+  stage_name: String!
+}
+
+type Mutation {
+  startWorkflow(domain_name: String!, flow_id: String!, flow_name: String!, input_string: String): String
+}
+
+#  a single property set on a vertex or edge
+type ObjectProperty {
+  property_name: String!
+  property_value: ObjectPropertyValue
+}
+
+#  the actual value of a given property, with it's data type
+type ObjectPropertyValue {
+  #  one of String, Integer, DateTime
+  data_type: String!
+  #  value of the property, expressed as a string
+  property_value: String!
+}
+
+#  information regarding a single returned page of a pagination
+type PageInfo {
+  #  are there more pages after this one
+  more: Boolean!
+  #  string pagination token returned to retrieve the next page of objects
+  token: ID!
+}
+
+type Query {
+  #  retrieves an edge by internal_id
+  edge(internal_id: ID!): Edge
+  #  retrieves additional edges, given an edge connection
+  edges(internal_id: ID!, token: ID): EdgeConnection
+  #  searches the graph for vertexes based on a collection of identifying information
+  find_vertexes(identifier_stem: String, internal_id: ID, sid_value: String, vertex_properties: AWSJSON): [Vertex]
+  #  retrieves a graph object by identifier_stem and sid_value
+  graph_object(identifier_stem: String!, sid_value: String!): GraphObject
+  #  retrieves the number of objects at a leech stage
+  leech_stage(stage_name: String!): Int!
+  #  retrieves a vertex by internal_id
+  vertex(internal_id: ID!, token: ID): Vertex
+}
+
+#  any object stored in the graph
+type Vertex {
+  #  the connection object used to paginate and inspect the edges connected to the vertex
+  connected_edges(page_size: Int, token: ID): EdgeConnection
+  #  the unique identifier of the vertex
+  internal_id: ID!
+  #  the properties of the vertex, filterable by property name
+  vertex_properties(property_names: [String]): [ObjectProperty]!
+  #  the type of object represented by the vertex
+  vertex_type: String!
+}

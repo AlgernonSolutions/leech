@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  GqlApiName:
+    Type: String
+    Description: the name applied to the GQL API
+  WorkerRoleArn:
+    Type: String
+    Description: ARN of the IAM role used by the leech
+  AphidLambdaArn:
+    Type: String
+    Description: ARN of the aphid lambda function, used to access the graph database
+  StarterLambdaArn:
+    Type: String
+    Description: ARN of the starter motor function, used to initiate workflows
+  SensitivesTableName:
+    Type: String
+    Description: name of the Dynamo table used to hold PHI
+  SensitivesTableRegion:
+    Type: String
+    Description: name of the region holding the Dynamo table used to hold PHI
+Resources:
+  LeechApi:
+    Type: "AWS::AppSync::GraphQLApi"
+    Properties:
+      Name: !Ref GqlApiName
+      AuthenticationType: AWS_IAM
+      LogConfig:
+        CloudWatchLogsRoleArn: !Ref WorkerRoleArn
+        FieldLogLevel: ALL
+  StarterDataSource:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      Type: AWS_LAMBDA
+      Description: data source for the starter motor for SWF
+      ServiceRoleArn: !Ref WorkerRoleArn
+      LambdaConfig:
+        LambdaFunctionArn: !Ref StarterLambdaArn
+      ApiId: !GetAtt LeechApi.ApiId
+      Name: !Join
+        - "-"
+        - - !Ref GqlApiName
+          - datasource-starter
+  GraphDataSource:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      Type: AWS_LAMBDA
+      Description: data source for the graph database
+      ServiceRoleArn: !Ref WorkerRoleArn
+      LambdaConfig:
+        LambdaFunctionArn: !Ref AphidLambdaArn
+      ApiId: !GetAtt LeechApi.ApiId
+      Name: !Join
+        - "-"
+        - - !Ref GqlApiName
+          - datasource-graph
+  SensitivesDataSource:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      Type: AMAZON_DYNAMODB
+      Description: data source for the Dynamo table holding the PHI
+      ServiceRoleArn: !Ref WorkerRoleArn
+      DynamoDBConfig:
+        TableName: !Ref SensitivesTableName
+        AwsRegion: !Ref SensitivesTableRegion
+        UseCallerCredentials: true
+      ApiId: !GetAtt LeechApi.ApiId
+      Name: !Join
+        - "-"
+        - - !Ref GqlApiName
+          - datasource-sensitives
+  LeechSchema:
+    Type: "AWS::AppSync::GraphQLSchema"
+    Properties:
+      DefinitionS3Location: gql/schema.graphql
+      ApiId: !GetAtt LeechApi.ApiId
+  StarterResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      RequestMappingTemplateS3Location: gql/resolvers/generic_lambda_request.vtl
+      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      TypeName: Mutation
+      DataSourceName: !GetAtt GraphDataSource.Name
+      ApiId: !GetAtt LeechApi.ApiId
+      FieldName: startWorkflow
+      Kind: UNIT
+  QueryEdgesResolver:
+      Type: "AWS::AppSync::Resolver"
+      Properties:
+        RequestMappingTemplateS3Location: gql/resolvers/query_edges_request.vtl
+        ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+        TypeName: Query
+        DataSourceName: !GetAtt GraphDataSource.Name
+        ApiId: !GetAtt LeechApi.ApiId
+        FieldName: edges
+        Kind: UNIT
+  QueryFindVertexesResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      RequestMappingTemplateS3Location: gql/resolvers/query_find_vertexes_request.vtl
+      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      TypeName: Query
+      DataSourceName: !GetAtt GraphDataSource.Name
+      ApiId: !GetAtt LeechApi.ApiId
+      FieldName: edges
+      Kind: UNIT
+  QueryVertexResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      RequestMappingTemplateS3Location: gql/resolvers/query_vertex_request.vtl
+      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      TypeName: Query
+      DataSourceName: !GetAtt GraphDataSource.Name
+      ApiId: !GetAtt LeechApi.ApiId
+      FieldName: edges
+      Kind: UNIT
+  VertexConnectedEdgesResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      RequestMappingTemplateS3Location: gql/resolvers/vertex_connected_edges_request.vtl
+      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      TypeName: Query
+      DataSourceName: !GetAtt GraphDataSource.Name
+      ApiId: !GetAtt LeechApi.ApiId
+      FieldName: edges
+      Kind: UNIT
+  VertexVertexPropertiesResolver:
+    Type: "AWS::AppSync::Resolver"
+    Properties:
+      RequestMappingTemplateS3Location: gql/resolvers/vertex_vertex_properties_request.vtl
+      ResponseMappingTemplateS3Location: gql/resolvers/generic_lambda_response.vtl
+      TypeName: Query
+      DataSourceName: !GetAtt GraphDataSource.Name
+      ApiId: !GetAtt LeechApi.ApiId
+      FieldName: edges
+      Kind: UNIT

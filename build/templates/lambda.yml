@@ -1,0 +1,211 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  WorkerRoleArn:
+    Type: String
+    Description: the ARN of the dynamo table acting as the index manager
+  LambdaSgId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: the id value of the security group used by Lambda to access the VPC
+  FirstSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the first generated subnet
+  SecondSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the second generated subnet
+  ThirdSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the third generated subnet
+  GraphEndpoint:
+    Type: String
+    Description: the read/write access point for the graph database
+  GraphReadEndpoint:
+    Type: String
+    Description: the read only access point for the graph database
+Globals:
+  Function:
+    Runtime: python3.6
+    CodeUri: ../toll_booth
+    Layers:
+      - !Ref LeechLayer
+    Tracing: Active
+    Environment:
+      Variables:
+        WORK_FUNCTION: leech-work
+        GRAPH_DB_ENDPOINT: !Ref GraphEndpoint
+        GRAPH_DB_READER_ENDPOINT: !Ref GraphReadEndpoint
+Resources:
+  LeechLayer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      LayerName: leechLayer
+      Description: compiled dependencies for the leech
+      ContentUri: lib/layer.zip
+      RetentionPolicy: Retain
+  Work:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.work
+      FunctionName: leech-work
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b3eba24a-a58a-4ac2-86bf-34a278318206
+  Starter:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/starter_motor.start_flow
+      FunctionName: leech-start
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 7e350454-6075-4255-9ff7-5b13d449e546
+  Cleaner:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/cleaner.cleaner
+      FunctionName: leech-clean
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 25ae1830-3f23-4632-9b12-c0a383f4158b
+  Fire:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/fire_task.fire_task
+      FunctionName: leech-fire
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 8a28347d-b611-420f-89ac-b999085e2881
+  Oversee:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.oversee
+      FunctionName: leech-oversee
+      Role: !Ref WorkerRoleArn
+      Timeout: 900
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f2141ab7-0df3-4962-b55c-9d5067d92e55
+  Decide:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.decide
+      FunctionName: leech-decide
+      Role: !Ref WorkerRoleArn
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f8f07f6c-cc0c-4ca1-bf40-405c50f48d54
+  Labor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.labor
+      FunctionName: leech-labor
+      Role: !Ref WorkerRoleArn
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 997f0043-ff2f-46d5-93f3-eebaec7c0e73
+  LambdaLabor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
+      FunctionName: leech-lambda-labor
+      Role: !Ref WorkerRoleArn
+      Timeout: 900
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b10f32a3-e368-4dcd-8f6c-d7aef1656ed0
+  VpcLabor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
+      FunctionName: leech-vpc-labor
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 448
+      VpcConfig:
+        SecurityGroupIds:
+          !Ref LambdaSgId
+        SubnetIds: !Join
+          - ', '
+          - - !Ref FirstSubnetId
+            - !Ref SecondSubnetId
+            - !Ref ThirdSubnetId
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 12616994-028b-4f97-87fa-e1ce7bde6087
+  Aphid:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/toll_booth.aphid
+      FunctionName: leech-aphid
+      Role: !Ref WorkerRoleArn
+      VpcConfig:
+        SecurityGroupIds:
+          !Ref LambdaSgId
+        SubnetIds: !Join
+          - ', '
+          - - !Ref FirstSubnetId
+            - !Ref SecondSubnetId
+            - !Ref ThirdSubnetId
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3b7b731b-3641-4e55-9841-7259ca1660cf
+  Log:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/log_process.handler
+      FunctionName: leech-process-log
+      Role: !Ref WorkerRoleArn
+      MemorySize: 128
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3758ff2d-4532-42f2-a7fc-5e78a3c23a41
+  CredibleWsExtractor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
+      FunctionName: leech-extract-crediblews
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d2797fb8-7237-4a71-b509-706b4ee7bf1b
+  CredibleFeExtractor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
+      FunctionName: leech-extract-crediblefe
+      Role: !Ref WorkerRoleArn
+      Timeout: 300
+      MemorySize: 448
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: dd8aacd1-c1a3-409b-83b3-46e3fb5755d6
+Outputs:
+  AphidLambdaArn:
+    Description: ARN of the aphid lambda function, used to access the graph database
+    Value: !GetAtt Aphid.Arn
+  StarterLambdaArn:
+    Description: ARN of the starter motor function, used to initiate workflows
+    Value: !GetAtt Starter.Arn

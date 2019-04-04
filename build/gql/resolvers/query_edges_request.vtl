@@ -1,0 +1,11 @@
+#set( $myMap = {
+  "source": $context.source,
+  "context" : $context.args,
+  "object_type": "EdgeConnection",
+  "username":$context.identity.username
+} )
+{
+    "version" : "2017-02-28",
+    "operation": "Invoke",
+    "payload": $util.toJson($myMap)
+}

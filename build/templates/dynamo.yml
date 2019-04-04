@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  SensitivesTableName:
+    Type: String
+    Description: name to be assigned to table which hold PHI
+    Default: Sensitives
+  IndexTableName:
+    Type: String
+    Description: name to be assigned to the table which will hold the indexes
+    Default: Indexes
+Resources:
+  SensitivesTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Ref SensitivesTableName
+      AttributeDefinitions:
+        - AttributeName: insensitive
+          AttributeType: S
+      KeySchema:
+        - AttributeName: insensitive
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 14c7ed9a-8efa-4b0c-8d83-1342c5f8c3eb
+  IndexTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Ref IndexTableName
+      AttributeDefinitions:
+        - AttributeName: identifier_stem
+          AttributeType: S
+        - AttributeName: sid_value
+          AttributeType: S
+        - AttributeName: internal_id
+          AttributeType: S
+        - AttributeName: fungal_stem
+          AttributeType: S
+        - AttributeName: numeric_id_value
+          AttributeType: N
+      KeySchema:
+        - AttributeName: identifier_stem
+          KeyType: HASH
+        - AttributeName: sid_value
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: internal_id_index
+          KeySchema:
+            - AttributeName: internal_id
+              KeyType: HASH
+            - AttributeName: identifier_stem
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: fungal_index
+          KeySchema:
+            - AttributeName: fungal_stem
+              KeyType: HASH
+            - AttributeName: numeric_id_value
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: identifier_stem_index
+          KeySchema:
+            - AttributeName: identifier_stem
+              KeyType: HASH
+            - AttributeName: numeric_id_value
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0b5b2eea-7e9d-454c-94d4-f394c6e71b88
+Outputs:
+  SensitivesTableArn:
+    Description: the arn of the generated table used to house PHI
+    Value: !GetAtt SensitivesTable.Arn
+  IndexTableArn:
+    Description: the arn of the generated table to be used for indexing
+    Value: !GetAtt IndexTable.Arn

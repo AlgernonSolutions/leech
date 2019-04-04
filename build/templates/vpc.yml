@@ -121,19 +121,28 @@ Resources:
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 536193f1-c349-490a-a47d-e299dfa64ea5
-Output:
+Outputs:
   VpcId:
     Description: id value of generated VPC
     Value: !Ref Vpc
   FirstSubnetId:
     Description: id value of first generated subnet
     Value: !Ref FirstSubnet
+  FirstSubnetAZ:
+    Description: availability zone of first generated subnet
+    Value: !GetAtt FirstSubnet.AvailabilityZone
   SecondSubnetId:
     Description: id value of second generated subnet
     Value: !Ref SecondSubnet
+  SecondSubnetAZ:
+    Description: availability zone of second generated subnet
+    Value: !GetAtt SecondSubnet.AvailabilityZone
   ThirdSubnetId:
     Description: id value of third generated subnet
     Value: !Ref ThirdSubnet
+  ThirdSubnetAZ:
+    Description: availability zone of third generated subnet
+    Value: !GetAtt ThirdSubnet.AvailabilityZone
   LambdaSgId:
     Description: id value of generated security group
     Value: !Ref LambdaSg

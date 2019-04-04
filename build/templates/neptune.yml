@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  GraphClusterName:
+    Type: String
+    Description: the name used to identify the graph cluster
+  GraphInstanceType:
+    Type: String
+    Description: the type of db instance used within the cluster
+    AllowedValues:
+      - db.r4.large
+      - db.r4.xlarge
+      - db.r4.2xlarge
+      - db.r4.4xlarge
+      - db.r4.8xlarge
+    Default: db.r4.large
+  LambdaSgId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: the id value of the security group used by lambda
+  FirstSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the first generated subnet
+  FirstSubnetAZ:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: the availability zone of the first generated subnet
+  SecondSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the second generated subnet
+  SecondSubnetAZ:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: the availability zone of the second generated subnet
+  ThirdSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: the id value of the third generated subnet
+  ThirdSubnetAZ:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: the availability zone of the third generated subnet
+Resources:
+  GraphClusterParameterGroup:
+    Type: "AWS::Neptune::DBClusterParameterGroup"
+    Properties:
+      Description: default cluster parameter group for the leech graph layer
+      Parameters:
+        neptune_enable_audit_log: 1
+        neptune_query_timeout: 600000
+      Family: neptune1
+      Name: !Join
+        - "-"
+        - - !Ref GraphClusterName
+          - cluster-parameter-group
+  GraphDbParameterGroup:
+    Type: "AWS::Neptune::DBParameterGroup"
+    Properties:
+      Description: default db parameter group for the leech graph layer
+      Parameters:
+        neptune_query_timeout: 600000
+      Family: neptune1
+      Name: !Join
+        - "-"
+        - - !Ref GraphClusterName
+          - db-parameter-group
+  GraphSubnetGroup:
+    Type: "AWS::Neptune::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: default subnet group for the leech graph layer
+      DBSubnetGroupName: !Join
+        - "-"
+        - - !Ref GraphClusterName
+          - subnet-group
+      SubnetIds: !Join
+        - ', '
+        - - !Ref FirstSubnetId
+          - !Ref SecondSubnetId
+          - !Ref ThirdSubnetId
+  GraphCluster:
+    Type: "AWS::Neptune::DBCluster"
+    DeletionPolicy: Snapshot
+    Properties:
+      AvailabilityZones: !Join
+        - ", "
+        - - !Ref FirstSubnetAZ
+          - !Ref SecondSubnetAZ
+          - !Ref ThirdSubnetAZ
+      BackupRetentionPeriod: 15
+      DBClusterIdentifier: !Ref GraphClusterName
+      DBClusterParameterGroupName: !Ref GraphClusterParameterGroup
+      DBSubnetGroupName: !Ref GraphSubnetGroup
+      IamAuthEnabled: true
+      StorageEncrypted: true
+      VpcSecurityGroupIds:
+        - !Ref LambdaSgId
+  GraphDbInstance1:
+    Type: "AWS::Neptune::DBInstance"
+    Properties:
+      AllowMajorVersionUpgrade: true
+      AutoMinorVersionUpgrade: true
+      DBClusterIdentifier: !GetAtt GraphCluster.ClusterResourceId
+      DBInstanceClass: !Ref GraphInstanceType
+      DBInstanceIdentifier: !Join
+        - "-"
+        - - !Ref GraphClusterName
+          - instance-1
+      DBParameterGroupName: !Ref GraphDbParameterGroup
+      DBSubnetGroupName: !Ref GraphSubnetGroup

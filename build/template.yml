@@ -6,9 +6,33 @@ Parameters:
   ProjectId:
     Type: String
     Description: CodeStar projectId used to associate new resources to team members
-  leechBucketName:
+  LeechBucketName:
     Type: String
     Description: Name of the bucket to be used by the leech for caching and local storage
+  GraphClusterName:
+    Type: String
+    Description: the name used to identify the graph cluster
+  GqlApiName:
+    Type: String
+    Description: the name used to identify the GQL API
+  SensitivesTableName:
+    Type: String
+    Description: name to be assigned to table which hold PHI
+    Default: Sensitives
+  IndexTableName:
+    Type: String
+    Description: name to be assigned to the table which will hold the indexes
+    Default: Indexes
+  GraphInstanceType:
+    Type: String
+    Description: the type of db instance used within the cluster
+    AllowedValues:
+      - db.r4.large
+      - db.r4.xlarge
+      - db.r4.2xlarge
+      - db.r4.4xlarge
+      - db.r4.8xlarge
+    Default: db.r4.large
   VpcCidr:
     Type: String
     Description: Cidr Block of VPC
@@ -28,675 +52,73 @@ Parameters:
   CodeDeployRole:
     Type: String
     Description: IAM role to be used to deploy code to AWS
-Globals:
-  Function:
-    Runtime: python3.6
-    CodeUri: ../toll_booth
-    Layers:
-      - !Ref leechLayer
-    Tracing: Active
-    Environment:
-      Variables:
-        WORK_FUNCTION: leech-work
-        GRAPH_DB_ENDPOINT: algernon.cluster-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
-        GRAPH_DB_READER_ENDPOINT: algernon.cluster-ro-cnv3iqiknsnm.us-east-1.neptune.amazonaws.com
 Resources:
-  leechLayer:
-    Type: 'AWS::Serverless::LayerVersion'
-    Properties:
-      LayerName: leechLayer
-      Description: compiled dependencies for the leech
-      ContentUri: lib/layer.zip
-      RetentionPolicy: Retain
-  work:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.work
-      FunctionName: leech-work
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: b3eba24a-a58a-4ac2-86bf-34a278318206
-  starter:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/starter_motor.start_flow
-      FunctionName: leech-start
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 128
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 7e350454-6075-4255-9ff7-5b13d449e546
-  cleaner:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/cleaner.cleaner
-      FunctionName: leech-clean
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 128
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 25ae1830-3f23-4632-9b12-c0a383f4158b
-  fire:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/fire_task.fire_task
-      FunctionName: leech-fire
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 128
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 8a28347d-b611-420f-89ac-b999085e2881
-  oversee:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/ruffians.oversee
-      FunctionName: leech-oversee
-      Role: !GetAtt worker.Arn
-      Timeout: 900
-      MemorySize: 128
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: f2141ab7-0df3-4962-b55c-9d5067d92e55
-  decide:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/ruffians.decide
-      FunctionName: leech-decide
-      Role: !GetAtt worker.Arn
-      Timeout: 900
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: f8f07f6c-cc0c-4ca1-bf40-405c50f48d54
-  labor:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/ruffians.labor
-      FunctionName: leech-labor
-      Role: !GetAtt worker.Arn
-      Timeout: 900
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 997f0043-ff2f-46d5-93f3-eebaec7c0e73
-  lambdaLabor:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
-      FunctionName: leech-lambda-labor
-      Role: !GetAtt worker.Arn
-      Timeout: 900
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: b10f32a3-e368-4dcd-8f6c-d7aef1656ed0
-  vpclabor:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/ruffians.lambda_labor
-      FunctionName: leech-vpc-labor
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 448
-      VpcConfig:
-        SecurityGroupIds:
-          !GetAtt VpcStack.Outputs.LambdaSgId
-        SubnetIds: !Join
-          - ', '
-          - - !GetAtt VpcStack.Outputs.FirstSubnetId
-            - !GetAtt VpcStack.Outputs.SecondSubnetId
-            - !GetAtt VpcStack.Outputs.ThirdSubnetId
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 12616994-028b-4f97-87fa-e1ce7bde6087
-  aphid:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/toll_booth.aphid
-      FunctionName: leech-aphid
-      Role: !GetAtt worker.Arn
-      VpcConfig:
-        SecurityGroupIds:
-          !GetAtt VpcStack.Outputs.LambdaSgId
-        SubnetIds: !Join
-          - ', '
-          - - !GetAtt VpcStack.Outputs.FirstSubnetId
-            - !GetAtt VpcStack.Outputs.SecondSubnetId
-            - !GetAtt VpcStack.Outputs.ThirdSubnetId
-      Timeout: 300
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 3b7b731b-3641-4e55-9841-7259ca1660cf
-  log:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/log_process.handler
-      FunctionName: leech-process-log
-      Role: !GetAtt worker.Arn
-      MemorySize: 128
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 3758ff2d-4532-42f2-a7fc-5e78a3c23a41
-  credibleWsExtractor:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/extractors/credible_ws.handler
-      FunctionName: leech-extract-crediblews
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: d2797fb8-7237-4a71-b509-706b4ee7bf1b
-  credibleFeExtractor:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: toll_booth/alg_tasks/extractors/credible_fe.handler
-      FunctionName: leech-extract-crediblefe
-      Role: !GetAtt worker.Arn
-      Timeout: 300
-      MemorySize: 448
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: dd8aacd1-c1a3-409b-83b3-46e3fb5755d6
   VpcStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         VpcCidr: VpcCidr
-        FirstSubnetCidr: FirstSubnetCidr
-        SecondSubnetCidr: SecondSubnetCidr
-        ThirdSubnetCidr: ThirdSubnetCidr
+        FirstSubnetCidr: !Ref FirstSubnetCidr
+        SecondSubnetCidr: !Ref SecondSubnetCidr
+        ThirdSubnetCidr: !Ref ThirdSubnetCidr
       TemplateURL: templates/vpc.yml
-  worker:
-    Type: 'AWS::IAM::Role'
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          LeechBucketName: !Ref LeechBucketName
+        TemplateURL: templates/s3.yml
+  DynamoStack:
+    Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          SensitivesTableName: !Ref SensitivesTableName
+          IndexTableName: !Ref IndexTableName
+        TemplateURL: templates/dynamo.yml
+  NeptuneStack:
+    Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          GraphClusterName: !Ref GraphClusterName
+          GraphInstanceType: !Ref GraphInstanceType
+          LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
+          FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
+          FirstSubnetAZ: !GetAtt VpcStack.Outputs.FirstSubnetAZ
+          SecondSubnetId: !GetAtt VpcStack.Outputs.SecondSubnetId
+          SecondSubnetAZ: !GetAtt VpcStack.Outputs.SecondSubnetAZ
+          ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
+          ThirdSubnetAZ: !GetAtt VpcStack.Outputs.ThirdSubnetAZ
+        TemplateURL: templates/neptune.yml
+  IamStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      RoleName: worker
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - appsync.amazonaws.com
-                - events.amazonaws.com
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
-  workGraph:
-    Type: 'AWS::IAM::Policy'
+      Parameters:
+        IndexTableArn: !GetAttS3Stack.Outputs.IndexTableArn
+        SensitivesTableArn: !GetAtt S3Stack.Outputs.SensitivesTableArn
+        LeechLogBucketArn: !GetAtt S3Stack.Outputs.LeechLogBucketArn
+        LeechBucketArn: !GetAtt S3Stack.Outputs.LeechBucketArn
+      TemplateURL: templates/iam.yml
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      PolicyName: workGraph
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: 'neptune-db:*'
-            Resource: '*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: a0906c04-fe82-43cd-8fd2-e33640f6c60e
-  queryGql:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: queryGql
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - 'appsync:ListDataSources'
-              - 'appsync:ListFunctions'
-              - 'appsync:GetDataSource'
-              - 'appsync:ListApiKeys'
-              - 'appsync:GetSchemaCreationStatus'
-              - 'appsync:GetFunction'
-              - 'appsync:GetResolver'
-              - 'appsync:ListGraphqlApis'
-              - 'appsync:GetGraphqlApi'
-              - 'appsync:ListTypes'
-              - 'appsync:GetIntrospectionSchema'
-              - 'appsync:GraphQL'
-              - 'appsync:ListResolvers'
-              - 'appsync:GetType'
-            Resource: '*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: f3e15ed0-c92d-4a19-a62d-b94f968d9f6a
-  accessVpc:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: accessVpc
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 'ec2:CreateNetworkInterface'
-              - 'ec2:DescribeNetworkInterfaces'
-              - 'ec2:DeleteNetworkInterface'
-            Effect: Allow
-            Resource: "*"
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 0f90e117-5e72-4d1f-a571-bcbe3a52c37e
-  workSensitives:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: workSenstives
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - 'dynamodb:BatchGetItem'
-              - 'dynamodb:BatchWriteItem'
-              - 'dynamodb:ListGlobalTables'
-              - 'dynamodb:PutItem'
-              - 'dynamodb:ListTables'
-              - 'dynamodb:DescribeTable'
-              - 'dynamodb:ListBackups'
-              - 'dynamodb:GetItem'
-              - 'dynamodb:Scan'
-              - 'dynamodb:Query'
-              - 'dynamodb:UpdateItem'
-              - 'dynamodb:DescribeTimeToLive'
-            Resource: !Ref sensitivesTable
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 877ab62e-4136-449e-9f46-de8409fb3a7a
-  workSwf:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: workSwf
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Resource: "*"
-            Action:
-              - 'swf:CountPendingActivityTasks'
-              - 'swf:RespondActivityTaskCanceled'
-              - 'swf:RequestCancelWorkflowExecution'
-              - 'swf:SignalExternalWorkflowExecution'
-              - 'swf:RespondDecisionTaskCompleted'
-              - 'swf:CountClosedWorkflowExecutions'
-              - 'swf:RespondActivityTaskFailed'
-              - 'swf:StartWorkflowExecution'
-              - 'swf:PollForDecisionTask'
-              - 'swf:FailWorkflowExecution'
-              - 'swf:RequestCancelExternalWorkflowExecution'
-              - 'swf:RequestCancelActivityTask'
-              - 'swf:ListOpenWorkflowExecutions'
-              - 'swf:StartTimer'
-              - 'swf:DescribeDomain'
-              - 'swf:RecordActivityTaskHeartbeat'
-              - 'swf:SignalWorkflowExecution'
-              - 'swf:ContinueAsNewWorkflowExecution'
-              - 'swf:RespondActivityTaskCompleted'
-              - 'swf:TerminateWorkflowExecution'
-              - 'swf:DescribeActivityType'
-              - 'swf:PollForActivityTask'
-              - 'swf:ListActivityTypes'
-              - 'swf:CancelWorkflowExecution'
-              - 'swf:StartChildWorkflowExecution'
-              - 'swf:CompleteWorkflowExecution'
-              - 'swf:DescribeWorkflowType'
-              - 'swf:CancelTimer'
-              - 'swf:RecordMarker'
-              - 'swf:ListWorkflowTypes'
-              - 'swf:GetWorkflowExecutionHistory'
-              - 'swf:CountOpenWorkflowExecutions'
-              - 'swf:ScheduleActivityTask'
-              - 'swf:CountPendingDecisionTasks'
-              - 'swf:DescribeWorkflowExecution'
-              - 'swf:ListDomains'
-              - 'swf:ListClosedWorkflowExecutions'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: afe684b7-95eb-448c-bdcf-938bbd88b60c
-  invokeLambda:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: invokeLambda
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 'lambda:InvokeFunction'
-            Resource: '*'
-            Effect: Allow
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e66672b8-1ef3-4766-800d-c165c38b0cc4
-  passRole:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: passRole
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: 'iam:PassRole'
-            Resource: '*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 0c7e5b36-d381-417d-bc6c-2d7c165bc363
-  readSecrets:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: readSecrets
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 'secretsmanager:GetSecretValue'
-            Resource: '*'
-            Effect: Allow
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: ac060457-fddd-4e0d-aecc-8e482255db82
-  workStateMachine:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: readSecrets
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-              - 'states:DescribeStateMachineForExecution'
-              - 'states:ListStateMachines'
-              - 'states:DescribeStateMachine'
-              - 'states:DescribeExecution'
-              - 'states:ListExecutions'
-              - 'states:GetExecutionHistory'
-              - 'states:StartExecution'
-              - 'states:StopExecution'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: cf058dc5-cb5e-4125-a30d-237405143e58
-  workDynamo:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      Version: 2012-10-17
-      Statement:
-        - Effect: Allow
-          Action:
-            - 'dynamodb:BatchGetItem'
-            - 'dynamodb:BatchWriteItem'
-            - 'dynamodb:ListGlobalTables'
-            - 'dynamodb:PutItem'
-            - 'dynamodb:ListTables'
-            - 'dynamodb:DescribeTable'
-            - 'dynamodb:ListBackups'
-            - 'dynamodb:GetItem'
-            - 'dynamodb:Scan'
-            - 'dynamodb:Query'
-            - 'dynamodb:UpdateItem'
-            - 'dynamodb:DescribeTimeToLive'
-          Resource: !Ref indexTable
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: d65053f9-8fa4-4018-940e-05e56bcbc8fd
-  workS3:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: workS3
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: 's3:*'
-            Resource: !Join
-              - ', '
-              - - !Ref leechBucket
-                - !Ref leechLogBucket
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 3cd965b5-6bce-4792-b3d9-1f2c4be1dae6
-  sendSesEmail:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: sendSesEmail
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Resource: "*"
-            Action:
-              - 'ses:ListTemplates'
-              - 'ses:ListCustomVerificationEmailTemplates'
-              - 'ses:VerifyEmailIdentity'
-              - 'ses:GetIdentityPolicies'
-              - 'ses:GetSendQuota'
-              - 'ses:DescribeConfigurationSet'
-              - 'ses:ListReceiptFilters'
-              - 'ses:GetIdentityMailFromDomainAttributes'
-              - 'ses:VerifyDomainDkim'
-              - 'ses:VerifyDomainIdentity'
-              - 'ses:SendEmail'
-              - 'ses:ListConfigurationSets'
-              - 'ses:SendTemplatedEmail'
-              - 'ses:SendCustomVerificationEmail'
-              - 'ses:GetIdentityDkimAttributes'
-              - 'ses:UpdateTemplate'
-              - 'ses:DescribeReceiptRuleSet'
-              - 'ses:ListReceiptRuleSets'
-              - 'ses:GetTemplate'
-              - 'ses:ListIdentities'
-              - 'ses:VerifyEmailAddress'
-              - 'ses:GetCustomVerificationEmailTemplate'
-              - 'ses:SendRawEmail'
-              - 'ses:GetSendStatistics'
-              - 'ses:SendBounce'
-              - 'ses:GetIdentityVerificationAttributes'
-              - 'ses:GetIdentityNotificationAttributes'
-              - 'ses:ListIdentityPolicies'
-              - 'ses:DescribeReceiptRule'
-              - 'ses:DescribeActiveReceiptRuleSet'
-              - 'ses:GetAccountSendingEnabled'
-              - 'ses:SendBulkTemplatedEmail'
-              - 'ses:ListVerifiedEmailAddresses'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 9ed57ab8-3b9f-4a90-b69e-f9585f299673
-  workParameterStore:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: workParameterStore
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - 'ssm:GetParameter'
-              - 'ssm:PutParameter'
-              - 'ssm:GetParameterHistory'
-              - 'ssm:DeleteParameter'
-            Resource: '*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: adde90b8-3f78-42aa-b5b4-1b73ebfb7339
-  writeXray:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: writeXray
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action:
-              - 'xray:PutTraceSegments'
-              - 'xray:PutTelemetryRecords'
-              - 'xray:GetSamplingRules'
-              - 'xray:GetSamplingTargets'
-              - 'xray:GetSamplingStatisticSummaries'
-            Resource: '*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 0290bfe2-6c1b-4aa8-b508-2904fbe67d7d
-  workLogs:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: workLogs
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Resource: '*'
-            Action:
-              - 'logs:*'
-      Roles:
-        - !Ref worker
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: a5668090-bc9a-4956-9c15-5db0a855b235
-
-  leechBucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Ref leechBucketName
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: 'aws:kms'
-      LoggingConfiguration:
-        DestinationBucketName: !GetAtt leechLogBucket.DomainName
-        LogFilePrefix: s3_logs
-      LifecycleConfiguration:
-        Rules:
-          -
-            Id: expire_cache
-            Status: Enabled
-            Prefix: cache
-            NoncurrentVersionExpirationInDays: 2
-            ExpirationInDays: 2
-      VersioningConfiguration:
-        Status: Enabled
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 4e7f7174-226a-4f80-ad85-86535d3ffceb
-  leechLogBucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: !Join
-        - '-'
-        - - !Ref leechBucketName
-          - logs
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: 'aws:kms'
-      VersioningConfiguration:
-        Status: Enabled
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: e5db2f4a-844f-4381-965e-11e1a397c187
-  sensitivesTable:
-    Type: 'AWS::DynamoDB::Table'
-    Properties:
-      TableName: Sensitives
-      AttributeDefinitions:
-        - AttributeName: insensitive
-          AttributeType: S
-      KeySchema:
-        - AttributeName: insensitive
-          KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
-      SSESpecification:
-        SSEEnabled: true
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 14c7ed9a-8efa-4b0c-8d83-1342c5f8c3eb
-  indexTable:
-    Type: 'AWS::DynamoDB::Table'
-    Properties:
-      TableName: leech_indexes
-      AttributeDefinitions:
-        - AttributeName: identifier_stem
-          AttributeType: S
-        - AttributeName: sid_value
-          AttributeType: S
-        - AttributeName: internal_id
-          AttributeType: S
-        - AttributeName: fungal_stem
-          AttributeType: S
-        - AttributeName: numeric_id_value
-          AttributeType: 'N'
-      KeySchema:
-        - AttributeName: identifier_stem
-          KeyType: HASH
-        - AttributeName: sid_value
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        - IndexName: internal_id_index
-          KeySchema:
-            - AttributeName: internal_id
-              KeyType: HASH
-            - AttributeName: identifier_stem
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: fungal_index
-          KeySchema:
-            - AttributeName: fungal_stem
-              KeyType: HASH
-            - AttributeName: numeric_id_value
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: identifier_stem_index
-          KeySchema:
-            - AttributeName: identifier_stem
-              KeyType: HASH
-            - AttributeName: numeric_id_value
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      BillingMode: PAY_PER_REQUEST
-      SSESpecification:
-        SSEEnabled: true
-    Metadata:
-      'AWS::CloudFormation::Designer':
-        id: 0b5b2eea-7e9d-454c-94d4-f394c6e71b88
+      Parameters:
+        WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
+        LambdaSgId: !GetAtt VpcStack.Outputs.LambdaSgId
+        FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
+        SecondSubnetId: !GetAtt VpcStack.Outputs.SecondSubnetId
+        ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
+      TemplateURL: templates/lambda.yml
+  GqlStack:
+    Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          GqlApiName: !Ref GqlApiName
+          WorkerRoleArn: !GetAtt IamStack.Outputs.WorkerRoleArn
+          AphidLambdaArn: !GetAtt LambdaStack.Outputs.AphidLambdaArn
+          StarterLambdaArn: GetAtt LambdaStack.Outputs.StarterLambdaArn
+          SensitivesTableName: !Ref SenstivesTableName
+          SensitivesTableRegion: !Ref "AWS::Region"
+        TemplateURL: templates/gql.yml
 Metadata:
   'AWS::CloudFormation::Designer':
     0b5b2eea-7e9d-454c-94d4-f394c6e71b88:

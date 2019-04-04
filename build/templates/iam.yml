@@ -1,0 +1,396 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  IndexTableArn:
+    Type: String
+    Description: the ARN of the dynamo table acting as the index manager
+  SensitivesTableArn:
+    Type: String
+    Description: the ARN of the dynamo table used to store PHI
+  LeechLogBucketArn:
+    Type: String
+    Description: the ARN of the S3 bucket that will hold the logs for the leech
+  LeechBucketArn:
+    Type: String
+    Description: the ARN of the S3 bucket that will be used by the leech
+Resources:
+  worker:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: worker
+        AssumeRolePolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - appsync.amazonaws.com
+                  - events.amazonaws.com
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+      Metadata:
+        'AWS::CloudFormation::Designer':
+          id: b44fc2c1-ab36-4257-9462-e28fc198c8a4
+  workGraph:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workGraph
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 'neptune-db:*'
+            Resource: '*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a0906c04-fe82-43cd-8fd2-e33640f6c60e
+  queryGql:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: queryGql
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'appsync:ListDataSources'
+              - 'appsync:ListFunctions'
+              - 'appsync:GetDataSource'
+              - 'appsync:ListApiKeys'
+              - 'appsync:GetSchemaCreationStatus'
+              - 'appsync:GetFunction'
+              - 'appsync:GetResolver'
+              - 'appsync:ListGraphqlApis'
+              - 'appsync:GetGraphqlApi'
+              - 'appsync:ListTypes'
+              - 'appsync:GetIntrospectionSchema'
+              - 'appsync:GraphQL'
+              - 'appsync:ListResolvers'
+              - 'appsync:GetType'
+            Resource: '*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: f3e15ed0-c92d-4a19-a62d-b94f968d9f6a
+  accessVpc:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: accessVpc
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:DescribeNetworkInterfaces'
+              - 'ec2:DeleteNetworkInterface'
+            Effect: Allow
+            Resource: "*"
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0f90e117-5e72-4d1f-a571-bcbe3a52c37e
+  workSensitives:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workSenstives
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'dynamodb:BatchGetItem'
+              - 'dynamodb:BatchWriteItem'
+              - 'dynamodb:ListGlobalTables'
+              - 'dynamodb:PutItem'
+              - 'dynamodb:ListTables'
+              - 'dynamodb:DescribeTable'
+              - 'dynamodb:ListBackups'
+              - 'dynamodb:GetItem'
+              - 'dynamodb:Scan'
+              - 'dynamodb:Query'
+              - 'dynamodb:UpdateItem'
+              - 'dynamodb:DescribeTimeToLive'
+            Resource: !Ref SensitivesTableArn
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 877ab62e-4136-449e-9f46-de8409fb3a7a
+  workSwf:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workSwf
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: "*"
+            Action:
+              - 'swf:CountPendingActivityTasks'
+              - 'swf:RespondActivityTaskCanceled'
+              - 'swf:RequestCancelWorkflowExecution'
+              - 'swf:SignalExternalWorkflowExecution'
+              - 'swf:RespondDecisionTaskCompleted'
+              - 'swf:CountClosedWorkflowExecutions'
+              - 'swf:RespondActivityTaskFailed'
+              - 'swf:StartWorkflowExecution'
+              - 'swf:PollForDecisionTask'
+              - 'swf:FailWorkflowExecution'
+              - 'swf:RequestCancelExternalWorkflowExecution'
+              - 'swf:RequestCancelActivityTask'
+              - 'swf:ListOpenWorkflowExecutions'
+              - 'swf:StartTimer'
+              - 'swf:DescribeDomain'
+              - 'swf:RecordActivityTaskHeartbeat'
+              - 'swf:SignalWorkflowExecution'
+              - 'swf:ContinueAsNewWorkflowExecution'
+              - 'swf:RespondActivityTaskCompleted'
+              - 'swf:TerminateWorkflowExecution'
+              - 'swf:DescribeActivityType'
+              - 'swf:PollForActivityTask'
+              - 'swf:ListActivityTypes'
+              - 'swf:CancelWorkflowExecution'
+              - 'swf:StartChildWorkflowExecution'
+              - 'swf:CompleteWorkflowExecution'
+              - 'swf:DescribeWorkflowType'
+              - 'swf:CancelTimer'
+              - 'swf:RecordMarker'
+              - 'swf:ListWorkflowTypes'
+              - 'swf:GetWorkflowExecutionHistory'
+              - 'swf:CountOpenWorkflowExecutions'
+              - 'swf:ScheduleActivityTask'
+              - 'swf:CountPendingDecisionTasks'
+              - 'swf:DescribeWorkflowExecution'
+              - 'swf:ListDomains'
+              - 'swf:ListClosedWorkflowExecutions'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: afe684b7-95eb-448c-bdcf-938bbd88b60c
+  invokeLambda:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: invokeLambda
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'lambda:InvokeFunction'
+            Resource: '*'
+            Effect: Allow
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e66672b8-1ef3-4766-800d-c165c38b0cc4
+  passRole:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: passRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 'iam:PassRole'
+            Resource: '*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0c7e5b36-d381-417d-bc6c-2d7c165bc363
+  readSecrets:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: readSecrets
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 'secretsmanager:GetSecretValue'
+            Resource: '*'
+            Effect: Allow
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ac060457-fddd-4e0d-aecc-8e482255db82
+  workStateMachine:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: readSecrets
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+              - 'states:DescribeStateMachineForExecution'
+              - 'states:ListStateMachines'
+              - 'states:DescribeStateMachine'
+              - 'states:DescribeExecution'
+              - 'states:ListExecutions'
+              - 'states:GetExecutionHistory'
+              - 'states:StartExecution'
+              - 'states:StopExecution'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: cf058dc5-cb5e-4125-a30d-237405143e58
+  workDynamo:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      Version: 2012-10-17
+      Statement:
+        - Effect: Allow
+          Action:
+            - 'dynamodb:BatchGetItem'
+            - 'dynamodb:BatchWriteItem'
+            - 'dynamodb:ListGlobalTables'
+            - 'dynamodb:PutItem'
+            - 'dynamodb:ListTables'
+            - 'dynamodb:DescribeTable'
+            - 'dynamodb:ListBackups'
+            - 'dynamodb:GetItem'
+            - 'dynamodb:Scan'
+            - 'dynamodb:Query'
+            - 'dynamodb:UpdateItem'
+            - 'dynamodb:DescribeTimeToLive'
+          Resource: !Ref IndexTableArn
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: d65053f9-8fa4-4018-940e-05e56bcbc8fd
+  workS3:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workS3
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:*'
+            Resource: !Join
+              - ', '
+              - - !Ref LeechBucketArn
+                - !Ref LeechLogBucketArn
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 3cd965b5-6bce-4792-b3d9-1f2c4be1dae6
+  sendSesEmail:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: sendSesEmail
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: "*"
+            Action:
+              - 'ses:ListTemplates'
+              - 'ses:ListCustomVerificationEmailTemplates'
+              - 'ses:VerifyEmailIdentity'
+              - 'ses:GetIdentityPolicies'
+              - 'ses:GetSendQuota'
+              - 'ses:DescribeConfigurationSet'
+              - 'ses:ListReceiptFilters'
+              - 'ses:GetIdentityMailFromDomainAttributes'
+              - 'ses:VerifyDomainDkim'
+              - 'ses:VerifyDomainIdentity'
+              - 'ses:SendEmail'
+              - 'ses:ListConfigurationSets'
+              - 'ses:SendTemplatedEmail'
+              - 'ses:SendCustomVerificationEmail'
+              - 'ses:GetIdentityDkimAttributes'
+              - 'ses:UpdateTemplate'
+              - 'ses:DescribeReceiptRuleSet'
+              - 'ses:ListReceiptRuleSets'
+              - 'ses:GetTemplate'
+              - 'ses:ListIdentities'
+              - 'ses:VerifyEmailAddress'
+              - 'ses:GetCustomVerificationEmailTemplate'
+              - 'ses:SendRawEmail'
+              - 'ses:GetSendStatistics'
+              - 'ses:SendBounce'
+              - 'ses:GetIdentityVerificationAttributes'
+              - 'ses:GetIdentityNotificationAttributes'
+              - 'ses:ListIdentityPolicies'
+              - 'ses:DescribeReceiptRule'
+              - 'ses:DescribeActiveReceiptRuleSet'
+              - 'ses:GetAccountSendingEnabled'
+              - 'ses:SendBulkTemplatedEmail'
+              - 'ses:ListVerifiedEmailAddresses'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 9ed57ab8-3b9f-4a90-b69e-f9585f299673
+  workParameterStore:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workParameterStore
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameter'
+              - 'ssm:PutParameter'
+              - 'ssm:GetParameterHistory'
+              - 'ssm:DeleteParameter'
+            Resource: '*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: adde90b8-3f78-42aa-b5b4-1b73ebfb7339
+  writeXray:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: writeXray
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'xray:PutTraceSegments'
+              - 'xray:PutTelemetryRecords'
+              - 'xray:GetSamplingRules'
+              - 'xray:GetSamplingTargets'
+              - 'xray:GetSamplingStatisticSummaries'
+            Resource: '*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0290bfe2-6c1b-4aa8-b508-2904fbe67d7d
+  workLogs:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: workLogs
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Resource: '*'
+            Action:
+              - 'logs:*'
+      Roles:
+        - !Ref worker
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: a5668090-bc9a-4956-9c15-5db0a855b235
+Outputs:
+  WorkerRoleArn:
+    Description: the ARN of the generated worker IAM role
+    Value: !GetAtt worker.Arn
