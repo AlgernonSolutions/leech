@@ -149,9 +149,9 @@ Resources:
           Ref: LambdaSg
         SubnetIds: !Join
           - ', '
-          - - !GetAtt VpcStack.FirstSubnetId
-            - !GetAtt VpcStack.SecondSubnetId
-            - !GetAtt VpcStack.ThirdSubnetId
+          - - !GetAtt VpcStack.Outputs.FirstSubnetId
+            - !GetAtt VpcStack.Outputs.SecondSubnetId
+            - !GetAtt VpcStack.Outputs.ThirdSubnetId
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 12616994-028b-4f97-87fa-e1ce7bde6087
@@ -594,7 +594,7 @@ Resources:
     Properties:
       GroupName: LambdaSg
       GroupDescription: security group allowing lambda functions access to VPC resources
-      VpcId: !GetAtt VpcStack.VpcId
+      VpcId: !GetAtt VpcStack.Outputs.VpcId
       SecurityGroupIngress:
         - IpProtocol: -1
           FromPort: -1
