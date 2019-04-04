@@ -27,7 +27,7 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.6
-    CodeUri: ../toll_booth
+    CodeUri: ../../toll_booth
     Layers:
       - !Ref LeechLayer
     Tracing: Active
@@ -42,7 +42,7 @@ Resources:
     Properties:
       LayerName: leechLayer
       Description: compiled dependencies for the leech
-      ContentUri: lib/layer.zip
+      ContentUri: ../lib/layer.zip
       RetentionPolicy: Retain
   Work:
     Type: 'AWS::Serverless::Function'
