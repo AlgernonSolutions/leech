@@ -72,20 +72,18 @@ Resources:
         - "-"
         - - !Ref GraphClusterName
           - subnet-group
-      SubnetIds: !Join
-        - ', '
-        - - !Ref FirstSubnetId
-          - !Ref SecondSubnetId
-          - !Ref ThirdSubnetId
+      SubnetIds:
+        - !Ref FirstSubnetId
+        - !Ref SecondSubnetId
+        - !Ref ThirdSubnetId
   GraphCluster:
     Type: "AWS::Neptune::DBCluster"
     DeletionPolicy: Snapshot
     Properties:
-      AvailabilityZones: !Join
-        - ", "
-        - - !Ref FirstSubnetAZ
-          - !Ref SecondSubnetAZ
-          - !Ref ThirdSubnetAZ
+      AvailabilityZones:
+        - !Ref FirstSubnetAZ
+        - !Ref SecondSubnetAZ
+        - !Ref ThirdSubnetAZ
       BackupRetentionPeriod: 15
       DBClusterIdentifier: !Ref GraphClusterName
       DBClusterParameterGroupName: !Ref GraphClusterParameterGroup
