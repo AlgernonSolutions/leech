@@ -46,8 +46,14 @@ Resources:
     Properties:
       Description: default cluster parameter group for the leech graph layer
       Parameters:
-        neptune_enable_audit_log: 1
-        neptune_query_timeout: 600000
+        -
+          ParameterName: neptune_enable_audit_log
+          ParameterValue: 1
+          Datatype: boolean
+        -
+          ParameterName: neptune_query_timeout
+          ParameterValue: 600000
+          Datatype: integer
       Family: neptune1
       Name: !Join
         - "-"
@@ -57,6 +63,11 @@ Resources:
     Type: "AWS::Neptune::DBParameterGroup"
     Properties:
       Description: default db parameter group for the leech graph layer
+      Parameters:
+        -
+          ParameterName: neptune_query_timeout
+          ParameterValue: 600000
+          Datatype: integer
       Family: neptune1
       Name: !Join
         - "-"
