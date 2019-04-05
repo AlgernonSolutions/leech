@@ -35,6 +35,10 @@ Resources:
       Properties:
         VpcId: !Ref Vpc
         CidrBlock: !Ref FirstSubnetCidr
+        AvailabilityZone: !Join
+          - ""
+          - - !Ref "AWS::Region"
+            - "a"
       Metadata:
         'AWS::CloudFormation::Designer':
           id: e94f82fc-27a5-4f3f-9c8c-9928247992fa
@@ -43,6 +47,10 @@ Resources:
       Properties:
         VpcId: !Ref Vpc
         CidrBlock: !Ref SecondSubnetCidr
+        AvailabilityZone: !Join
+          - ""
+          - - !Ref "AWS::Region"
+            - "b"
       Metadata:
         'AWS::CloudFormation::Designer':
           id: 9fc65d22-2218-4ef3-b93b-6607326e5553
@@ -51,6 +59,10 @@ Resources:
       Properties:
         VpcId: !Ref Vpc
         CidrBlock: !Ref ThirdSubnetCidr
+        AvailabilityZone: !Join
+          - ""
+          - - !Ref "AWS::Region"
+            - "c"
       Metadata:
         'AWS::CloudFormation::Designer':
           id: ccda3246-4d55-4c4e-a19e-fe933db6e970
