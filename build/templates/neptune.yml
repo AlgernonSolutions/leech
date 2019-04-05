@@ -96,7 +96,7 @@ Resources:
     Properties:
       AllowMajorVersionUpgrade: true
       AutoMinorVersionUpgrade: true
-      DBClusterIdentifier: !GetAtt GraphCluster.ClusterResourceId
+      DBClusterIdentifier: !Ref GraphCluster
       DBInstanceClass: !Ref GraphInstanceType
       DBInstanceIdentifier: !Join
         - "-"
