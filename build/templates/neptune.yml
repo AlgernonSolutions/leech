@@ -57,8 +57,6 @@ Resources:
     Type: "AWS::Neptune::DBParameterGroup"
     Properties:
       Description: default db parameter group for the leech graph layer
-      Parameters:
-        neptune_query_timeout: 600000
       Family: neptune1
       Name: !Join
         - "-"
