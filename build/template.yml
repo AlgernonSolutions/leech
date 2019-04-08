@@ -113,6 +113,8 @@ Resources:
         FirstSubnetId: !GetAtt VpcStack.Outputs.FirstSubnetId
         SecondSubnetId: !GetAtt VpcStack.Outputs.SecondSubnetId
         ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
+        GraphEndpoint: !GetAtt NeptuneStack.Outputs.GraphEndpoint
+        GraphReadEndpoint: !GetAtt NeptuneStack.Outputs.GraphReadEndpoint
       TemplateURL: templates/lambda.yml
   GqlStack:
     Type: AWS::CloudFormation::Stack

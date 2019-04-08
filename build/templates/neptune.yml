@@ -107,3 +107,10 @@ Resources:
           - instance-1
       DBParameterGroupName: !Ref GraphDbParameterGroup
       DBSubnetGroupName: !Ref GraphSubnetGroup
+Outputs:
+  GraphEndpoint:
+    Description: The read/write endpoint for the graph database
+    Value: !GetAtt GraphCluster.Endpoint
+  GraphReadEndpoint:
+    Description: The read only endpoint for the graph database
+    Value: !GetAtt GraphCluster.ReadEndpoint
