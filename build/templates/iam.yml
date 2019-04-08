@@ -250,23 +250,25 @@ Resources:
   workDynamo:
     Type: 'AWS::IAM::Policy'
     Properties:
-      Version: 2012-10-17
-      Statement:
-        - Effect: Allow
-          Action:
-            - 'dynamodb:BatchGetItem'
-            - 'dynamodb:BatchWriteItem'
-            - 'dynamodb:ListGlobalTables'
-            - 'dynamodb:PutItem'
-            - 'dynamodb:ListTables'
-            - 'dynamodb:DescribeTable'
-            - 'dynamodb:ListBackups'
-            - 'dynamodb:GetItem'
-            - 'dynamodb:Scan'
-            - 'dynamodb:Query'
-            - 'dynamodb:UpdateItem'
-            - 'dynamodb:DescribeTimeToLive'
-          Resource: !Ref IndexTableArn
+      PolicyName: workDynamo
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'dynamodb:BatchGetItem'
+              - 'dynamodb:BatchWriteItem'
+              - 'dynamodb:ListGlobalTables'
+              - 'dynamodb:PutItem'
+              - 'dynamodb:ListTables'
+              - 'dynamodb:DescribeTable'
+              - 'dynamodb:ListBackups'
+              - 'dynamodb:GetItem'
+              - 'dynamodb:Scan'
+              - 'dynamodb:Query'
+              - 'dynamodb:UpdateItem'
+              - 'dynamodb:DescribeTimeToLive'
+            Resource: !Ref IndexTableArn
       Roles:
         - !Ref worker
     Metadata:
