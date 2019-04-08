@@ -77,7 +77,7 @@ Resources:
         - !Ref ThirdSubnetId
   GraphCluster:
     Type: "AWS::Neptune::DBCluster"
-    DeletionPolicy: Snapshot
+
     Properties:
       AvailabilityZones:
         - !Ref FirstSubnetAZ
