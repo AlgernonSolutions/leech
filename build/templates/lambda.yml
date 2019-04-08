@@ -145,12 +145,11 @@ Resources:
       MemorySize: 448
       VpcConfig:
         SecurityGroupIds:
-          !Ref LambdaSgId
-        SubnetIds: !Join
-          - ', '
-          - - !Ref FirstSubnetId
-            - !Ref SecondSubnetId
-            - !Ref ThirdSubnetId
+          - !Ref LambdaSgId
+        SubnetIds:
+          - !Ref FirstSubnetId
+          - !Ref SecondSubnetId
+          - !Ref ThirdSubnetId
     Metadata:
       'AWS::CloudFormation::Designer':
         id: 12616994-028b-4f97-87fa-e1ce7bde6087
@@ -162,12 +161,11 @@ Resources:
       Role: !Ref WorkerRoleArn
       VpcConfig:
         SecurityGroupIds:
-          !Ref LambdaSgId
-        SubnetIds: !Join
-          - ', '
-          - - !Ref FirstSubnetId
-            - !Ref SecondSubnetId
-            - !Ref ThirdSubnetId
+          - !Ref LambdaSgId
+        SubnetIds:
+          - !Ref FirstSubnetId
+          - !Ref SecondSubnetId
+          - !Ref ThirdSubnetId
       Timeout: 300
       MemorySize: 448
     Metadata:

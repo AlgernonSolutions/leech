@@ -1,0 +1,754 @@
+{
+  "vertex": [
+    {
+      "vertex_name": "Provider",
+      "vertex_properties": [
+        {
+          "property_name": "provider_id",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "provider_class",
+          "property_data_type": "String"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "provider_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [
+              {
+                "edge_type": "_provided_",
+                "target_type": "Encounter",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "provided",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "provider_id"
+                    ]
+                  }
+                ],
+                "if_absent": "pass",
+                "target_constants": []
+              }
+            ],
+            "inbound": []
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
+          }
+        }
+      ]
+    },
+    {
+      "vertex_name": "Patient",
+      "vertex_properties": [
+        {
+          "property_name": "patient_id",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "patient_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [],
+            "inbound": [
+              {
+                "edge_type": "_received_",
+                "target_type": "Encounter",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "received",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "patient_id"
+                    ]
+                  }
+                ],
+                "if_absent": "pass",
+                "target_constants": []
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
+          }
+        }
+      ]
+    },
+    {
+      "vertex_name": "Encounter",
+      "vertex_properties": [
+        {
+          "property_name": "encounter_id",
+          "property_data_type": "Number",
+          "is_id_value": true
+        },
+        {
+          "property_name": "provider_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "patient_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "encounter_type",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "encounter_start_time",
+          "property_data_type": "DateTime"
+        },
+        {
+          "property_name": "encounter_end_time",
+          "property_data_type": "DateTime"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "encounter_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [
+              {
+                "edge_type": "_received_",
+                "target_type": "Patient",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "received",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "patient_id"
+                    ]
+                  }
+                ],
+                "if_absent": "stub",
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "patient_id",
+                    "constant_value": "source.patient_id"
+                  }
+                ]
+              },
+              {
+                "edge_type": "_documentation_",
+                "target_type": "Documentation",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "documentation",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "documentation_id"
+                    ]
+                  }
+                ],
+                "if_absent": "stub",
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "encounter_id",
+                    "constant_value": "source.encounter_id"
+                  }
+                ]
+              }
+            ],
+            "inbound": [
+               {
+                "edge_type": "_provided_",
+                "target_type": "Provider",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "provided",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "provider_id"
+                    ]
+                  }
+                ],
+                "if_absent": "stub",
+                "target_constants": [
+                  {
+                    "constant_name": "id_source",
+                    "constant_value": "source.id_source"
+                  },
+                  {
+                    "constant_name": "provider_id",
+                    "constant_value": "source.provider_id"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
+          }
+        }
+      ]
+    },
+    {
+      "vertex_name": "Documentation",
+      "vertex_properties": [
+        {
+          "property_name": "documentation_id",
+          "property_data_type": "String",
+          "is_id_value": true
+        },
+        {
+          "property_name": "encounter_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "documentation_version",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "documentation_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [
+              {
+                "edge_type": "_documentation_",
+                "target_type": "DocumentationEntry",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "documentation_entry",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "documentation_id"
+                    ]
+                  }
+                ],
+                "if_absent": "pass",
+                "target_constants": []
+              }
+            ],
+            "inbound": [
+              {
+                "edge_type": "_documentation_entry_",
+                "target_type": "DocumentationEntry",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "documentation_entry",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "encounter_id",
+                      "documentation_id"
+                    ]
+                  }
+                ],
+                "if_absent": "pass",
+                "target_constants": []
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
+          }
+        }
+      ]
+    },
+    {
+      "vertex_name": "DocumentationEntry",
+      "vertex_properties": [
+        {
+          "property_name": "documentation_entry_id",
+          "property_data_type": "String",
+          "is_id_value": true
+        },
+        {
+          "property_name": "documentation_id",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "encounter_id",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "entry_name",
+          "property_data_type": "Number"
+        },
+        {
+          "property_name": "id_source",
+          "property_data_type": "String"
+        },
+        {
+          "property_name": "entry_value",
+          "property_data_type": "String"
+        }
+      ],
+      "internal_id_key": [
+        "id_source",
+        "object_type",
+        "documentation_id"
+      ],
+      "identifier_stem": [
+        "id_source",
+        "object_type"
+      ],
+      "indexes": [],
+      "rules": {
+        "linking_rules": [
+          {
+            "vertex_specifiers": [],
+            "outbound": [],
+            "inbound": [
+              {
+                "edge_type": "_documentation_entry_",
+                "target_type": "Documentation",
+                "target_specifiers": [
+                  {
+                    "specifier_name": "documentation_entry",
+                    "specifier_type": "shared_property",
+                    "shared_properties": [
+                      "id_source",
+                      "encounter_id",
+                      "documentation_id"
+                    ]
+                  }
+                ],
+                "if_absent": "pass",
+                "target_constants": []
+              }
+            ]
+          }
+        ]
+      },
+      "extract": [
+        {
+          "extraction_source": "CredibleFrontEndExtractor",
+          "extraction_properties": {
+            "driving_vertex": null,
+            "mapping":  {"$ref": "#/commons/mapping"}
+          }
+        }
+      ]
+    }
+  ],
+  "edge": [
+    {
+      "edge_label": "_provided_",
+      "from": ["Provider"],
+      "to": ["Encounter"],
+      "edge_properties": [],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_received_",
+      "from": ["Encounter"],
+      "to": ["Patient"],
+      "edge_properties": [],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_documentation_",
+      "from": ["Encounter"],
+      "to": ["Documentation"],
+      "edge_properties": [],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id"
+      ],
+      "indexes": []
+    },
+    {
+      "edge_label": "_documentation_entry_",
+      "from": ["Documentation"],
+      "to": ["DocumentationEntry"],
+      "edge_properties": [],
+      "internal_id_key": [
+        "from.internal_id",
+        "schema.edge_label",
+        "to.internal_id"
+      ],
+      "indexes": []
+    }
+  ],
+  "commons": {
+    "mapping": {
+      "DCDBH": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer ID": {
+            "name": "client_id",
+            "mutation": null
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "ChangeLog": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer ID": {
+            "name": "client_id",
+            "mutation": null
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        }
+      },
+      "MBI": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer ID": {
+            "name": "client_id",
+            "mutation": null
+          },
+          "Done By": {
+            "name": "done_by",
+            "mutation": null
+          }
+        }
+      },
+      "default": {
+        "ExternalId": {
+          "Employees": {
+            "internal_name": "Employee ID",
+            "alg_name": "emp_id"
+          },
+          "Clients": {
+            "internal_name": "Client ID",
+            "alg_name": "client_id"
+          }
+        },
+        "Clients": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Client Name": {
+            "name": "client_id",
+            "mutation": "get_client_id"
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        },
+        "Employees": {
+          "Date": {
+            "name": "change_date",
+            "mutation": null
+          },
+          "UTCDate": {
+            "name": "change_date_utc",
+            "mutation": null
+          },
+          "Description": {
+            "name": "change_description",
+            "mutation": null
+          },
+          "Action": {
+            "name": "action",
+            "mutation": null
+          },
+          "Service ID": {
+            "name": "clientvisit_id",
+            "mutation": null
+          },
+          "Record": {
+            "name": "record",
+            "mutation": "split_record_id"
+          },
+          "Consumer ID": {
+            "name": "client_id",
+            "mutation": null
+          },
+          "User": {
+            "name": "emp_id",
+            "mutation": null
+          }
+        }
+      }
+    }
+  }
+}

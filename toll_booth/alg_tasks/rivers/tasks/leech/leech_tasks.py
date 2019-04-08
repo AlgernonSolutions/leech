@@ -2,7 +2,6 @@ import logging
 
 from aws_xray_sdk.core import xray_recorder
 
-
 from toll_booth.alg_tasks.rivers.rocks import task
 
 
@@ -16,6 +15,16 @@ def pull_schema_entry(**kwargs):
     schema = Schema.retrieve(**kwargs)
     schema_entry = schema[identifier_stem.object_type]
     return {'schema_entry': schema_entry, 'schema': schema}
+
+
+@xray_recorder.capture('fip_extract')
+@task('fip_extract')
+def fip_extract(**kwargs):
+    from toll_booth.alg_tasks.rivers.tasks.leech.extractors import FipExtractors
+
+    fip_extractor = FipExtractors.get_fip_extractor(**kwargs)
+    extracted_data = fip_extractor(**kwargs)
+    return {'fip_extract': extracted_data}
 
 
 @xray_recorder.capture('transform')

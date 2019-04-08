@@ -20,16 +20,15 @@ class SchemaSnek:
     def get_validation_schema(self, schema_name=None):
         if not schema_name:
             schema_name = 'master_schema.json'
-        return self.get_schema(schema_name)
+        return self.get_schema(schema_name=schema_name)
 
     def put_validation_schema(self, file_path, master_schema_name=None):
         if not master_schema_name:
             master_schema_name = 'master_schema.json'
         return self.put_schema(file_path, master_schema_name)
 
-    def get_schema(self, schema_name=None):
-        if not schema_name:
-            schema_name = 'schema.json'
+    def get_schema(self, **kwargs):
+        schema_name = kwargs.get('schema_name', 'schema.json')
         s3 = boto3.resource('s3')
         object_key = f'{self._folder_name}/{schema_name}'
         stored_object = s3.Object(self._bucket_name, object_key).get()
