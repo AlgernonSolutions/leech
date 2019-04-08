@@ -84,7 +84,10 @@ Resources:
         - !Ref SecondSubnetAZ
         - !Ref ThirdSubnetAZ
       BackupRetentionPeriod: 15
-      DBClusterIdentifier: !Ref GraphClusterName
+      DBClusterIdentifier: !Join
+        - "-"
+        - - !Ref GraphClusterName
+          - cluster
       DBClusterParameterGroupName: !Ref GraphClusterParameterGroup
       DBSubnetGroupName: !Ref GraphSubnetGroup
       IamAuthEnabled: true
