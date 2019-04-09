@@ -43,9 +43,9 @@ Resources:
         LambdaFunctionArn: !Ref StarterLambdaArn
       ApiId: !GetAtt LeechApi.ApiId
       Name: !Join
-        - "-"
+        - "_"
         - - !Ref GqlApiName
-          - datasource-starter
+          - datasource_starter
   GraphDataSource:
     Type: "AWS::AppSync::DataSource"
     Properties:
@@ -56,9 +56,9 @@ Resources:
         LambdaFunctionArn: !Ref AphidLambdaArn
       ApiId: !GetAtt LeechApi.ApiId
       Name: !Join
-        - "-"
+        - "_"
         - - !Ref GqlApiName
-          - datasource-graph
+          - datasource_graph
   SensitivesDataSource:
     Type: "AWS::AppSync::DataSource"
     Properties:

@@ -11,10 +11,6 @@
         {
           "property_name": "id_source",
           "property_data_type": "String"
-        },
-        {
-          "property_name": "provider_class",
-          "property_data_type": "String"
         }
       ],
       "internal_id_key": [
@@ -364,7 +360,7 @@
         },
         {
           "property_name": "entry_name",
-          "property_data_type": "Number"
+          "property_data_type": "String"
         },
         {
           "property_name": "id_source",
@@ -372,7 +368,8 @@
         },
         {
           "property_name": "entry_value",
-          "property_data_type": "String"
+          "property_data_type": "String",
+          "sensitive": true
         }
       ],
       "internal_id_key": [

@@ -1,21 +1,13 @@
-"""
-    the master flow for the weird bit of getting information out of a FIP ICAMS domain,
-    this flow works by vertex driven growth,
-    under this process, we are unable to access the unique identifiers of the object of interest,
-    so we instead access them through an object we can get unique identifiers for, creating a two step process
-"""
-
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import group, chain, ActivitySignature, LambdaSignature, \
-    SubtaskSignature
+from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, group, SubtaskSignature, chain
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
-@xray_recorder.capture('command_fungi')
-@workflow('command_fungi')
-def command_fungi(**kwargs):
+@xray_recorder.capture('work_encounter_documentation')
+@workflow('work_encounter_documentation')
+def work_encounter_documentation(**kwargs):
     execution_id = kwargs['execution_id']
     names = {
         'local': f'get_local_ids-{execution_id}',
@@ -38,7 +30,7 @@ def command_fungi(**kwargs):
     decisions.append(CompleteWork())
 
 
-@xray_recorder.capture('command_fungi_build_chain')
+@xray_recorder.capture('command_fungal_surgeon_build_chain')
 def _build_chain(names, **kwargs):
     get_local_ids = ActivitySignature(names['local'], 'get_local_ids', **kwargs)
     get_remote_ids = ActivitySignature(names['remote'], 'get_remote_ids', **kwargs)
@@ -53,7 +45,7 @@ def _build_chain(names, **kwargs):
 
 @xray_recorder.capture('command_fungi_build_group')
 def _build_group(names, task_args, **kwargs):
-    subtask_name = 'work_remote_id'
+    subtask_name = 'work_encounter'
     work_history = kwargs['work_history']
     execution_id = kwargs['execution_id']
     remote_id_values = work_history.get_result(names['remote'])

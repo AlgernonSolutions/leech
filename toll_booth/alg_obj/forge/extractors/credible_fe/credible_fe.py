@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import re
 from decimal import Decimal
@@ -22,7 +23,9 @@ _url_stems = {
     'ChangeDetail': '/common/hipaalog_details.asp',
     'Employee Advanced': '/employee/list_emps_adv.asp',
     'Global': '/admin/global_hipaalog.aspx',
-    'Encounter': '/visit/clientvisit_view.asp'
+    'Encounter': '/visit/clientvisit_view.asp',
+    'Versions': "/services/lookups_service.asmx/GetVisitDocVersions",
+    'ViewVersions': '/visit/clientvisit_documentation_version_view.aspx'
 }
 
 
@@ -520,6 +523,27 @@ class CredibleFrontEndDriver:
         if response.status_code != 200:
             raise RuntimeError(f'could not get the encounter data for {encounter_id}, response code: {response.status_code}')
         return response.text
+
+    @_login_required
+    def retrieve_client_encounter_version(self, encounter_id, version_id):
+        url = _base_stem + _url_stems['ViewVersions']
+        data = {
+            'visitdocversion_id': str(version_id),
+            'clientvisit_id': str(encounter_id)
+        }
+        response = self._session.get(url, data=data)
+        if response.status_code != 200:
+            raise RuntimeError(
+                f'could not get the encounter data for {encounter_id}, response code: {response.status_code}')
+        return response.text
+
+    @_login_required
+    def retrieve_documentation_versions(self, encounter_id):
+        url = _base_stem + _url_stems['Versions']
+        response = self._session.post(url, data={'clientvisit_id': encounter_id})
+        if response.status_code != 200:
+            raise RuntimeError(f'could not get the version data for {encounter_id}, response code: {response.status_code}')
+        return json.loads(response.text)['data']
 
     @_login_required
     def set_client_case_manager(self, **kwargs):
