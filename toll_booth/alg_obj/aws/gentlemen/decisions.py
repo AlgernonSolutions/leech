@@ -145,12 +145,13 @@ class StartActivity(Decision):
     def __init__(self, activity_id, activity_name, task_args=None, **kwargs):
         running_time = kwargs.get('running_time', 300)
         heartbeat = kwargs.get('heartbeat', 'NONE')
+        task_list = kwargs.get('task_list', 'Leech')
         activity_attributes = {
             'activityType': {
                 'name': activity_name,
                 'version': kwargs.get('version', '1')
             },
-            'taskList': {'name': kwargs.get('task_list', 'Leech')},
+            'taskList': {'name': task_list},
             'activityId': activity_id,
             'startToCloseTimeout': str(running_time),
             'heartbeatTimeout': str(heartbeat)
@@ -166,6 +167,7 @@ class StartActivity(Decision):
         if 'control' in kwargs:
             activity_attributes['control'] = json.dumps(kwargs['control'], cls=AlgEncoder)
         attributes_name = 'scheduleActivityTaskDecisionAttributes'
+        self._task_list = task_list
         super().__init__('ScheduleActivityTask', activity_attributes, attributes_name)
 
     @classmethod
@@ -190,6 +192,14 @@ class StartActivity(Decision):
     @property
     def control(self):
         return self.__getitem__('control')
+
+    @property
+    def activity_id(self):
+        return self.__getitem__('activityId')
+
+    @property
+    def task_list(self):
+        return self._task_list
 
     def set_control(self, control_string):
         self._decision_attributes['control'] = control_string

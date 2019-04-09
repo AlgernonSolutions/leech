@@ -2,7 +2,9 @@ import logging
 
 import boto3
 
-from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork, Decision
+from toll_booth.alg_obj.aws.continuum.q import Q
+from toll_booth.alg_obj.aws.gentlemen.decisions import MadeDecisions, StartSubtask, RecordMarker, CompleteWork, \
+    Decision, StartActivity
 from toll_booth.alg_obj.aws.gentlemen.events.history import WorkflowHistory
 from toll_booth.alg_obj.aws.gentlemen.tasks import Versions, LeechConfig
 from toll_booth.alg_obj.aws.overseer.overseer import Overseer
@@ -107,6 +109,8 @@ def workflow(workflow_name):
                 elif isinstance(decision, CompleteWork):
                     decision.add_result('task_args', task_args)
                     _disband_ruffian(work_history, configs, versions)
+                elif isinstance(decision, StartActivity):
+                    Q.send_task_reminder(decision.task_list, decision.type_name, decision.activity_id)
                 try:
                     decision.set_id_info(work_history.flow_id, work_history.run_id)
                 except AttributeError:

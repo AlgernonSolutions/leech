@@ -71,9 +71,9 @@ Resources:
         UseCallerCredentials: true
       ApiId: !GetAtt LeechApi.ApiId
       Name: !Join
-        - "-"
+        - "_"
         - - !Ref GqlApiName
-          - datasource-sensitives
+          - datasource_sensitives
   LeechSchema:
     Type: "AWS::AppSync::GraphQLSchema"
     Properties:

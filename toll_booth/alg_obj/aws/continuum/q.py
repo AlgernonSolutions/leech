@@ -1,3 +1,4 @@
+import json
 import os
 
 import boto3
@@ -7,7 +8,7 @@ class Q:
     @classmethod
     def create_task_queue(cls, task_list_name, **kwargs):
         task_worker_function = kwargs.get('task_worker_function', os.environ['TASK_WORKER_FUNCTION'])
-        queue = cls.create_queue(task_list_name, is_fifo=True, **kwargs)
+        queue = cls.create_queue(task_list_name, is_fifo=False, **kwargs)
         queue_arn = cls.get_queue_attributes(queue.url)['QueueArn']
         cls.attach_function_to_queue(queue_arn, task_worker_function)
 
@@ -71,6 +72,18 @@ class Q:
             for entry in page['EventSourceMappings']:
                 mapping_uuid = entry['UUID']
                 client.delete_event_source_mapping(UUID=mapping_uuid)
+
+    @classmethod
+    def send_task_reminder(cls, task_list_name, task_name, task_id):
+        queue_attributes = cls.find_queue_attributes(task_list_name)
+        queue_url = queue_attributes['QueueUrl']
+        queue = boto3.resource('sqs').Queue(queue_url)
+        queue.send_message(
+            MessageBody=json.dumps({
+                'task_name': task_name,
+                'task_id': task_id
+            })
+        )
 
 
 class RedriveConfig:
