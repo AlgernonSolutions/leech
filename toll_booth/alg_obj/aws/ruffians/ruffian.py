@@ -221,6 +221,14 @@ class RuffianRoost:
                 raise e
 
     @classmethod
+    def generate_decider_ruffian(cls, domain_name, flow_id, flow_name, run_config):
+        decider_ruffian = {
+            'ruffian_id': RuffianId(domain_name, flow_id, flow_name, flow_id, is_laborer=False),
+            'run_config': run_config
+        }
+        return decider_ruffian
+
+    @classmethod
     def generate_ruffians(cls, domain_name, flow_id, flow_name, leech_config, run_config):
         decider_ruffian = {
             'ruffian_id': RuffianId(domain_name, flow_id, flow_name, flow_id, is_laborer=False),

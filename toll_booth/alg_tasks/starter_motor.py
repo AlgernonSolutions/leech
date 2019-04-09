@@ -32,7 +32,7 @@ def start_flow(*args):
     run_config = event.get('run_config', {})
     overseer = Overseer.start(domain_name, versions)
     client = boto3.client('swf')
-    ruffians = RuffianRoost.generate_ruffians(domain_name, flow_id, flow_name, config, run_config)
+    decider_ruffian = RuffianRoost.generate_decider_ruffian(domain_name, flow_id, flow_name, run_config)
     start_args = {
         'domain': domain_name,
         'workflowId': flow_id,
@@ -53,7 +53,7 @@ def start_flow(*args):
         if e.response['Error']['Code'] != 'WorkflowExecutionAlreadyStartedFault':
             raise e
         start_results['workflow'] = 'workflow already running'
-    start_results['overseer'] = overseer.signal('start_ruffian', flow_id, config, ruffians)
+    start_results['overseer'] = overseer.signal('start_ruffian', flow_id, config, [decider_ruffian])
     return start_results
 
 
