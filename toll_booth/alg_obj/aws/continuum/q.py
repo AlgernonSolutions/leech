@@ -2,6 +2,16 @@ import json
 import os
 
 import boto3
+from botocore.exceptions import ClientError
+
+
+class QueueAlreadyExistsException(Exception):
+    def __init__(self, queue_name):
+        self._queue_name = queue_name
+
+    @property
+    def queue_name(self):
+        return self._queue_name
 
 
 class Q:
@@ -25,10 +35,15 @@ class Q:
         if is_fifo is True:
             queue_name = f'{queue_name}.fifo'
             queue_attributes['FifoQueue'] = 'true'
-        queue = sqs.create_queue(
-            QueueName=queue_name,
-            Attributes=queue_attributes
-        )
+        try:
+            queue = sqs.create_queue(
+                QueueName=queue_name,
+                Attributes=queue_attributes
+            )
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'QueueAlreadyExists':
+                raise QueueAlreadyExistsException(queue_name)
+            raise e
         return queue
 
     @classmethod
@@ -75,8 +90,9 @@ class Q:
 
     @classmethod
     def send_task_reminder(cls, task_list_name, task_name, task_id):
-        queue_attributes = cls.find_queue_attributes(task_list_name)
-        queue_url = queue_attributes['QueueUrl']
+        if task_list_name != 'credible':
+            raise NotImplementedError(f'tried to send a task reminder for list_name: {task_list_name}, you have not written that bit yet')
+        queue_url = os.environ['CREDIBLE_TASKS_URL']
         queue = boto3.resource('sqs').Queue(queue_url)
         queue.send_message(
             MessageBody=json.dumps({

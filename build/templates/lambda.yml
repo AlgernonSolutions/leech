@@ -39,6 +39,9 @@ Parameters:
   FifoDeadLetterArn:
     Type: String
     Description: the ARN of the generated FIFO redrive queue
+  CredibleTasksUrl:
+    Type: String
+    Description: the url of the generated queue for Credible tasks
 Globals:
   Function:
     Runtime: python3.6
@@ -48,6 +51,7 @@ Globals:
     Tracing: Active
     Environment:
       Variables:
+        CREDIBLE_TASKS_URL: !Ref CredibleTasksUrl
         WORK_FUNCTION: leech-work
         TASK_WORKER_FUNCTION: leech-labor
         GRAPH_DB_ENDPOINT: !Ref GraphEndpoint

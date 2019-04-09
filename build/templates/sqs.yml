@@ -7,6 +7,14 @@ Parameters:
     Type: String
     Description: CodeStar projectId used to associate new resources to team members
 Resources:
+  CredibleTasks:
+    Type: AWS::SQS::Queue
+      Properties:
+        RedrivePolicy:
+          deadLetterTargetArn:
+            !GetAtt DeadLetter.Arn
+          maxReceiveCount: 15
+        KmsMasterKeyId: alias/aws/sqs
   DeadLetter:
     Type: AWS::SQS::Queue
     Properties:
@@ -18,6 +26,12 @@ Resources:
       KmsMasterKeyId: alias/aws/sqs
       MessageRetentionPeriod: 1209600
 Outputs:
+  CredibleTasksQueueUrl:
+    Description: the url of the generated queue for Credible tasks
+    Value: !Ref CredibleTasks
+  CredibleTasksQueueArn:
+    Description: the ARN of the generated queue for Credible tasks
+    Value: !GetAtt CredibleTasks.Arn
   DeadLetterQueueUrl:
     Description: the url of the generated dead letter queue
     Value: !Ref DeadLetter
