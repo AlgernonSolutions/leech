@@ -27,7 +27,7 @@ def work_patient_id(**kwargs):
     group_results = great_group(**kwargs)
     if group_results is None:
         return
-    decisions.append(CompleteWork())
+    decisions.append(CompleteWork(group_results))
 
 
 @xray_recorder.capture('work_patient_id_build_get_encounter_ids')
@@ -39,14 +39,14 @@ def _build_get_encounters(execution_id, **kwargs):
 
 @xray_recorder.capture('work_patient_id_build_group')
 def _build_group(task_args, **kwargs):
-    subtask_name = 'work_encounter_documentation'
+    subtask_name = 'work_encounter'
     execution_id = kwargs['execution_id']
     encounter_ids = task_args.get_argument_value('encounter_ids')
     work_remote_ids_signatures = []
     for remote_id_value in encounter_ids:
-        subtask_identifier = f'work_encounter_documentation-{remote_id_value}-{execution_id}'
+        subtask_identifier = f'work_encounter-{remote_id_value}-{execution_id}'
         new_task_args = task_args.replace_argument_value(subtask_name, {'id_value': remote_id_value}, remote_id_value)
-        work_remote_id_signature = SubtaskSignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
+        work_remote_id_signature = ActivitySignature(subtask_identifier, subtask_name, task_args=new_task_args, **kwargs)
         work_remote_ids_signatures.append(work_remote_id_signature)
     tuple_signatures = tuple(work_remote_ids_signatures)
     return group(*tuple_signatures)

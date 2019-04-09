@@ -119,6 +119,7 @@ Resources:
         DeadLetterUrl: !GetAtt SqsStack.Outputs.DeadLetterQueueUrl
         FifoDeadLetterArn: !GetAtt SqsStack.Outputs.FifoDeadLetterQueueArn
         FifoDeadLetterUrl: !GetAtt SqsStack.Outputs.FifoDeadLetterQueueUrl
+        CredibleTasksUrl: !GetAtt SqsStack.Outputs.CredibleTasksUrl
       TemplateURL: templates/lambda.yml
   GqlStack:
     Type: AWS::CloudFormation::Stack
