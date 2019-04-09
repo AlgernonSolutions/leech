@@ -27,6 +27,18 @@ Parameters:
   GraphReadEndpoint:
     Type: String
     Description: the read only access point for the graph database
+  DeadLetterUrl:
+    Type: String
+    Description: the url for the generated redrive queue
+  DeadLetterArn:
+    Type: String
+    Description: the ARN of the generated redrive queue
+  FifoDeadLetterUrl:
+    Type: String
+    Description: the url for the generated FIFO redrive queue
+  FifoDeadLetterArn:
+    Type: String
+    Description: the ARN of the generated FIFO redrive queue
 Globals:
   Function:
     Runtime: python3.6
@@ -37,8 +49,13 @@ Globals:
     Environment:
       Variables:
         WORK_FUNCTION: leech-work
+        TASK_WORKER_FUNCTION: leech-labor
         GRAPH_DB_ENDPOINT: !Ref GraphEndpoint
         GRAPH_DB_READER_ENDPOINT: !Ref GraphReadEndpoint
+        DEAD_LETTER_URL: !Ref DeadLetterUrl
+        DEAD_LETTER_ARN: !Ref DeadLetterArn
+        FIFO_DEAD_LETTER_URL: !Ref FifoDeadLetterUrl
+        FIFO_DEAD_LETTER_ARN: !Ref FifoDeadLetterArn
 Resources:
   LeechLayer:
     Type: 'AWS::Serverless::LayerVersion'

@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - 'AWS::Serverless-2016-10-31'
+  - 'AWS::CodeStar'
+Parameters:
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
+Resources:
+  DeadLetter:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
+      MessageRetentionPeriod: 1209600
+  FifoDeadLetter:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId: alias/aws/sqs
+      MessageRetentionPeriod: 1209600
+Outputs:
+  DeadLetterQueueUrl:
+    Description: the url of the generated dead letter queue
+    Value: !Ref DeadLetter
+  DeadLetterQueueArn:
+    Description: the ARN of the generated dead letter queue
+    Value: !GetAtt DeadLetter.Arn
+  DeadLetterQueueName:
+    Description: the name of the generated dead letter queue
+    Value: !GetAtt DeadLetter.QueueName
+  FifoDeadLetterQueueUrl:
+    Description: the url of the generated FIFO dead letter queue
+    Value: !Ref DeadLetter
+  FifoDeadLetterQueueArn:
+    Description: the ARN of the generated FIFO dead letter queue
+    Value: !GetAtt DeadLetter.Arn
+  FifoDeadLetterQueueName:
+    Description: the name of the generated FIFO dead letter queue
+    Value: !GetAtt DeadLetter.QueueName

@@ -115,6 +115,10 @@ Resources:
         ThirdSubnetId: !GetAtt VpcStack.Outputs.ThirdSubnetId
         GraphEndpoint: !GetAtt NeptuneStack.Outputs.GraphEndpoint
         GraphReadEndpoint: !GetAtt NeptuneStack.Outputs.GraphReadEndpoint
+        DeadLetterArn: !GetAtt SqsStack.Outputs.DeadLetterQueueArn
+        DeadLetterUrl: !GetAtt SqsStack.Outputs.DeadLetterQueueUrl
+        FifoDeadLetterArn: !GetAtt SqsStack.Outputs.FifoDeadLetterQueueArn
+        FifoDeadLetterUrl: !GetAtt SqsStack.Outputs.FifoDeadLetterQueueUrl
       TemplateURL: templates/lambda.yml
   GqlStack:
     Type: AWS::CloudFormation::Stack
@@ -128,6 +132,12 @@ Resources:
         SensitivesTableName: !Ref SensitivesTableName
         SensitivesTableRegion: !Ref "AWS::Region"
       TemplateURL: templates/gql.yml
+  SqsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ProjectId: !Ref ProjectId
+      TemplateURL: templates/sqs.yml
 Metadata:
   'AWS::CloudFormation::Designer':
     0b5b2eea-7e9d-454c-94d4-f394c6e71b88:
