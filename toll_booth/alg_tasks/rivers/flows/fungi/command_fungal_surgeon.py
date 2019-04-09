@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, group, SubtaskSignature, chain
+from toll_booth.alg_obj.aws.gentlemen.rafts import ActivitySignature, group, SubtaskSignature, chain, LambdaSignature
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -32,12 +32,12 @@ def command_fungal_surgeon(**kwargs):
 
 @xray_recorder.capture('command_fungal_surgeon_build_chain')
 def _build_chain(names, **kwargs):
-    get_local_ids = ActivitySignature(names['local'], 'get_local_ids', **kwargs)
+    get_local_ids = LambdaSignature(names['local'], 'get_local_ids', **kwargs)
     get_remote_ids = ActivitySignature(names['remote'], 'get_remote_ids', **kwargs)
-    generate_mapping = ActivitySignature(names['map'], 'build_mapping', **kwargs)
+    generate_mapping = LambdaSignature(names['map'], 'build_mapping', **kwargs)
     get_ids_group = group(get_local_ids, get_remote_ids)
-    get_change_type = ActivitySignature(names['change_types'], 'pull_change_types', **kwargs)
-    get_schema_entry = ActivitySignature(names['schema_entry'], 'pull_schema_entry', **kwargs)
+    get_change_type = LambdaSignature(names['change_types'], 'pull_change_types', **kwargs)
+    get_schema_entry = LambdaSignature(names['schema_entry'], 'pull_schema_entry', **kwargs)
     work_fip_links = SubtaskSignature(names['work_links'], 'work_fip_links', **kwargs)
     great_chain = chain(get_schema_entry, get_ids_group, work_fip_links, get_change_type, generate_mapping)
     return great_chain
@@ -57,3 +57,9 @@ def _build_group(names, task_args, **kwargs):
         work_remote_ids_signatures.append(work_remote_id_signature)
     tuple_signatures = tuple(work_remote_ids_signatures)
     return group(*tuple_signatures)
+
+
+def _build_fungal_leech(task_args, **kwargs):
+    extracted_encounters = task_args.get_argument_value('extracted_encounters')
+    extracted_documentation_versions = task_args.get_argument_value('extracted_documentation_versions')
+    extracted_documentation= task_args.get_argument_value('extracted_documentation')

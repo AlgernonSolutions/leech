@@ -9,12 +9,12 @@ Parameters:
 Resources:
   CredibleTasks:
     Type: AWS::SQS::Queue
-      Properties:
-        RedrivePolicy:
-          deadLetterTargetArn:
-            !GetAtt DeadLetter.Arn
-          maxReceiveCount: 15
-        KmsMasterKeyId: alias/aws/sqs
+    Properties:
+      RedrivePolicy:
+        deadLetterTargetArn:
+          !GetAtt DeadLetter.Arn
+        maxReceiveCount: 15
+      KmsMasterKeyId: alias/aws/sqs
   DeadLetter:
     Type: AWS::SQS::Queue
     Properties:

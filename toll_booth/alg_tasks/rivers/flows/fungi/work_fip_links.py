@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import xray_recorder
 
 from toll_booth.alg_obj.aws.gentlemen.decisions import CompleteWork
-from toll_booth.alg_obj.aws.gentlemen.rafts import LambdaSignature, ActivitySignature, group
+from toll_booth.alg_obj.aws.gentlemen.rafts import LambdaSignature, group
 from toll_booth.alg_tasks.rivers.rocks import workflow
 
 
@@ -47,7 +47,7 @@ def _build_index_group(task_args, **kwargs):
         operation_identifier = names[operation_name]
         new_task_arg = {'id_values': id_values}
         new_task_args = task_args.replace_argument_value(operation_name, new_task_arg, operation_identifier)
-        operation_signature = ActivitySignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
+        operation_signature = LambdaSignature(operation_identifier, operation_name, task_args=new_task_args, **kwargs)
         signatures.append(operation_signature)
     if not signatures:
         return None
@@ -58,4 +58,4 @@ def _build_graph_signature(task_args, **kwargs):
     operation_name = 'graph_links'
     names = kwargs['names']
     identifier = names['graph']
-    return ActivitySignature(identifier, operation_name, **kwargs)
+    return LambdaSignature(identifier, operation_name, **kwargs)

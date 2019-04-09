@@ -12,7 +12,6 @@ def work_encounter(**kwargs):
     id_source = kwargs['id_source']
     encounter_id = kwargs['id_value']
     documentation_id = f'{encounter_id}-1'
-    return_name = f'work_encounter-{encounter_id}'
     with CredibleFrontEndDriver(id_source) as driver:
         encounter = driver.retrieve_client_encounter(encounter_id)
         encounter_soup = bs4.BeautifulSoup(encounter, features="lxml")
@@ -20,7 +19,7 @@ def work_encounter(**kwargs):
         encounter_type = identifier_data[0].text
         if encounter_type == 'Community Support':
             encounter_documentation = _parse_community_support_encounter(encounter_soup)
-            return {return_name: [{
+            return {'extracted_encounters': [{
                 'source': {
                     'documentation_entry_id': f'{documentation_id}-{x["entry_name"]}',
                     'documentation_id': documentation_id,
